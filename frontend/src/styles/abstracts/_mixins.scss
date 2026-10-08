@@ -1,0 +1,14 @@
+@use 'sass:map';
+@use './tokens' as tokens;
+
+@mixin up($breakpoint) {
+  $value: map.get(tokens.$breakpoints, $breakpoint);
+
+  @if $value == null {
+    @error 'Unknown breakpoint: #{$breakpoint}';
+  }
+
+  @media (min-width: $value) {
+    @content;
+  }
+}

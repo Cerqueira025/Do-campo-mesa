@@ -1,0 +1,19 @@
+:root {
+  font-family: var(--font-body);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  color: var(--color-white);
+  background: var(--color-stone-50);
+}
+
+button {
+  font-family: inherit;
+}
+
+::selection {
+  color: var(--color-white);
+  background: var(--color-green-900);
+}

@@ -1,0 +1,74 @@
+@use '../../styles/abstracts/mixins' as *;
+
+.button {
+  display: inline-flex;
+  min-height: 62px;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 14px 20px;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  color: var(--color-white);
+  font: inherit;
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    transform 160ms ease;
+
+  &:hover {
+    transform: translateY(-1px);
+  }
+
+  &:focus-visible {
+    outline: 3px solid var(--color-white);
+    outline-offset: 4px;
+  }
+
+  &--primary {
+    background: var(--color-green-500);
+
+    &:hover {
+      background: var(--color-green-800);
+    }
+  }
+
+  &--secondary {
+    border-color: var(--color-white-70);
+    background: var(--color-white-10);
+
+    &:hover {
+      border-color: var(--color-white);
+      background: var(--color-white-20);
+    }
+  }
+
+  &__icon {
+    display: block;
+    width: 24px;
+    height: 24px;
+    flex: 0 0 auto;
+  }
+}
+
+@include up(tablet) {
+  .button {
+    min-width: 0;
+    min-height: 68px;
+    flex: 1 1 0;
+    padding-inline: 18px;
+    font-size: 1.2rem;
+  }
+}
+
+@include up(desktop) {
+  .button {
+    min-height: 74px;
+    font-size: 1.35rem;
+  }
+}

@@ -1,0 +1,26 @@
+$breakpoints: (
+  tablet: 768px,
+  desktop: 1024px,
+  wide: 1280px,
+);
+
+$colors: (
+  'green-20': rgba(6, 42, 27, 20%),
+  'green-50': rgba(6, 42, 27, 50%),
+  'green-90': rgba(6, 42, 27, 90%),
+  'green-95': rgba(6, 42, 27, 95%),
+  'green-300': #86b99c,
+  'green-500': #38831f,
+  'green-800': #2f7419,
+  'green-900': #2f5d3a,
+  'green-950': #062a1b,
+  'stone-50': #f7f7f2,
+  'white': #fff,
+  'white-10': rgb(255 255 255 / 10%),
+  'white-20': rgb(255 255 255 / 20%),
+  'white-50': rgb(255 255 255 / 50%),
+  'white-70': rgb(255 255 255 / 70%),
+);
+
+$font-body: Arial, Helvetica, sans-serif;
+$content-max: 1280px;

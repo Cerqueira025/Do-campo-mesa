@@ -1,0 +1,24 @@
+openapi: 3.0.3
+info:
+  title: Do Campo à Mesa API
+  version: 1.0.0
+  description: Especificação inicial da API do projeto.
+servers:
+  - url: http://localhost:3000/api
+paths:
+  /health:
+    get:
+      summary: Verifica se a API está disponível
+      responses:
+        '200':
+          description: API disponível
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                properties:
+                  status:
+                    type: string
+                    example: ok

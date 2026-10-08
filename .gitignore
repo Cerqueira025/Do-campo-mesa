@@ -1,0 +1,21 @@
+# Environment secrets
+.env
+.env.*
+!.env.example
+
+# Node.js
+node_modules/
+dist/
+coverage/
+npm-debug.log*
+
+# Laravel
+backoffice/app/.env
+backoffice/app/vendor/
+backoffice/app/storage/*.key
+
+# Editor and operating system files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

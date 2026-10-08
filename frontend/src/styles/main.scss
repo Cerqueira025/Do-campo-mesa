@@ -1,0 +1,12 @@
+@use './abstracts/tokens' as tokens;
+@use './base/reset';
+@use './base/global';
+
+:root {
+  @each $name, $value in tokens.$colors {
+    --color-#{$name}: #{$value};
+  }
+
+  --font-body: #{tokens.$font-body};
+  --content-max: #{tokens.$content-max};
+}
