@@ -1,59 +1,42 @@
 .product-card {
-  position: relative;
-  container-type: inline-size;
-  display: flex;
-  flex-direction: column;
-  width: min(100%, 360px);
-  margin-inline: auto;
-  aspect-ratio: 4 / 3;
+  --bs-card-bg: var(--color-brown-100);
+  min-height: 220px;
+  padding: 24px;
   overflow: hidden;
-  padding: clamp(20px, 7cqw, 28px) clamp(20px, 7.8cqw, 30px);
-  border-radius: clamp(36px, 13cqw, 48px);
-  background: var(--color-brown-100);
+  color: var(--color-brown-500);
 
   &__details {
+    position: relative;
     z-index: 1;
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    align-items: flex-start;
-    min-width: 0;
-    pointer-events: none;
   }
 
   &__title {
-    max-width: calc(100% - 68px);
-    margin: 0;
-    color: var(--color-brown-500);
-    font-size: clamp(var(--font-size-2xl), 13.5cqw, var(--font-size-3xl));
-    font-weight: 700;
-    letter-spacing: -0.045em;
-    line-height: 1;
+    margin: 0 52px 16px 0;
+    overflow-wrap: anywhere;
+    font-size: var(--font-size-2xl);
+    line-height: 1.1;
   }
 
   &__category {
-    max-width: 54%;
-    margin: clamp(16px, 6.5cqw, 24px) 0 0;
-    color: var(--color-brown-400);
-    font-size: clamp(var(--font-size-sm), 5.2cqw, var(--font-size-xl));
-    font-weight: 700;
-    line-height: 1.22;
+    max-width: 50%;
+    margin: 0 0 24px;
+    overflow-wrap: anywhere;
+    font-size: var(--font-size-sm);
+    line-height: 1.4;
   }
 
   &__weight {
-    margin: auto 0 8px;
-    color: var(--color-brown-400);
-    font-size: clamp(var(--font-size-md), 5.4cqw, var(--font-size-xl));
+    max-width: 50%;
+    margin: 0;
+    font-size: var(--font-size-md);
     font-weight: 700;
-    line-height: 1;
   }
 
   &__image {
     position: absolute;
-    z-index: 0;
     right: -8px;
-    bottom: clamp(-40px, -11cqw, -24px);
-    width: 58%;
+    bottom: -24px;
+    width: 54%;
     height: auto;
     mix-blend-mode: multiply;
   }
@@ -61,24 +44,20 @@
   &__add {
     position: absolute;
     z-index: 2;
-    top: clamp(28px, 9cqw, 34px);
-    right: clamp(24px, 8cqw, 30px);
-    width: clamp(44px, 14cqw, 50px);
-    padding: 0 0 4px;
-    background: #c9a066;
-    color: #fffdf0;
-    font-size: clamp(2rem, 9cqw, 2.4rem);
-    font-weight: 700;
+    top: 20px;
+    right: 20px;
+    background: var(--color-brown-500);
+    color: var(--color-brown-100);
+    font-size: var(--font-size-2xl);
     line-height: 1;
 
     &:not(:disabled):hover {
-      transform: scale(1.06);
-      background: #b78d50;
+      background: var(--color-brown-400);
+      color: var(--color-green-950);
     }
 
     &:disabled {
-      opacity: 0.8;
+      opacity: 0.6;
     }
   }
-
 }

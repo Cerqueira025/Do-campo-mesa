@@ -16,7 +16,7 @@ interface ProductCardProps {
 
 function ProductCard({ product, onAdd }: ProductCardProps) {
   return (
-    <article className="product-card">
+    <article className="card product-card">
       <div className="product-card__details">
         <h3 className="product-card__title">{product.title}</h3>
         <p className="product-card__category">{product.category}</p>

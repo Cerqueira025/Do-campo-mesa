@@ -37,9 +37,9 @@ function HomePage() {
           <SearchBar value={search} onChange={setSearch} />
 
           {visibleProducts.length > 0 ? (
-            <ul className="home-page__product-grid">
+            <ul className="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 home-page__product-grid">
               {visibleProducts.map((product) => (
-                <li key={product.id}>
+                <li className="col" key={product.id}>
                   <ProductCard product={product} />
                 </li>
               ))}

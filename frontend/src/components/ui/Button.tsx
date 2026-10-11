@@ -19,7 +19,7 @@ function Button({
   variant = 'primary',
   ...buttonProps
 }: ButtonProps) {
-  const classes = ['button', `button--${variant}`, className]
+  const classes = ['btn', 'button', `button--${variant}`, className]
     .filter(Boolean)
     .join(' ')
 

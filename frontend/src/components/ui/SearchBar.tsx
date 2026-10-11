@@ -21,7 +21,7 @@ function SearchBar({
         aria-hidden="true"
       />
       <input
-        className="search-bar__input"
+        className="form-control search-bar__input"
         type="search"
         aria-label="Pesquisar produtos"
         placeholder={placeholder}

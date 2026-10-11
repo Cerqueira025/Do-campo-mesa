@@ -20,6 +20,7 @@ Estas regras aplicam-se a novas implementações e ao código alterado.
 - Antes de acrescentar uma regra para corrigir um estilo, verificar se a regra original deve ser ajustada.
 - Reutilizar os mixins e breakpoints existentes, com abordagem Mobile First.
 - Usar `@use`; criar mixins apenas quando simplificarem repetição real.
+- Exceção: os imports Sass do Bootstrap 5 usam `@import`, exclusivamente em `frontend/src/styles/_bootstrap.scss`, devido às dependências internas da biblioteca.
 - Remover estilos que a alteração tornou desnecessários. Comentar apenas decisões que não sejam evidentes.
 
 ## 3. Cores sempre nos tokens
