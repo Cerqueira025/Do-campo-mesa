@@ -2,23 +2,26 @@
 
 .entry-actions {
   display: flex;
-  flex-direction: column;
-  flex-grow: 1;
-  gap: 12px;
+  flex-direction: row;
+  gap: 10px;
   margin-top: 22px;
 
-  &__feedback {
-    min-height: 1.5em;
-    margin: 12px 0 0;
-    color: var(--color-white-70);
-    font-size: 0.95rem;
-    line-height: 1.5;
+  .button {
+    flex: 1 1 0;
+    min-width: 0;
+    gap: 8px;
+    padding-inline: 10px;
+    font-size: clamp(0.8rem, 3vw, 1.05rem);
   }
 
   @include up(tablet) {
-    flex-direction: row;
     gap: 16px;
     margin-top: 28px;
+
+    .button {
+      padding-inline: 18px;
+      font-size: 1.2rem;
+    }
   }
 
   @include up(desktop) {

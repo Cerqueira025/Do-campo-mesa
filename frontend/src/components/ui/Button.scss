@@ -2,11 +2,10 @@
 
 .button {
   display: inline-flex;
-  min-height: 62px;
   align-items: center;
   justify-content: center;
   gap: 12px;
-  padding: 14px 20px;
+  padding: 10px 8px;
   border: 2px solid transparent;
   border-radius: 999px;
   color: var(--color-white);
@@ -50,8 +49,8 @@
 
   &__icon {
     display: block;
-    width: 24px;
-    height: 24px;
+    width: 20px;
+    height: 20px;
     flex: 0 0 auto;
   }
 }
@@ -59,7 +58,7 @@
 @include up(tablet) {
   .button {
     min-width: 0;
-    min-height: 68px;
+    min-height: 35px;
     flex: 1 1 0;
     padding-inline: 18px;
     font-size: 1.2rem;
@@ -68,7 +67,7 @@
 
 @include up(desktop) {
   .button {
-    min-height: 74px;
+    min-height: 40px;
     font-size: 1.35rem;
   }
 }

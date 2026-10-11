@@ -2,22 +2,16 @@
 
 .brand-mark {
   display: grid;
-  width: 82px;
-  height: 82px;
+  width: 60px;
+  height: 60px;
   flex: 0 0 auto;
   place-items: center;
-  border: 2px solid var(--color-white-70);
-  border-radius: 28px;
-  background: var(--color-white-10);
+  border-radius: 20px;
+  background: var(--color-white-40);
 
   &__icon {
-    width: 42px;
-    height: 48px;
+    width: 36px;
+    height: 43px;
     color: var(--color-green-500);
-  }
-
-  @include up(tablet) {
-    width: 100px;
-    height: 100px;
   }
 }
