@@ -1,0 +1,22 @@
+meta {
+  name: Impede salto de estado
+  type: http
+  seq: 5
+}
+
+patch {
+  url: {{baseUrl}}/orders/{{testOrderId}}/estado
+  body: json
+  auth: bearer
+  token: {{producerToken}}
+}
+
+body:json {
+  { "estado": "entregue" }
+}
+
+tests {
+  test("salto de estado devolve 409", function() {
+    expect(res.getStatus()).to.equal(409);
+  });
+}

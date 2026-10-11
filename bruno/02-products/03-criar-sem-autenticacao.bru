@@ -1,0 +1,21 @@
+meta {
+  name: Impede criação de produto sem token
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/products
+  body: json
+  auth: none
+}
+
+body:json {
+  { "nome": "{{testRun}} produto não autorizado" }
+}
+
+tests {
+  test("criação anónima devolve 401", function() {
+    expect(res.getStatus()).to.equal(401);
+  });
+}

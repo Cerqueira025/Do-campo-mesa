@@ -1,0 +1,21 @@
+meta {
+  name: Lista produtores aprovados
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/producers
+  body: none
+  auth: none
+}
+
+tests {
+  test("lista apenas produtores aprovados e não expõe morada", function() {
+    expect(res.getStatus()).to.equal(200);
+    const producers = res.getBody();
+    expect(producers).to.be.an("array");
+    expect(producers.every((item) => item.perfilProdutor.validacao === "aceite")).to.equal(true);
+    expect(producers.every((item) => !item.perfilProdutor.morada)).to.equal(true);
+  });
+}

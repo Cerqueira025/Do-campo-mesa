@@ -1,0 +1,30 @@
+meta {
+  name: Login comprador de teste
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/auth/login
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "{{testEmail}}",
+    "password": "{{testPassword}}"
+  }
+}
+
+tests {
+  test("login de comprador devolve token", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().token).to.be.a("string");
+    expect(res.getBody().utilizador.papel).to.equal("comprador");
+  });
+}
+
+script:post-response {
+  bru.setVar("testBuyerToken", res.getBody().token);
+}

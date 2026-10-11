@@ -1,0 +1,17 @@
+meta {
+  name: Encomendas exigem sessão
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/orders
+  body: none
+  auth: none
+}
+
+tests {
+  test("lista anónima devolve 401", function() {
+    expect(res.getStatus()).to.equal(401);
+  });
+}

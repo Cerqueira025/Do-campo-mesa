@@ -1,0 +1,40 @@
+meta {
+  name: Regista comprador de teste
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/auth/registo
+  body: json
+  auth: none
+}
+
+script:pre-request {
+  const stamp = Date.now().toString();
+  bru.setVar("testRun", "BRUNO_AUTOTEST_" + stamp);
+  bru.setVar("testEmail", "bruno-test-" + stamp + "-" + Math.random().toString(36).slice(2) + "@example.test");
+}
+
+body:json {
+  {
+    "nome": "Comprador Bruno Teste",
+    "email": "{{testEmail}}",
+    "password": "{{testPassword}}",
+    "papel": "comprador"
+  }
+}
+
+tests {
+  test("cria comprador sem devolver password ou hash", function() {
+    expect(res.getStatus()).to.equal(201);
+    const body = res.getBody();
+    expect(body).to.have.property("id");
+    expect(body.papel).to.equal("comprador");
+    expect(body).to.not.have.property("passwordHash");
+  });
+}
+
+script:post-response {
+  bru.setVar("testBuyerId", res.getBody().id);
+}

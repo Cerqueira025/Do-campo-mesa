@@ -1,0 +1,19 @@
+meta {
+  name: Lista encomendas próprias
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/orders
+  body: none
+  auth: bearer
+  token: {{testBuyerToken}}
+}
+
+tests {
+  test("comprador vê a encomenda criada", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().some((order) => order._id === "{{testOrderId}}")).to.equal(true);
+  });
+}

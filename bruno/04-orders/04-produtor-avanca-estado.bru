@@ -1,0 +1,23 @@
+meta {
+  name: Produtor confirma encomenda
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/orders/{{testOrderId}}/estado
+  body: json
+  auth: bearer
+  token: {{producerToken}}
+}
+
+body:json {
+  { "estado": "confirmada" }
+}
+
+tests {
+  test("produtor proprietário avança a encomenda", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().estado).to.equal("confirmada");
+  });
+}

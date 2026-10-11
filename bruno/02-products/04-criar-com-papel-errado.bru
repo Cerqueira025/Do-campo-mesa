@@ -1,0 +1,22 @@
+meta {
+  name: Impede comprador de criar produto
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/products
+  body: json
+  auth: bearer
+  token: {{testBuyerToken}}
+}
+
+body:json {
+  { "nome": "{{testRun}} produto não autorizado" }
+}
+
+tests {
+  test("papel comprador devolve 403", function() {
+    expect(res.getStatus()).to.equal(403);
+  });
+}

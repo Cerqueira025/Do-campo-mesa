@@ -1,0 +1,30 @@
+meta {
+  name: Login produtor aprovado
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/auth/login
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "{{producerEmail}}",
+    "password": "{{demoPassword}}"
+  }
+}
+
+tests {
+  test("login identifica produtor aprovado", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().utilizador.papel).to.equal("produtor");
+    expect(res.getBody().utilizador.validacao).to.equal("aceite");
+  });
+}
+
+script:post-response {
+  bru.setVar("producerToken", res.getBody().token);
+}

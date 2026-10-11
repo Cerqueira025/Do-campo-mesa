@@ -1,0 +1,20 @@
+meta {
+  name: Consulta leilão de teste
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/auctions/{{testAuctionId}}
+  body: none
+  auth: none
+}
+
+tests {
+  test("detalhe contém lote e produtor", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().lote).to.contain("BRUNO_AUTOTEST_");
+    expect(res.getBody().produtoId).to.have.property("nome");
+    expect(res.getBody().produtorId).to.have.property("nome");
+  });
+}

@@ -1,0 +1,21 @@
+meta {
+  name: Impede criação anónima de leilão
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/auctions
+  body: json
+  auth: none
+}
+
+body:json {
+  {}
+}
+
+tests {
+  test("criação anónima devolve 401", function() {
+    expect(res.getStatus()).to.equal(401);
+  });
+}

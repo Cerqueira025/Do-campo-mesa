@@ -1,0 +1,18 @@
+meta {
+  name: Não revela encomenda alheia
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/orders/{{testOrderId}}
+  body: none
+  auth: bearer
+  token: {{buyerToken}}
+}
+
+tests {
+  test("outro comprador recebe 404", function() {
+    expect(res.getStatus()).to.equal(404);
+  });
+}

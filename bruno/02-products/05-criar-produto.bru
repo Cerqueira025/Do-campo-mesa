@@ -1,0 +1,39 @@
+meta {
+  name: Cria produto de teste
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/products
+  body: json
+  auth: bearer
+  token: {{producerToken}}
+}
+
+body:json {
+  {
+    "nome": "{{testRun}} batata de teste",
+    "descricao": "Produto criado pela coleção Bruno.",
+    "categoria": "Hortícolas",
+    "preco": 125,
+    "unidade": "kg",
+    "stock": 5,
+    "epoca": ["verao"],
+    "biologico": true,
+    "imagens": []
+  }
+}
+
+tests {
+  test("cria produto e devolve Location", function() {
+    expect(res.getStatus()).to.equal(201);
+    expect(res.getHeader("Location")).to.contain("/api/products/");
+    expect(res.getBody().nome).to.contain("BRUNO_AUTOTEST_");
+    expect(res.getBody().produtorId).to.have.property("_id");
+  });
+}
+
+script:post-response {
+  bru.setVar("testProductId", res.getBody()._id);
+}

@@ -1,0 +1,29 @@
+meta {
+  name: Login administrador
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/auth/login
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "{{adminEmail}}",
+    "password": "{{demoPassword}}"
+  }
+}
+
+tests {
+  test("login identifica administrador", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().utilizador.papel).to.equal("administrador");
+  });
+}
+
+script:post-response {
+  bru.setVar("adminToken", res.getBody().token);
+}
