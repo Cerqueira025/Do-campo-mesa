@@ -1,0 +1,65 @@
+name: API checks
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test-api:
+    runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.adminCommand(\"ping\").ok'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      MONGODB_URI: mongodb://127.0.0.1:27017
+      MONGODB_DB_NAME: do_campo_a_mesa_test
+      JWT_SECRET: ci-only-secret-that-is-at-least-32-characters-long
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: api/package-lock.json
+
+      - name: Install API dependencies
+        working-directory: api
+        run: npm ci
+
+      - name: Run model tests
+        working-directory: api
+        run: npm test
+
+      - name: Prepare test database
+        working-directory: api
+        run: |
+          npm run db:init
+          npm run db:seed
+
+      - name: Start API and wait for health check
+        working-directory: api
+        run: |
+          npm start > api.log 2>&1 &
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:3000/api/health; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat api.log
+          exit 1
+
+      - name: Run Bruno API collection
+        working-directory: api
+        run: npm run test:api

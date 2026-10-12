@@ -5,7 +5,7 @@ export interface ProductCardProduct {
   title: string
   category: string
   weight: string
-  image: string
+  image?: string
   imageAlt?: string
 }
 
@@ -23,11 +23,13 @@ function ProductCard({ product, onAdd }: ProductCardProps) {
         <p className="product-card__weight">{product.weight}</p>
       </div>
 
-      <img
-        className="product-card__image"
-        src={product.image}
-        alt={product.imageAlt ?? product.title}
-      />
+      {product.image && (
+        <img
+          className="product-card__image"
+          src={product.image}
+          alt={product.imageAlt ?? product.title}
+        />
+      )}
 
       <IconButton
         className="product-card__add"
