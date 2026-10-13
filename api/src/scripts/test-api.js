@@ -6,7 +6,7 @@ import { cleanupBrunoData } from './cleanup-bruno.js';
 
 const directory = dirname(fileURLToPath(import.meta.url));
 const collectionPath = resolve(directory, '../../../bruno');
-const cliPath = resolve(directory, '../../node_modules/.bin/bru.cmd');
+const cliPath = resolve(directory, '../../node_modules/@usebruno/cli/bin/bru.js');
 let connected = false;
 let exitCode = 1;
 let brunoStarted = false;
@@ -24,9 +24,7 @@ try {
   delete brunoEnv.MONGODB_DB_NAME;
   delete brunoEnv.JWT_SECRET;
   const baseUrl = process.env.API_BASE_URL || 'http://localhost:3000/api';
-  const result = process.platform === 'win32'
-    ? spawnSync('cmd.exe', ['/d', '/s', '/c', `"${cliPath}" run . --env local --env-var "baseUrl=${baseUrl}" -r`], { stdio: 'inherit', env: brunoEnv, cwd: collectionPath })
-    : spawnSync(process.execPath, [resolve(directory, '../../node_modules/@usebruno/cli/bin/bru.js'), 'run', '.', '--env', 'local', '--env-var', `baseUrl=${baseUrl}`, '-r'], { stdio: 'inherit', env: brunoEnv, cwd: collectionPath });
+  const result = spawnSync(process.execPath, [cliPath, 'run', '.', '--env', 'local', '--env-var', `baseUrl=${baseUrl}`, '-r'], { stdio: 'inherit', env: brunoEnv, cwd: collectionPath });
   if (result.error) throw result.error;
   exitCode = result.status ?? 1;
 } catch (error) {
