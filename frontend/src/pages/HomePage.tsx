@@ -2,10 +2,6 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { faRotateRight, faSliders } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import azeiteImage from '../assets/Azeite.png'
-import batataImage from '../assets/Batata.png'
-import leiteImage from '../assets/Leite.png'
-import melImage from '../assets/Mel.png'
-import vinhoImage from '../assets/Vinho.png'
 import Button from '../components/ui/Button'
 import IconButton from '../components/ui/IconButton'
 import AuctionCard from '../components/auction/AuctionCard'
@@ -14,43 +10,12 @@ import SearchBar from '../components/ui/SearchBar'
 import WelcomeHero from '../features/home/components/WelcomeHero'
 import ProductFilters from '../features/home/components/ProductFilters'
 import { emptyFilters, readCatalogUrl, writeCatalogUrl, type CatalogFilters, type FilterOptions } from '../features/home/catalogFilters'
+import { mapProduct, productHref, type ApiProduct } from '../features/products/product'
 import './HomePage.scss'
-
-interface ApiProduct {
-  _id: string
-  nome: string
-  categoria: string
-  preco: number
-  unidade: string
-  imagens: string[]
-}
 
 interface ProductsResponse {
   items: ApiProduct[]
   total: number
-}
-
-const priceFormatter = new Intl.NumberFormat('pt-PT', {
-  style: 'currency',
-  currency: 'EUR',
-})
-
-const productImages: Record<string, string> = {
-  azeite: azeiteImage,
-  batata: batataImage,
-  leite: leiteImage,
-  mel: melImage,
-  vinho: vinhoImage,
-}
-
-function mapProduct(product: ApiProduct): ProductCardProduct & { id: string } {
-  return {
-    id: product._id,
-    title: product.nome,
-    category: product.categoria,
-    weight: `${priceFormatter.format(product.preco / 100)}/${product.unidade}`,
-    image: productImages[product.nome.trim().toLowerCase()],
-  }
 }
 
 function HomePage() {
@@ -215,7 +180,7 @@ function HomePage() {
                   <ul className={`row row-cols-1 row-cols-md-2 ${isFiltersOpen ? 'row-cols-lg-1 row-cols-xl-2' : 'row-cols-lg-3'} home-page__product-grid`}>
                     {products.map((product) => (
                       <li className="col" key={product.id}>
-                        <ProductCard product={product} />
+                        <ProductCard product={product} href={productHref(product.id, `/${window.location.search}`)} />
                       </li>
                     ))}
                   </ul>

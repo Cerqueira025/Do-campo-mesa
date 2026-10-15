@@ -1,0 +1,38 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import { catalogReturnUrl, mapProduct, originMapUrl, productHref, productIdFromPath, productImages } from '../src/features/products/product.ts'
+
+const id = 'dca000000000000000000101'
+const product = { _id: id, nome: 'Batata', categoria: 'Hortícolas', preco: 150, unidade: 'kg', imagens: [] as string[] }
+
+test('Resolve apenas endereços de produtos com identificadores válidos', () => {
+  assert.equal(productIdFromPath(`/produtos/${id}`), id)
+  assert.equal(productIdFromPath(`/produtos/${id}/`), id)
+  for (const path of ['/', '/produtos/invalido', `/produtos/${id}/extra`]) assert.equal(productIdFromPath(path), null)
+})
+
+test('Preserva filtros no regresso e rejeita destinos externos', () => {
+  const catalog = '/?q=batata&bio=true&localidade=Viana'
+  const url = new URL(productHref(id, catalog), 'https://example.test')
+  assert.equal(catalogReturnUrl(url.search), catalog)
+  for (const value of ['', '?regresso=https://evil.test', '?regresso=//evil.test', '?regresso=/produtos/123']) assert.equal(catalogReturnUrl(value), '/')
+})
+
+test('Transforma preço em cêntimos e escolhe imagem remota antes do fallback', () => {
+  const mapped = mapProduct(product)
+  assert.match(mapped.weight, /^1,50\s€\/kg$/)
+  assert.equal(mapped.id, id)
+  assert.ok(mapped.image?.endsWith('Batata.png'))
+  const remote = productImages({ ...product, imagens: ['javascript:alert(1)', '', 'https://example.test/batata.png'] })
+  assert.equal(remote.image, 'https://example.test/batata.png')
+  assert.ok(remote.fallbackImage?.endsWith('Batata.png'))
+  assert.equal(productImages({ ...product, nome: 'Desconhecido' }).image, undefined)
+  assert.equal(productImages({ ...product, imagens: ['images/batata.png'] }).image, '/images/batata.png')
+})
+
+test('Mapa só é disponibilizado com coordenadas válidas, incluindo zero', () => {
+  assert.equal(originMapUrl(), null)
+  assert.equal(originMapUrl({ latitude: 91, longitude: 0 }), null)
+  assert.equal(originMapUrl({ latitude: 0, longitude: NaN }), null)
+  assert.match(originMapUrl({ latitude: 0, longitude: 0 })!, /mlat=0&mlon=0/)
+})

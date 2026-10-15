@@ -1,8 +1,7 @@
 import { useId } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faArrowRight, faLeaf, faRotateRight, faStar, faStarHalfStroke, faXmark } from '@fortawesome/free-solid-svg-icons'
+import { faArrowRight, faLeaf, faRotateRight, faStar, faStarHalfStroke } from '@fortawesome/free-solid-svg-icons'
 import Button from '../../../components/ui/Button'
-import IconButton from '../../../components/ui/IconButton'
 import { ratingOptions, seasons, type CatalogFilters, type FilterOptions } from '../catalogFilters'
 import './ProductFilters.scss'
 

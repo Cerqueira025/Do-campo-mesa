@@ -1,4 +1,5 @@
 import IconButton from '../ui/IconButton'
+import ProductImage from './ProductImage'
 import './ProductCard.scss'
 
 export interface ProductCardProduct {
@@ -6,18 +7,22 @@ export interface ProductCardProduct {
   category: string
   weight: string
   image?: string
+  fallbackImage?: string
   imageAlt?: string
 }
 
 interface ProductCardProps {
   product: ProductCardProduct
   onAdd?: (product: ProductCardProduct) => void
+  href?: string
 }
 
-function ProductCard({ product, onAdd }: ProductCardProps) {
+function ProductCard({ product, onAdd, href }: ProductCardProps) {
   return (
     <article className="card product-card">
-      <h3 className="product-card__title">{product.title}</h3>
+      <h3 className="product-card__title">
+        {href ? <a href={href}>{product.title}</a> : product.title}
+      </h3>
 
       <div className="product-card__body">
         <div className="product-card__details">
@@ -25,13 +30,12 @@ function ProductCard({ product, onAdd }: ProductCardProps) {
           <p className="product-card__weight">{product.weight}</p>
         </div>
 
-        {product.image && (
-          <img
-            className="product-card__image"
-            src={product.image}
-            alt={product.imageAlt ?? product.title}
-          />
-        )}
+        <ProductImage
+          className="product-card__image"
+          image={product.image}
+          fallbackImage={product.fallbackImage}
+          alt={product.imageAlt ?? product.title}
+        />
       </div>
 
       <IconButton
