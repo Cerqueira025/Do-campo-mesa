@@ -40,7 +40,7 @@ function ProductCard({ product, onAdd, href }: ProductCardProps) {
 
       <IconButton
         className="product-card__add"
-        variant="product"
+        variant="cream"
         aria-label={`Adicionar ${product.title} ao carrinho`}
         icon={<span aria-hidden="true">+</span>}
         disabled={!onAdd}

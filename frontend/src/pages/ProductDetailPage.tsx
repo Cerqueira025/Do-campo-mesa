@@ -51,7 +51,7 @@ export default function ProductDetailPage({ id }: { id: string | null }) {
   const seasonNames = seasons.filter((season) => product?.epoca?.includes(season.value)).map((season) => season.label)
   const backNavigation = (
     <nav className="product-detail__back" aria-label="Regresso ao catálogo">
-      <IconButton variant="secondary" aria-label="Voltar ao catálogo" icon={<FontAwesomeIcon icon={faArrowLeft} aria-hidden="true" />}
+      <IconButton variant="cream" aria-label="Voltar ao catálogo" icon={<FontAwesomeIcon icon={faArrowLeft} aria-hidden="true" />}
         onClick={() => window.location.assign(returnUrl)} />
       {status !== 'success' && <span>Voltar ao catálogo</span>}
     </nav>
