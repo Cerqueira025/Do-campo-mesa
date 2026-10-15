@@ -1,0 +1,22 @@
+meta {
+  name: Impede comprador de moderar avaliação
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/reviews/{{testReviewId}}/moderacao
+  body: json
+  auth: bearer
+  token: {{buyerToken}}
+}
+
+body:json {
+  { "estado": "oculta" }
+}
+
+tests {
+  test("papel comprador recebe 403", function() {
+    expect(res.getStatus()).to.equal(403);
+  });
+}

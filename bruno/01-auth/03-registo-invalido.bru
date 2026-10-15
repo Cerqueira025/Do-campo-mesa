@@ -1,0 +1,27 @@
+meta {
+  name: Rejeita dados inválidos no registo
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/auth/registo
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "nome": "X",
+    "email": "email-invalido",
+    "password": "curta",
+    "papel": "administrador"
+  }
+}
+
+tests {
+  test("registo inválido devolve 400", function() {
+    expect(res.getStatus()).to.equal(400);
+    expect(res.getBody()).to.have.property("erro");
+  });
+}

@@ -1,0 +1,17 @@
+meta {
+  name: Rejeita estado de leilão inválido
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/auctions?estado=pausado
+  body: none
+  auth: none
+}
+
+tests {
+  test("filtro inválido devolve 400", function() {
+    expect(res.getStatus()).to.equal(400);
+  });
+}

@@ -1,0 +1,17 @@
+meta {
+  name: Rejeita filtro inválido
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/products?bio=talvez
+  body: none
+  auth: none
+}
+
+tests {
+  test("parâmetro bio inválido devolve 400", function() {
+    expect(res.getStatus()).to.equal(400);
+  });
+}

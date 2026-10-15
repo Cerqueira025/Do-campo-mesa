@@ -1,0 +1,17 @@
+meta {
+  name: Produtor não aprovado não é público
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/producers/dca000000000000000000005
+  body: none
+  auth: none
+}
+
+tests {
+  test("perfil de produtor pendente devolve 404", function() {
+    expect(res.getStatus()).to.equal(404);
+  });
+}

@@ -1,0 +1,22 @@
+meta {
+  name: Lista e filtra produtos
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/products?q=batata&bio=true&precoMax=2
+  body: none
+  auth: none
+}
+
+tests {
+  test("filtro devolve produtos e paginação", function() {
+    expect(res.getStatus()).to.equal(200);
+    const body = res.getBody();
+    expect(body.items).to.be.an("array");
+    expect(body.page).to.equal(1);
+    expect(body.total).to.be.a("number");
+    expect(body.items.every((item) => item.biologico && item.preco <= 200)).to.equal(true);
+  });
+}

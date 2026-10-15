@@ -1,0 +1,22 @@
+meta {
+  name: Consulta perfil público de produtor
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/producers/dca000000000000000000004
+  body: none
+  auth: none
+}
+
+tests {
+  test("perfil público inclui produtos e avaliações", function() {
+    expect(res.getStatus()).to.equal(200);
+    const producer = res.getBody();
+    expect(producer.perfilProdutor.validacao).to.equal("aceite");
+    expect(producer.produtos).to.be.an("array");
+    expect(producer.avaliacoes).to.have.property("items");
+    expect(producer.perfilProdutor).to.not.have.property("morada");
+  });
+}

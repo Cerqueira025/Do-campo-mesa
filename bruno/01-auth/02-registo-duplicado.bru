@@ -1,0 +1,27 @@
+meta {
+  name: Rejeita email duplicado
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/auth/registo
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "nome": "Comprador Bruno Teste",
+    "email": "{{testEmail}}",
+    "password": "{{testPassword}}",
+    "papel": "comprador"
+  }
+}
+
+tests {
+  test("email já registado devolve 409", function() {
+    expect(res.getStatus()).to.equal(409);
+    expect(res.getBody()).to.have.property("erro");
+  });
+}

@@ -1,28 +1,18 @@
-@use '../../../styles/abstracts/mixins' as *;
-
 .entry-actions {
-  display: flex;
-  flex-direction: column;
-  flex-grow: 1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
-  margin-top: 22px;
+  max-width: 440px;
+  margin-top: 24px;
 
   &__feedback {
-    min-height: 1.5em;
-    margin: 12px 0 0;
-    color: var(--color-white-70);
-    font-size: 0.95rem;
+    margin: 16px 0 0;
+    color: var(--color-white);
+    font-size: var(--font-size-xs);
     line-height: 1.5;
   }
 
-  @include up(tablet) {
-    flex-direction: row;
-    gap: 16px;
-    margin-top: 28px;
-  }
-
-  @include up(desktop) {
-    max-width: 740px;
-    margin-top: 34px;
+  &__feedback:empty {
+    display: none;
   }
 }

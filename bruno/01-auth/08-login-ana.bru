@@ -1,0 +1,29 @@
+meta {
+  name: Login compradora de demonstração
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/auth/login
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "{{buyerEmail}}",
+    "password": "{{demoPassword}}"
+  }
+}
+
+tests {
+  test("login identifica compradora", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().utilizador.papel).to.equal("comprador");
+  });
+}
+
+script:post-response {
+  bru.setVar("buyerToken", res.getBody().token);
+}

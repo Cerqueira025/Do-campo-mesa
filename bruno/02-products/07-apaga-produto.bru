@@ -1,0 +1,18 @@
+meta {
+  name: Apaga produto de teste
+  type: http
+  seq: 7
+}
+
+delete {
+  url: {{baseUrl}}/products/{{testProductId}}
+  body: none
+  auth: bearer
+  token: {{producerToken}}
+}
+
+tests {
+  test("produto de teste é removido", function() {
+    expect(res.getStatus()).to.equal(204);
+  });
+}

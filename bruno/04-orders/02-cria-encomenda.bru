@@ -1,0 +1,35 @@
+meta {
+  name: Cria encomenda de teste
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/orders
+  body: json
+  auth: bearer
+  token: {{testBuyerToken}}
+}
+
+body:json {
+  {
+    "linhas": [
+      { "produtoId": "dca000000000000000000065", "quantidade": 1 }
+    ],
+    "entrega": { "tipo": "levantamento" }
+  }
+}
+
+tests {
+  test("cria encomenda com preço calculado pelo servidor", function() {
+    expect(res.getStatus()).to.equal(201);
+    const order = res.getBody();
+    expect(order.estado).to.equal("pendente");
+    expect(order.total).to.equal(order.linhas[0].precoUnitario);
+    expect(order.compradorId).to.equal(bru.getVar("testBuyerId"));
+  });
+}
+
+script:post-response {
+  bru.setVar("testOrderId", res.getBody()._id);
+}

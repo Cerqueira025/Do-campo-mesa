@@ -1,0 +1,19 @@
+meta {
+  name: Lista leilões ativos
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/auctions?estado=ativo
+  body: none
+  auth: none
+}
+
+tests {
+  test("devolve apenas leilões ativos", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody()).to.be.an("array");
+    expect(res.getBody().every((auction) => auction.estado === "ativo")).to.equal(true);
+  });
+}
