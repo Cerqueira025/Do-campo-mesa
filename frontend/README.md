@@ -36,6 +36,16 @@ npm run dev
 
 ## Verificações disponíveis:
 
+### Revisão visual e responsiva
+
+- Rever componentes no contexto da página a 320, 375, 661, 768, 1024 e 1280 px; confirmar proporção, legibilidade e espaço ocupado, além da ausência de transbordo.
+- No AuctionCard, com os dados de demonstração, confirmar altura até 420 px abaixo de 768 px e até 320 px a partir de 768 px. Estes limites são critérios de revisão, não alturas fixas de CSS.
+- Capturar a HomePage com o destaque e o início do catálogo visíveis. A imagem deve manter as proporções, sem sobrepor texto.
+- Rever textos longos, zoom a 200%, contagem com horas e estado terminado. Permitir crescimento natural do cartão quando necessário; nunca cortar informação para cumprir o limite de altura.
+- Verificar teclado, contraste e estados dos componentes partilhados alterados antes de concluir.
+
+### Comandos
+
 ```powershell
 npm run build
 npm run lint

@@ -81,7 +81,8 @@ paths:
         - { name: precoMin, in: query, schema: { type: number, minimum: 0 }, description: Preço em euros. }
         - { name: precoMax, in: query, schema: { type: number, minimum: 0 }, description: Preço em euros. }
         - { name: bio, in: query, schema: { type: boolean } }
-        - { name: epoca, in: query, schema: { type: string } }
+        - { name: avaliacaoMin, in: query, schema: { type: number, minimum: 1, maximum: 5 }, description: Média mínima das avaliações públicas do produto. Exclui produtos sem avaliações públicas quando usado. }
+        - { name: epoca, in: query, schema: { type: string }, description: Primavera (primavera), verão (verao), outono e inverno incluem produtos de todo-o-ano. Todo-o-ano seleciona apenas produtos disponíveis todo o ano. }
         - { name: localidade, in: query, schema: { type: string, maxLength: 100 } }
         - { name: produtorId, in: query, schema: { type: string } }
         - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
@@ -119,6 +120,30 @@ paths:
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
+  /products/filters:
+    get:
+      tags: [Produtos]
+      summary: Opções de filtros de todo o catálogo público de produtores aprovados
+      description: Valores únicos e ordenados alfabeticamente. Apenas produtores e localidades com produtos publicados são incluídos.
+      responses:
+        '200':
+          description: Opções independentes da pesquisa e paginação
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [categorias, produtores, localidades]
+                properties:
+                  categorias: { type: array, items: { type: string } }
+                  localidades: { type: array, items: { type: string } }
+                  produtores:
+                    type: array
+                    items:
+                      type: object
+                      required: [id, nome]
+                      properties:
+                        id: { type: string }
+                        nome: { type: string }
   /products/{id}:
     parameters: [{ $ref: '#/components/parameters/id' }]
     get:

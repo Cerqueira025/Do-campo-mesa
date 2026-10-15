@@ -1,8 +1,11 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
 import './IconButton.scss'
 
+type IconButtonVariant = 'primary' | 'secondary' | 'cream' | 'product'
+
 interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'aria-label'> {
   icon: ReactNode
+  variant?: IconButtonVariant
   'aria-label': string
 }
 
@@ -10,10 +13,11 @@ function IconButton({
   'aria-label': ariaLabel,
   className = '',
   icon,
+  variant = 'primary',
   type = 'button',
   ...buttonProps
 }: IconButtonProps) {
-  const classes = ['icon-button', className].filter(Boolean).join(' ')
+  const classes = ['icon-button', `icon-button--${variant}`, className].filter(Boolean).join(' ')
 
   return (
     <button

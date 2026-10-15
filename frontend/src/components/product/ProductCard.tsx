@@ -17,22 +17,26 @@ interface ProductCardProps {
 function ProductCard({ product, onAdd }: ProductCardProps) {
   return (
     <article className="card product-card">
-      <div className="product-card__details">
-        <h3 className="product-card__title">{product.title}</h3>
-        <p className="product-card__category">{product.category}</p>
-        <p className="product-card__weight">{product.weight}</p>
-      </div>
+      <h3 className="product-card__title">{product.title}</h3>
 
-      {product.image && (
-        <img
-          className="product-card__image"
-          src={product.image}
-          alt={product.imageAlt ?? product.title}
-        />
-      )}
+      <div className="product-card__body">
+        <div className="product-card__details">
+          <p className="product-card__category">{product.category}</p>
+          <p className="product-card__weight">{product.weight}</p>
+        </div>
+
+        {product.image && (
+          <img
+            className="product-card__image"
+            src={product.image}
+            alt={product.imageAlt ?? product.title}
+          />
+        )}
+      </div>
 
       <IconButton
         className="product-card__add"
+        variant="product"
         aria-label={`Adicionar ${product.title} ao carrinho`}
         icon={<span aria-hidden="true">+</span>}
         disabled={!onAdd}

@@ -8,7 +8,7 @@
     "start": "node src/server.js",
     "db:init": "node src/scripts/init-db.js",
     "db:seed": "node src/scripts/seed-db.js",
-    "test": "node test/models.test.js",
+    "test": "node --test test/*.test.js",
     "test:api": "node src/scripts/test-api.js"
   },
   "dependencies": {

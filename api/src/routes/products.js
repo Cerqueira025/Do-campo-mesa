@@ -2,6 +2,7 @@ import { Router } from 'express';
 import mongoose from 'mongoose';
 import Product from '../models/Product.js';
 import User from '../models/User.js';
+import Review from '../models/Review.js';
 import { requireApprovedProducer, requireAuth } from '../middleware/auth.js';
 
 const router = Router();
@@ -12,10 +13,12 @@ const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 router.get('/', async (request, response, next) => {
   try {
-    const { q, categoria, precoMin, precoMax, bio, epoca, localidade, produtorId, page = '1', limit = '24' } = request.query;
+    const { q, categoria, precoMin, precoMax, bio, epoca, localidade, produtorId, avaliacaoMin, page = '1', limit = '24' } = request.query;
     if ((q && (q.length > 100 || !q.trim())) || (precoMin !== undefined && (!Number.isFinite(Number(precoMin)) || Number(precoMin) < 0)) ||
       (precoMax !== undefined && (!Number.isFinite(Number(precoMax)) || Number(precoMax) < 0)) ||
       (bio !== undefined && !['true', 'false'].includes(bio)) || (produtorId && !mongoose.isValidObjectId(produtorId)) ||
+      (avaliacaoMin !== undefined && (typeof avaliacaoMin !== 'string' || !Number.isFinite(Number(avaliacaoMin)) ||
+        Number(avaliacaoMin) < 1 || Number(avaliacaoMin) > 5)) ||
       (localidade && localidade.length > 100) || !/^\d+$/.test(page) || !/^\d+$/.test(limit) ||
       Number(page) < 1 || Number(limit) < 1 || Number(limit) > 100) {
       return response.status(400).json({ erro: 'Filtros ou paginação inválidos.' });
@@ -50,7 +53,16 @@ router.get('/', async (request, response, next) => {
       }).distinct('_id');
       constraints.push({ produtorId: { $in: matchingLocations } });
     }
-    if (epoca) filter.epoca = epoca;
+    if (epoca) filter.epoca = ['primavera', 'verao', 'outono', 'inverno'].includes(epoca)
+      ? { $in: [epoca, 'todo-o-ano'] } : epoca;
+    if (avaliacaoMin !== undefined) {
+      const ratings = await Review.aggregate([
+        { $match: { estado: 'publicada', produtoId: { $ne: null } } },
+        { $group: { _id: '$produtoId', media: { $avg: '$classificacao' } } },
+        { $match: { media: { $gte: Number(avaliacaoMin) } } },
+      ]);
+      filter._id = { $in: ratings.map((rating) => rating._id) };
+    }
     filter.$and = constraints;
     const skip = (Number(page) - 1) * Number(limit);
     const [items, total] = await Promise.all([
@@ -58,6 +70,30 @@ router.get('/', async (request, response, next) => {
       Product.countDocuments(filter),
     ]);
     response.json({ items, page: Number(page), limit: Number(limit), total });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/filters', async (_request, response, next) => {
+  try {
+    const approved = await User.find({ papel: 'produtor', 'perfilProdutor.validacao': 'aceite' })
+      .select('nome perfilProdutor.localidade').lean();
+    const filter = { publicado: true, produtorId: { $in: approved.map((producer) => producer._id) } };
+    const [categories, producerIds] = await Promise.all([
+      Product.distinct('categoria', filter),
+      Product.distinct('produtorId', filter),
+    ]);
+    const ids = new Set(producerIds.map(String));
+    const producers = approved.filter((producer) => ids.has(String(producer._id)));
+    const alphabetical = (a, b) => a.localeCompare(b, 'pt-PT');
+    response.json({
+      categorias: categories.filter(Boolean).sort(alphabetical),
+      produtores: producers.map((producer) => ({ id: String(producer._id), nome: producer.nome }))
+        .sort((a, b) => alphabetical(a.nome, b.nome) || alphabetical(a.id, b.id)),
+      localidades: [...new Set(producers.map((producer) => producer.perfilProdutor?.localidade).filter(Boolean))]
+        .sort(alphabetical),
+    });
   } catch (error) {
     next(error);
   }
