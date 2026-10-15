@@ -10,6 +10,7 @@
   justify-content: center;
   gap: 8px;
   min-height: 46px;
+  border: 0;
 
   &:focus-visible {
     outline: 3px solid currentColor;
@@ -32,10 +33,18 @@
     --bs-btn-hover-bg: var(--color-white-20);
     --bs-btn-active-bg: var(--color-white-20);
     --bs-btn-disabled-bg: var(--color-white-10);
-    --bs-btn-border-color: var(--color-white-70);
-    --bs-btn-hover-border-color: var(--color-white);
-    --bs-btn-active-border-color: var(--color-white);
-    --bs-btn-disabled-border-color: var(--color-white-70);
+  }
+
+  &--cream {
+    --bs-btn-color: var(--color-green-950);
+    --bs-btn-hover-color: var(--color-green-950);
+    --bs-btn-active-color: var(--color-green-950);
+    --bs-btn-disabled-color: var(--color-green-950);
+    --bs-btn-bg: var(--color-brown-100);
+    --bs-btn-hover-bg: var(--color-stone-50);
+    --bs-btn-active-bg: var(--color-stone-50);
+    --bs-btn-disabled-bg: var(--color-brown-100);
+    --bs-btn-disabled-opacity: 1;
   }
 
   &__icon {
