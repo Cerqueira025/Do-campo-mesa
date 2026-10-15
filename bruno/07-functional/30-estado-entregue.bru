@@ -1,0 +1,29 @@
+meta {
+  name: Avança para entregue
+  type: http
+  seq: 30
+}
+
+patch {
+  url: {{baseUrl}}/orders/{{functionalOrder}}/estado
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{producerToken}}
+}
+
+body:json {
+  {
+    "estado": "entregue"
+  }
+}
+
+tests {
+  test("Avança para entregue", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().estado).to.equal('entregue');
+    expect(res.getBody().dataEntrega).to.be.a('string');
+  });
+}

@@ -1,0 +1,39 @@
+meta {
+  name: Rejeita mistura de produtores
+  type: http
+  seq: 23
+}
+
+post {
+  url: {{baseUrl}}/orders
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{testBuyerToken}}
+}
+
+body:json {
+  {
+    "linhas": [
+      {
+        "produtoId": "{{functionalProduct1}}",
+        "quantidade": 1
+      },
+      {
+        "produtoId": "dca0000000000000000007db",
+        "quantidade": 1
+      }
+    ],
+    "entrega": {
+      "tipo": "levantamento"
+    }
+  }
+}
+
+tests {
+  test("Rejeita mistura de produtores", function() {
+    expect(res.getStatus()).to.equal(400);
+  });
+}

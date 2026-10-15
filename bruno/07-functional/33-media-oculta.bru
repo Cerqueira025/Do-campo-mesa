@@ -1,0 +1,17 @@
+meta {
+  name: Avaliação oculta não contribui para média
+  type: http
+  seq: 33
+}
+
+get {
+  url: {{baseUrl}}/reviews/products/{{functionalProduct1}}
+}
+
+tests {
+  test("Avaliação oculta não contribui para média", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().total).to.equal(0);
+    expect(res.getBody().media).to.equal(null);
+  });
+}

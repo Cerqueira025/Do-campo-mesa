@@ -1,0 +1,27 @@
+meta {
+  name: Login de outro produtor
+  type: http
+  seq: 13
+}
+
+post {
+  url: {{baseUrl}}/auth/login
+  body: json
+}
+
+body:json {
+  {
+    "email": "quinta2@example.test",
+    "password": "{{demoPassword}}"
+  }
+}
+
+tests {
+  test("Login de outro produtor", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+}
+
+script:post-response {
+  bru.setVar("otherProducerToken", res.getBody().token);
+}

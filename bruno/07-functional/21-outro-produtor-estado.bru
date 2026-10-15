@@ -1,0 +1,27 @@
+meta {
+  name: Outro produtor não altera encomenda
+  type: http
+  seq: 21
+}
+
+patch {
+  url: {{baseUrl}}/orders/{{functionalOrder}}/estado
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{otherProducerToken}}
+}
+
+body:json {
+  {
+    "estado": "confirmada"
+  }
+}
+
+tests {
+  test("Outro produtor não altera encomenda", function() {
+    expect(res.getStatus()).to.equal(404);
+  });
+}

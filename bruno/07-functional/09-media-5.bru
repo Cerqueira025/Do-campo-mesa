@@ -1,0 +1,19 @@
+meta {
+  name: Média pública 5
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{baseUrl}}/products?q=explora%C3%A7%C3%A3o%20funcional&avaliacaoMin=5&limit=100
+}
+
+tests {
+  test("Média pública 5", function() {
+    expect(res.getStatus()).to.equal(200);
+    const ids = res.getBody().items.map(p => p._id);
+    expect(ids).to.include('dca0000000000000000007dd');
+    expect(ids).not.to.include('dca0000000000000000007d5');
+    expect(ids).not.to.include('dca0000000000000000007d1');
+  });
+}

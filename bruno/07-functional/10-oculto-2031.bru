@@ -1,0 +1,15 @@
+meta {
+  name: Produto indisponível 2031
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{baseUrl}}/products/dca0000000000000000007ef
+}
+
+tests {
+  test("Produto indisponível 2031", function() {
+    expect(res.getStatus()).to.equal(404);
+  });
+}

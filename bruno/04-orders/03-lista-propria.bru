@@ -8,12 +8,15 @@ get {
   url: {{baseUrl}}/orders
   body: none
   auth: bearer
+}
+
+auth:bearer {
   token: {{testBuyerToken}}
 }
 
 tests {
   test("comprador vê a encomenda criada", function() {
     expect(res.getStatus()).to.equal(200);
-    expect(res.getBody().some((order) => order._id === "{{testOrderId}}")).to.equal(true);
+    expect(res.getBody().some((order) => order._id === bru.getVar("testOrderId"))).to.equal(true);
   });
 }

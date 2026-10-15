@@ -5,7 +5,7 @@ import { seedData, insertSeedData } from '../src/scripts/seed-data.js';
 import { User, Product, Order, Auction, Bid, Review } from '../src/models/index.js';
 
 const passwordHash = await bcrypt.hash('CampoMesaDemo123!', 4);
-const fixtures = seedData(passwordHash);
+const fixtures = seedData(passwordHash, new Date('2026-10-15T12:00:00Z'));
 const documentData = (model) => new model(fixtures.find(([candidate]) => candidate === model)[1][0]).toObject();
 
 test('Todos os exemplos cumprem os schemas e as relações de negócio do seed', async () => {
@@ -90,6 +90,10 @@ test('Seed repetido preserva documentos e timestamps existentes', async (t) => {
   const collections = new Map();
   for (const [model] of fixtures) {
     const stored = new Map();
+    t.mock.method(model, 'createCollection', async () => {});
+    t.mock.method(model, 'createIndexes', async () => {});
+    t.mock.method(model, 'find', (filter) => ({ select: () => ({ lean: async () => [...stored.values()]
+      .filter((row) => filter.email ? filter.email.$in.includes(row.email) : filter._id.$in.some((id) => String(id) === String(row._id))) }) }));
     collections.set(model.collection.name, stored);
     t.mock.method(model.collection, 'updateOne', async (filter, update, options) => {
       assert.equal(options.upsert, true);
@@ -100,7 +104,7 @@ test('Seed repetido preserva documentos e timestamps existentes', async (t) => {
       return { upsertedCount: 1 };
     });
   }
-  assert.deepEqual(await insertSeedData(fixtures), { users: 6, products: 3, orders: 3, auctions: 3, bids: 3, reviews: 2 });
+  assert.deepEqual(await insertSeedData(fixtures), { users: 18, products: 39, orders: 27, auctions: 12, bids: 27, reviews: 38 });
   const user = collections.get('users').values().next().value;
   user.nome = 'Nome alterado após seed';
   const before = JSON.stringify([...collections].map(([name, data]) => [name, [...data.values()]]));

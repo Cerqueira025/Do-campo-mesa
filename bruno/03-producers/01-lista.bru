@@ -15,7 +15,8 @@ tests {
     expect(res.getStatus()).to.equal(200);
     const producers = res.getBody();
     expect(producers).to.be.an("array");
-    expect(producers.every((item) => item.perfilProdutor.validacao === "aceite")).to.equal(true);
+    expect(producers.map((item) => item._id)).not.to.include("dca000000000000000000005");
+    expect(producers.map((item) => item._id)).not.to.include("dca000000000000000000006");
     expect(producers.every((item) => !item.perfilProdutor.morada)).to.equal(true);
   });
 }

@@ -1,0 +1,36 @@
+meta {
+  name: Cria produto temporário 1
+  type: http
+  seq: 14
+}
+
+post {
+  url: {{baseUrl}}/products
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{producerToken}}
+}
+
+body:json {
+  {
+    "nome": "{{testRun}} funcional 1",
+    "descricao": "Teste funcional temporário",
+    "categoria": "Hortícolas",
+    "preco": 151,
+    "unidade": "kg",
+    "stock": 5
+  }
+}
+
+tests {
+  test("Cria produto temporário 1", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+}
+
+script:post-response {
+  bru.setVar("functionalProduct1", res.getBody()._id);
+}

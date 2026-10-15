@@ -1,0 +1,16 @@
+meta {
+  name: Rollback preserva stock anterior
+  type: http
+  seq: 17
+}
+
+get {
+  url: {{baseUrl}}/products/{{functionalProduct1}}
+}
+
+tests {
+  test("Rollback preserva stock anterior", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().stock).to.equal(5);
+  });
+}

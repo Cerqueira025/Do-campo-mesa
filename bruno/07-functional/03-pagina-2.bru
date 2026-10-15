@@ -1,0 +1,18 @@
+meta {
+  name: Paginação sem repetições e exclusões públicas
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/products?q=explora%C3%A7%C3%A3o%20funcional&limit=24&page=2
+}
+
+tests {
+  test("Paginação sem repetições e exclusões públicas", function() {
+    expect(res.getStatus()).to.equal(200);
+    const ids = [...bru.getVar('functionalPage1'), ...res.getBody().items.map(p => p._id)];
+    expect(new Set(ids).size).to.equal(30);
+    expect([...ids].sort()).to.deep.equal(["dca0000000000000000007d1", "dca0000000000000000007d2", "dca0000000000000000007d3", "dca0000000000000000007d4", "dca0000000000000000007d5", "dca0000000000000000007d6", "dca0000000000000000007d7", "dca0000000000000000007d8", "dca0000000000000000007d9", "dca0000000000000000007da", "dca0000000000000000007db", "dca0000000000000000007dc", "dca0000000000000000007dd", "dca0000000000000000007de", "dca0000000000000000007df", "dca0000000000000000007e0", "dca0000000000000000007e1", "dca0000000000000000007e2", "dca0000000000000000007e3", "dca0000000000000000007e4", "dca0000000000000000007e5", "dca0000000000000000007e6", "dca0000000000000000007e7", "dca0000000000000000007e8", "dca0000000000000000007e9", "dca0000000000000000007ea", "dca0000000000000000007eb", "dca0000000000000000007ec", "dca0000000000000000007ed", "dca0000000000000000007ee"]);
+  });
+}

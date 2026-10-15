@@ -2,6 +2,7 @@ import { Router } from 'express';
 import mongoose from 'mongoose';
 import Order from '../models/Order.js';
 import Product from '../models/Product.js';
+import User from '../models/User.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
@@ -10,7 +11,7 @@ const states = ['pendente', 'confirmada', 'pronta', 'entregue'];
 router.post('/', requireAuth('comprador'), async (request, response, next) => {
   const { linhas, entrega } = request.body;
   if (!Array.isArray(linhas) || !linhas.length || linhas.some((line) =>
-    !mongoose.isValidObjectId(line.produtoId) || !Number.isFinite(line.quantidade) || line.quantidade <= 0)) {
+    !line || !mongoose.isValidObjectId(line.produtoId) || !Number.isFinite(line.quantidade) || line.quantidade <= 0)) {
     return response.status(400).json({ erro: 'Indica linhas com produto e quantidade válida.' });
   }
   if (!entrega || !['levantamento', 'entrega'].includes(entrega.tipo) ||
@@ -19,7 +20,10 @@ router.post('/', requireAuth('comprador'), async (request, response, next) => {
   }
 
   const quantities = new Map();
-  for (const line of linhas) quantities.set(line.produtoId, (quantities.get(line.produtoId) || 0) + line.quantidade);
+  for (const line of linhas) {
+    const id = new mongoose.Types.ObjectId(line.produtoId).toString();
+    quantities.set(id, (quantities.get(id) || 0) + line.quantidade);
+  }
   const session = await mongoose.startSession();
   try {
     let order;
@@ -32,6 +36,10 @@ router.post('/', requireAuth('comprador'), async (request, response, next) => {
       if (products.some((product) => String(product.produtorId) !== producerId)) {
         throw Object.assign(new Error('Cria uma encomenda por produtor.'), { status: 400 });
       }
+      const producer = await User.findOne({
+        _id: producerId, papel: 'produtor', 'perfilProdutor.validacao': 'aceite',
+      }).session(session);
+      if (!producer) throw Object.assign(new Error('O produtor está indisponível.'), { status: 409 });
       const lines = products.map((product) => ({
         produtoId: product.id, nome: product.nome, precoUnitario: product.preco,
         quantidade: quantities.get(String(product._id)), unidade: product.unidade,
@@ -47,7 +55,7 @@ router.post('/', requireAuth('comprador'), async (request, response, next) => {
       }
 
       [order] = await Order.create([{
-        compradorId: request.user.id, produtorId: producerId, linhas, total,
+        compradorId: request.user.id, produtorId: producerId, linhas: lines, total,
         estado: 'pendente', entrega,
       }], { session });
     });

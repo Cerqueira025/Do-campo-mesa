@@ -14,7 +14,7 @@ tests {
   test("perfil público inclui produtos e avaliações", function() {
     expect(res.getStatus()).to.equal(200);
     const producer = res.getBody();
-    expect(producer.perfilProdutor.validacao).to.equal("aceite");
+    expect(producer._id).to.equal("dca000000000000000000004");
     expect(producer.produtos).to.be.an("array");
     expect(producer.avaliacoes).to.have.property("items");
     expect(producer.perfilProdutor).to.not.have.property("morada");

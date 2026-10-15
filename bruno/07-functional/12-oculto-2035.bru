@@ -1,0 +1,15 @@
+meta {
+  name: Produto indisponível 2035
+  type: http
+  seq: 12
+}
+
+get {
+  url: {{baseUrl}}/products/dca0000000000000000007f3
+}
+
+tests {
+  test("Produto indisponível 2035", function() {
+    expect(res.getStatus()).to.equal(404);
+  });
+}

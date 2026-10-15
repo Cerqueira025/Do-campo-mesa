@@ -1,0 +1,22 @@
+meta {
+  name: Opções públicas e localidades únicas
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/products/filters
+}
+
+tests {
+  test("Opções públicas e localidades únicas", function() {
+    expect(res.getStatus()).to.equal(200);
+    const body = res.getBody();
+    expect(body.localidades).to.include.members(['Viana do Castelo', 'Braga', 'Ponte de Lima']);
+    expect(new Set(body.localidades).size).to.equal(body.localidades.length);
+    const ids = body.produtores.map(p => p.id);
+    expect(ids).to.include.members(["dca00000000000000000044d", "dca00000000000000000044e", "dca00000000000000000044f"]);
+    for (const id of ["dca000000000000000000450", "dca000000000000000000451", "dca000000000000000000452"]) expect(ids).not.to.include(id);
+    expect(body.categorias).to.include.members(['Fruta', 'Hortícolas', 'Mel']);
+  });
+}

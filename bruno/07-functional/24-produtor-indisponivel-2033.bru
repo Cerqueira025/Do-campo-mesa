@@ -1,0 +1,35 @@
+meta {
+  name: Rejeita produtor não aceite 2033
+  type: http
+  seq: 24
+}
+
+post {
+  url: {{baseUrl}}/orders
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{testBuyerToken}}
+}
+
+body:json {
+  {
+    "linhas": [
+      {
+        "produtoId": "dca0000000000000000007f1",
+        "quantidade": 1
+      }
+    ],
+    "entrega": {
+      "tipo": "levantamento"
+    }
+  }
+}
+
+tests {
+  test("Rejeita produtor não aceite 2033", function() {
+    expect(res.getStatus()).to.equal(409);
+  });
+}
