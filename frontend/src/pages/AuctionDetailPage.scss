@@ -1,0 +1,321 @@
+@use '../styles/abstracts/mixins' as *;
+
+.auction-detail {
+  position: relative;
+  max-width: var(--content-max);
+  min-height: 100svh;
+  margin-inline: auto;
+  color: var(--color-green-950);
+
+  &--loaded {
+    background: var(--color-green-950);
+  }
+
+  &__back {
+    position: absolute;
+    z-index: 2;
+    top: 20px;
+    left: 20px;
+  }
+
+  &__back .icon-button {
+    width: 44px;
+    --icon-button-background: var(--color-green-950);
+    --icon-button-hover-background: var(--color-green-900);
+  }
+
+  &__hero {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    min-width: 0;
+    min-height: clamp(480px, 120vw, 720px);
+    padding-top: 235px;
+    overflow: hidden;
+    background: var(--color-brown-100);
+  }
+
+  &__image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center 25%;
+    text-align: center;
+  }
+
+  &__image:where(span) {
+    display: grid;
+    place-items: center;
+    height: 235px;
+    padding-top: 150px;
+  }
+
+  &__indicators {
+    position: absolute;
+    z-index: 1;
+    top: 20px;
+    right: 20px;
+    display: grid;
+    gap: 5px;
+    max-width: calc(100% - 100px);
+    text-align: center;
+    color: var(--color-stone-50);
+  }
+
+  &__badge, &__timer, &__participants {
+    margin: 0;
+    padding: 8px 12px;
+    border-radius: 14px;
+    background: var(--color-green-950);
+  }
+
+  &__badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+  }
+
+  &__live-dot {
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--color-red-500);
+    border-radius: 50%;
+    background: var(--color-red-500);
+    box-shadow: inset 0 0 0 2px var(--color-green-950);
+  }
+
+  &__timer span {
+    display: block;
+    font-size: var(--font-size-xs);
+    color: var(--color-green-300);
+  }
+
+  &__timer strong {
+    font-size: var(--font-size-xl);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+  }
+
+  &__participants {
+    font-size: 0.75rem;
+    color: var(--color-green-300);
+  }
+
+  &__summary {
+    position: relative;
+    width: 100%;
+    padding: 110px 20px 44px;
+    background: linear-gradient(180deg, transparent, var(--color-green-50) 35%, var(--color-green-950));
+    color: var(--color-stone-50);
+    overflow-wrap: anywhere;
+  }
+
+  h1 {
+    margin: 0 0 14px;
+    font-size: clamp(2.5rem, 8vw, 3rem);
+    font-weight: 700;
+    line-height: 1.1;
+  }
+
+  &__metrics {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    margin: 0;
+  }
+
+  dt {
+    color: var(--color-green-300);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+  }
+
+  dd {
+    margin: 0;
+    font-weight: 700;
+    line-height: 1.1;
+  }
+
+  &__current {
+    flex: 1 1 200px;
+    min-width: 0;
+  }
+
+  &__current dd {
+    font-size: clamp(2.75rem, 12vw, 5rem);
+  }
+
+  &__last {
+    flex: 0 1 115px;
+    margin-left: auto;
+    color: var(--color-green-300);
+    text-align: right;
+  }
+
+  &__last dd {
+    margin-top: 6px;
+    font-size: var(--font-size-xl);
+  }
+
+  &__last span {
+    font-size: 0.75rem;
+  }
+
+  &__form {
+    position: relative;
+    z-index: 1;
+    min-width: 0;
+    margin-top: -20px;
+    padding: 24px 20px calc(24px + env(safe-area-inset-bottom));
+    border-radius: 32px 32px 0 0;
+    background: var(--color-stone-50);
+  }
+
+  &__increments {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  &__increment {
+    --bs-btn-bg: var(--color-stone-50);
+    --bs-btn-hover-bg: var(--color-green-20);
+    --bs-btn-disabled-bg: var(--color-stone-50);
+    --bs-btn-disabled-opacity: 0.5;
+    min-height: 48px;
+    padding: 8px 4px;
+    border: 1px solid var(--color-green-900);
+    border-radius: 12px;
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+  }
+
+  label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+
+  &__input-group {
+    display: flex;
+    overflow: hidden;
+    border: 1px solid var(--color-green-20);
+    border-radius: 10px;
+
+    &:focus-within {
+      outline: 3px solid var(--color-green-900);
+      outline-offset: 3px;
+    }
+  }
+
+  input {
+    width: 100%;
+    min-width: 0;
+    padding: 10px 16px;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--color-green-950);
+    font: inherit;
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
+  }
+
+  input:disabled {
+    opacity: 0.65;
+  }
+
+  &__input-group > span {
+    display: grid;
+    flex: 0 0 56px;
+    place-items: center;
+    background: var(--color-green-20);
+    font-size: var(--font-size-xl);
+  }
+
+  &__submit {
+    --bs-btn-bg: var(--color-green-950);
+    --bs-btn-disabled-bg: var(--color-green-950);
+    --bs-btn-disabled-opacity: 1;
+    width: 100%;
+    min-height: 64px;
+    gap: 20px;
+    padding: 12px 20px;
+    border-radius: 40px;
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    overflow-wrap: anywhere;
+  }
+
+  &__hint, &__error {
+    margin: 10px 0;
+    font-size: var(--font-size-xs);
+  }
+
+  &__error {
+    color: var(--color-error-700);
+  }
+
+  &__message {
+    margin: 0;
+    padding: 90px 24px 32px;
+  }
+
+  &__message h1 {
+    font-size: var(--font-size-2xl);
+  }
+
+  &__message a {
+    color: var(--color-green-950);
+  }
+
+  &__announcement {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  @include up(tablet) {
+    &__form {
+      padding-inline: 32px;
+    }
+
+    &__summary {
+      padding-inline: 32px;
+    }
+  }
+
+  @include up(desktop) {
+    &--loaded {
+      display: grid;
+      grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+      align-items: center;
+      min-height: 720px;
+      margin-block: 32px;
+      border-radius: 32px;
+      overflow: hidden;
+    }
+
+    &__hero {
+      min-height: 720px;
+      height: 100%;
+    }
+
+    &__form {
+      margin: 24px;
+      padding: 28px;
+      border-radius: 28px;
+    }
+  }
+}

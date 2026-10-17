@@ -29,6 +29,12 @@ O Sass atual emite avisos de depreciação provenientes dos imports e funções 
 
 ## Desenvolvimento
 
+### Endereços e alojamento
+
+O catálogo está em `/` e o detalhe em `/produtos/:id`, com navegação por ligações nativas. O parâmetro `regresso` conserva o endereço do catálogo e os seus filtros. As encomendas ainda não estão disponíveis.
+
+O Vite já serve `index.html` nos acessos diretos ao detalhe, tanto em desenvolvimento como em preview. Em produção, o servidor que serve `dist` deve encaminhar caminhos que não correspondam a ficheiros para `index.html`, preservando o proxy de `/api` (por exemplo, `try_files $uri $uri/ /index.html` na localização do frontend em Nginx). Este repositório não contém configuração de alojamento de produção.
+
 ```powershell
 npm install
 npm run dev

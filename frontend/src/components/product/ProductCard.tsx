@@ -1,4 +1,6 @@
+import InternalLink from '../../navigation/InternalLink'
 import IconButton from '../ui/IconButton'
+import ProductImage from './ProductImage'
 import './ProductCard.scss'
 
 export interface ProductCardProduct {
@@ -6,18 +8,23 @@ export interface ProductCardProduct {
   category: string
   weight: string
   image?: string
+  fallbackImage?: string
+  fallbackSrcSet?: string
   imageAlt?: string
 }
 
 interface ProductCardProps {
   product: ProductCardProduct
   onAdd?: (product: ProductCardProduct) => void
+  href?: string
 }
 
-function ProductCard({ product, onAdd }: ProductCardProps) {
+function ProductCard({ product, onAdd, href }: ProductCardProps) {
   return (
     <article className="card product-card">
-      <h3 className="product-card__title">{product.title}</h3>
+      <h3 className="product-card__title">
+        {href ? <InternalLink href={href}>{product.title}</InternalLink> : product.title}
+      </h3>
 
       <div className="product-card__body">
         <div className="product-card__details">
@@ -25,18 +32,20 @@ function ProductCard({ product, onAdd }: ProductCardProps) {
           <p className="product-card__weight">{product.weight}</p>
         </div>
 
-        {product.image && (
-          <img
-            className="product-card__image"
-            src={product.image}
-            alt={product.imageAlt ?? product.title}
-          />
-        )}
+        <ProductImage
+          className="product-card__image"
+          image={product.image}
+          fallbackImage={product.fallbackImage}
+          fallbackSrcSet={product.fallbackSrcSet}
+          sizes="(min-width: 1200px) 400px, (min-width: 768px) 50vw, 100vw"
+          loading="lazy"
+          alt={product.imageAlt ?? product.title}
+        />
       </div>
 
       <IconButton
         className="product-card__add"
-        variant="product"
+        variant="cream"
         aria-label={`Adicionar ${product.title} ao carrinho`}
         icon={<span aria-hidden="true">+</span>}
         disabled={!onAdd}

@@ -1,0 +1,28 @@
+meta {
+  name: Avança para confirmada
+  type: http
+  seq: 28
+}
+
+patch {
+  url: {{baseUrl}}/orders/{{functionalOrder}}/estado
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{producerToken}}
+}
+
+body:json {
+  {
+    "estado": "confirmada"
+  }
+}
+
+tests {
+  test("Avança para confirmada", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().estado).to.equal('confirmada');
+  });
+}

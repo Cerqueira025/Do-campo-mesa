@@ -1,0 +1,16 @@
+meta {
+  name: Reserva apenas quantidade consolidada
+  type: http
+  seq: 19
+}
+
+get {
+  url: {{baseUrl}}/products/{{functionalProduct1}}
+}
+
+tests {
+  test("Reserva apenas quantidade consolidada", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().stock).to.equal(3.75);
+  });
+}

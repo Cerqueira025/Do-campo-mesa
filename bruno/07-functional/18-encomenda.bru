@@ -1,0 +1,52 @@
+meta {
+  name: Consolida linhas e ignora preços manipulados
+  type: http
+  seq: 18
+}
+
+post {
+  url: {{baseUrl}}/orders
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{testBuyerToken}}
+}
+
+body:json {
+  {
+    "linhas": [
+      {
+        "produtoId": "{{functionalProduct1}}",
+        "quantidade": 0.5,
+        "precoUnitario": 1,
+        "nome": "Manipulado",
+        "unidade": "l"
+      },
+      {
+        "produtoId": "{{functionalProduct1}}",
+        "quantidade": 0.75
+      }
+    ],
+    "entrega": {
+      "tipo": "levantamento"
+    }
+  }
+}
+
+tests {
+  test("Consolida linhas e ignora preços manipulados", function() {
+    expect(res.getStatus()).to.equal(201);
+    const order = res.getBody();
+    expect(order.linhas).to.have.length(1);
+    expect(order.linhas[0].quantidade).to.equal(1.25);
+    expect(order.linhas[0].precoUnitario).to.equal(151);
+    expect(order.linhas[0].unidade).to.equal('kg');
+    expect(order.total).to.equal(189);
+  });
+}
+
+script:post-response {
+  bru.setVar("functionalOrder", res.getBody()._id);
+}

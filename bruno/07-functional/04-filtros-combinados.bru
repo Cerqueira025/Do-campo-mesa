@@ -1,0 +1,16 @@
+meta {
+  name: Combinação de filtros com resultado conhecido
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/products?produtorId=dca00000000000000000044d&categoria=Hort%C3%ADcolas&bio=true&epoca=primavera&localidade=Viana&precoMin=1.51&precoMax=1.51
+}
+
+tests {
+  test("Combinação de filtros com resultado conhecido", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().items.map(p => p._id)).to.deep.equal(['dca0000000000000000007d1']);
+  });
+}

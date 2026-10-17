@@ -23,6 +23,7 @@ export async function disconnectDatabase() {
 
 export function databaseErrorMessage(error) {
   if (!process.env.MONGODB_URI) return 'Configura MONGODB_URI em api/.env.';
+  if (error.name === 'SeedConflictError') return error.message;
   if (error.code === 11000) return 'Existe um valor duplicado num índice único.';
   if (error.name === 'ValidationError') return 'Dados inválidos para o schema.';
   return 'Não foi possível concluir a operação MongoDB. Verifica a configuração, as credenciais e o acesso de rede ao Atlas.';

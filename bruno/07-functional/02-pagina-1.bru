@@ -1,0 +1,21 @@
+meta {
+  name: Primeira página funcional
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/products?q=explora%C3%A7%C3%A3o%20funcional&limit=24&page=1
+}
+
+tests {
+  test("Primeira página funcional", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().items).to.have.length(24);
+    expect(res.getBody().total).to.equal(30);
+  });
+}
+
+script:post-response {
+  bru.setVar("functionalPage1", res.getBody().items.map(p => p._id));
+}

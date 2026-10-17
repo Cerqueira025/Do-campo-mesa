@@ -1,0 +1,20 @@
+meta {
+  name: Outro produtor não consulta encomenda
+  type: http
+  seq: 20
+}
+
+get {
+  url: {{baseUrl}}/orders/{{functionalOrder}}
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{otherProducerToken}}
+}
+
+tests {
+  test("Outro produtor não consulta encomenda", function() {
+    expect(res.getStatus()).to.equal(404);
+  });
+}

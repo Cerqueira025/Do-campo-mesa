@@ -206,6 +206,7 @@ paths:
       tags: [Encomendas]
       security: [{ bearerAuth: [] }]
       summary: Cria uma encomenda de produtos de um único produtor e reserva stock
+      description: Exige um produtor aceite. Consolida linhas repetidas e guarda nome, preço e unidade calculados pelo servidor; campos de preço enviados pelo cliente são ignorados. Produtos ou produtor indisponíveis e stock insuficiente devolvem 409, sem reserva parcial.
       requestBody:
         required: true
         content:

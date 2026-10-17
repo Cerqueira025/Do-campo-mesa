@@ -1,0 +1,39 @@
+meta {
+  name: Stock insuficiente aborta encomenda
+  type: http
+  seq: 16
+}
+
+post {
+  url: {{baseUrl}}/orders
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{testBuyerToken}}
+}
+
+body:json {
+  {
+    "linhas": [
+      {
+        "produtoId": "{{functionalProduct1}}",
+        "quantidade": 1
+      },
+      {
+        "produtoId": "{{functionalProduct2}}",
+        "quantidade": 1
+      }
+    ],
+    "entrega": {
+      "tipo": "levantamento"
+    }
+  }
+}
+
+tests {
+  test("Stock insuficiente aborta encomenda", function() {
+    expect(res.getStatus()).to.equal(409);
+  });
+}

@@ -1,0 +1,28 @@
+meta {
+  name: Avança para pronta
+  type: http
+  seq: 29
+}
+
+patch {
+  url: {{baseUrl}}/orders/{{functionalOrder}}/estado
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{producerToken}}
+}
+
+body:json {
+  {
+    "estado": "pronta"
+  }
+}
+
+tests {
+  test("Avança para pronta", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().estado).to.equal('pronta');
+  });
+}

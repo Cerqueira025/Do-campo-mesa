@@ -1,8 +1,7 @@
 import { useId } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faArrowRight, faLeaf, faRotateRight, faStar, faStarHalfStroke, faXmark } from '@fortawesome/free-solid-svg-icons'
+import { faArrowRight, faLeaf, faRotateRight, faStar, faStarHalfStroke } from '@fortawesome/free-solid-svg-icons'
 import Button from '../../../components/ui/Button'
-import IconButton from '../../../components/ui/IconButton'
 import { ratingOptions, seasons, type CatalogFilters, type FilterOptions } from '../catalogFilters'
 import './ProductFilters.scss'
 
@@ -108,12 +107,12 @@ function ProductFilters({ id: panelId, isOpen, value, options, optionsError, onC
             </select>
           </div>
         ))}
-        {!options && (optionsError ? (
+        {optionsError ? (
           <div className="product-filters__message" role="alert">
-            <p>Não foi possível carregar as categorias, os produtores e as localidades.</p>
+            <p>{options ? 'Não foi possível atualizar os filtros. A mostrar as opções anteriores.' : 'Não foi possível carregar as categorias, os produtores e as localidades.'}</p>
             <Button className="product-filters__action" icon={faRotateRight} onClick={onRetry}>Tentar novamente</Button>
           </div>
-        ) : <p className="product-filters__message" role="status">A carregar opções dos filtros…</p>)}
+        ) : !options && <p className="product-filters__message" role="status">A carregar opções dos filtros…</p>}
         <footer className="product-filters__footer">
           <Button className="product-filters__action product-filters__clear" variant="cream"
             onClick={onClear} disabled={!activeCount}>Limpar filtros</Button>

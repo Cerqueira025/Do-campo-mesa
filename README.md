@@ -83,9 +83,14 @@ stock, transições de estado e elegibilidade das avaliações serão verificada
 nos endpoints. Atualizações usam validação de documento; a criação de encomenda
 reserva stock numa transação MongoDB.
 
-O seed cria 6 utilizadores, 3 produtos, 3 encomendas, 3 leilões, 3 licitações
-e 2 avaliações. Inclui produtores aceite, pendente e rejeitado, encomenda
-entregue elegível para avaliações e leilões agendado, ativo e terminado.
+O seed completo define 18 utilizadores, 39 produtos, 27 encomendas, 12 leilões,
+27 licitações e 38 avaliações (161 documentos). A expansão funcional acrescenta
+141 documentos aos 20 exemplos originais, sem substituir documentos existentes.
+Inclui produtores aceites, pendentes e rejeitados, encomendas entregues elegíveis
+para avaliações e leilões agendados, ativos e terminados.
+O conjunto é validado antes da primeira escrita, incluindo as relações com
+exemplos já existentes. Conflitos interrompem a execução sem corrigir esses dados.
+Consulta [os cenários funcionais](docs/dados-funcionais.md) para contas, IDs e resultados esperados.
 As datas dos leilões são relativas à primeira execução e ficam preservadas
 nas seguintes; o seed não reinicia leilões expirados.
 
@@ -118,5 +123,17 @@ em dados próprios. A execução pode alterar dados da base de demonstração
 durante o teste, pelo que convém não a usar simultaneamente.
 
 `npm test` dentro de `api/` verifica os schemas, os hashes, as relações dos
-exemplos e a repetição do seed com escrita simulada. Não precisa de Atlas.
+exemplos e a repetição do seed com escrita simulada, além das regras de criação
+de encomendas. Não precisa de Atlas.
 A verificação do índice único de email e da ligação real exige a base acessível.
+
+
+## Navegação e fluidez
+
+Catálogo, produtos e leilões usam navegação interna sem recarregar a aplicação.
+O regresso recupera a lista, os filtros, o scroll e o foco, atualizando os resultados em segundo plano.
+Os detalhes continuam a confirmar disponibilidade na API. A cache é apenas em memória.
+
+Consulta [a implementação e as medições de fluidez](docs/fluidez.md).
+Depois de alterar código da API, reinicia-a se a estiveres a executar com `npm start`;
+`npm run dev` acompanha as alterações automaticamente.

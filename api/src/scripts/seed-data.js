@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
-import { User, Product, Order, Auction, Bid, Review } from '../models/index.js';
+import { User, Product, Order, Auction, Bid, Review, initializeCollections } from '../models/index.js';
+import { validateSeedData, checkExistingSeedData } from './seed-validation.js';
 
 export const seedId = (number) => new mongoose.Types.ObjectId(`dca000000000${number.toString(16).padStart(12, '0')}`);
 
@@ -51,10 +52,87 @@ export function seedData(passwordHash, now = new Date()) {
     { _id: id(502), autorId: id(2), encomendaId: id(201), produtorId: id(4), classificacao: 4, comentario: 'Avaliação fictícia do produtor.', estado: 'denunciada' },
   ];
 
+  const locations = [
+    ['Viana do Castelo', 41.6946, -8.8302], ['Braga', 41.5454, -8.4265],
+    ['Ponte de Lima', 41.7672, -8.5839],
+  ];
+  for (let i = 0; i < 6; i++) {
+    users.push({ _id: id(1001 + i), papel: 'comprador', nome: `Comprador Funcional ${i + 1}`,
+      email: `comprador${i + 1}@example.test`, passwordHash });
+    const [localidade, latitude, longitude] = locations[i % 3];
+    users.push({ _id: id(1101 + i), papel: 'produtor', nome: `Quinta Funcional ${i + 1}`,
+      email: `quinta${i + 1}@example.test`, passwordHash,
+      perfilProdutor: { ...profile(i < 4 ? 'aceite' : i === 4 ? 'pendente' : 'rejeitado'),
+        localidade, coordenadas: { latitude, longitude } } });
+  }
+  const varieties = [
+    ['Batata', 'Hortícolas', 'kg', 151], ['Maçã', 'Fruta', 'kg', 240],
+    ['Mel', 'Mel', 'g', 2], ['Azeite', 'Azeite', 'l', 899],
+    ['Leite', 'Laticínios', 'l', 110], ['Vinho', 'Bebidas', 'unidade', 1250],
+    ['Cenoura', 'Hortícolas', 'kg', 135], ['Pera', 'Fruta', 'kg', 275],
+    ['Ovos', 'Ovos', 'unidade', 35], ['Nozes', 'Frutos secos', 'g', 3],
+  ];
+  const extraProducts = Array.from({ length: 36 }, (_, i) => {
+    const [nome, categoria, unidade, preco] = varieties[i % 10];
+    return { _id: id(2001 + i), produtorId: id(1101 + (i < 30 ? Math.floor(i / 10) : i < 32 ? 0 : i < 34 ? 4 : 5)),
+      nome, categoria, unidade, preco, descricao: `${nome} da exploração funcional ${i + 1}.`,
+      stock: i % 10 === 8 ? 0 : i % 10 === 9 ? 0.5 : 40 + i,
+      epoca: [['primavera'], ['verao'], ['outono'], ['inverno'], ['todo-o-ano']][i % 5],
+      biologico: i % 2 === 0, publicado: i !== 30 && i !== 31, imagens: [],
+      createdAt: at(-200 + i), updatedAt: at(-200 + i) };
+  });
+  products.push(...extraProducts);
+  for (let i = 0; i < 24; i++) {
+    const group = i % 3;
+    const pair = Math.floor((i % 12) / 3) % 2;
+    const selected = extraProducts.slice(group * 10 + pair * 2, group * 10 + pair * 2 + 2);
+    const linhas = selected.map((product, j) => ({ ...line(product, j ? 1.25 : 0.5), precoUnitario: product.preco + 1 }));
+    orders.push({ _id: id(3001 + i), compradorId: id(1001 + i % 6), produtorId: id(1101 + group), linhas,
+      total: linhas.reduce((sum, item) => sum + Math.round(item.precoUnitario * item.quantidade), 0),
+      estado: i < 12 ? 'entregue' : ['pendente', 'confirmada', 'pronta'][Math.floor((i - 12) / 4)],
+      entrega: i % 2 ? { tipo: 'entrega', morada: `Morada fictícia ${i + 1}`, dataPrevista: at(i < 12 ? -24 : 24) }
+        : { tipo: 'levantamento', dataPrevista: at(i < 12 ? -24 : 24) },
+      ...(i < 12 ? { dataEntrega: at(-24) } : {}), leilaoId: null, createdAt: at(-72), updatedAt: at(-24) });
+  }
+  for (let i = 0; i < 9; i++) {
+    const product = extraProducts[(i % 3) * 10];
+    const estado = ['agendado', 'ativo', 'terminado'][Math.floor(i / 3)];
+    const start = i < 3 ? 24 : i < 6 ? -12 : -48;
+    const end = i < 3 ? 48 : i < 6 ? 24 : -24;
+    const auction = { _id: id(4001 + i), produtorId: product.produtorId, produtoId: product._id,
+      lote: `Lote funcional ${i + 1}`, quantidade: 2, unidade: product.unidade,
+      precoBase: 1000, incremento: 100, dataInicio: at(start), dataFim: at(end), estado,
+      licitacaoAtual: { valor: 1000, compradorId: null } };
+    if ([3, 4, 6, 7].includes(i)) {
+      for (let j = 0; j < 6; j++) {
+        const bid = { _id: id(5001 + bids.length - 3), leilaoId: auction._id,
+          compradorId: id(1001 + j), valor: 1100 + j * 100, createdAt: at(start + j + 1) };
+        bids.push(bid);
+        auction.licitacaoAtual = { valor: bid.valor, compradorId: bid.compradorId };
+      }
+    }
+    auctions.push(auction);
+  }
+  // Two public product reviews per delivered order; producer reviews exercise moderation.
+  const ratings = [[3, 3], [3, 4], [4, 4], [4, 5], [5, 5], [3, 3]];
+  for (let i = 0; i < 12; i++) {
+    const order = orders[3 + i];
+    for (let j = 0; j < 3; j++) {
+      reviews.push({ _id: id(6001 + i * 3 + j), autorId: order.compradorId, encomendaId: order._id,
+        ...(j < 2 ? { produtoId: order.linhas[j].produtoId } : { produtorId: order.produtorId }),
+        classificacao: j < 2 ? ratings[i % 6][Math.floor(i / 6)] : 4,
+        comentario: `Avaliação funcional ${i + 1}/${j + 1}.`,
+        estado: j < 2 ? 'publicada' : i % 2 ? 'oculta' : 'denunciada', createdAt: at(-12) });
+    }
+  }
+
   return [[User, users], [Product, products], [Order, orders], [Auction, auctions], [Bid, bids], [Review, reviews]];
 }
 
 export async function insertSeedData(dataset) {
+  await validateSeedData(dataset);
+  await checkExistingSeedData(dataset);
+  await initializeCollections();
   const counts = {};
   for (const [model, documents] of dataset) {
     let inserted = 0;

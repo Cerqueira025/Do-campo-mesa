@@ -1,42 +1,28 @@
-import { useEffect, useId, useState } from 'react'
+import { useId } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowRight, faClock, faGavel, faUsers } from '@fortawesome/free-solid-svg-icons'
 import Button from '../ui/Button'
+import ProductImage from '../product/ProductImage'
+import { priceFormatter } from '../../features/products/product'
+import { formatRemaining } from '../../features/auctions/auction'
+import { useAuctionCountdown } from '../../features/auctions/useAuctionCountdown'
 import './AuctionCard.scss'
 
 export interface AuctionCardAuction {
   name: string
   lotDescription: string
-  image: string
+  image?: string
+  fallbackImage?: string
+  fallbackSrcSet?: string
   currentBid: number
   endsAt: number
-  participants: number
+  participants?: number | null
 }
 
-const priceFormatter = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' })
-
-function formatRemaining(seconds: number) {
-  const hours = Math.floor(seconds / 3600)
-  const minutes = Math.floor((seconds % 3600) / 60)
-  const parts = [minutes, seconds % 60]
-  if (hours > 0) parts.unshift(hours)
-  return parts.map((part) => String(part).padStart(2, '0')).join(':')
-}
-
-function AuctionCard({ auction }: { auction: AuctionCardAuction }) {
+function AuctionCard({ auction, onEnter, href }: { auction: AuctionCardAuction; onEnter?: () => void; href?: string }) {
   const id = useId()
-  const [now, setNow] = useState(Date.now)
-  const remaining = Math.max(0, Math.ceil((auction.endsAt - now) / 1000))
+  const { remaining } = useAuctionCountdown(auction.endsAt)
   const ended = remaining === 0
-
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      const currentTime = Date.now()
-      setNow(currentTime)
-      if (currentTime >= auction.endsAt) window.clearInterval(timer)
-    }, 1000)
-    return () => window.clearInterval(timer)
-  }, [auction.endsAt])
 
   return (
     <article className="auction-card" aria-labelledby={`${id}-title`}>
@@ -44,14 +30,14 @@ function AuctionCard({ auction }: { auction: AuctionCardAuction }) {
         <svg className="auction-card__wave" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" focusable="false">
           <path className="auction-card__wave" d="M45 0 C15 20 40 100 0 100 H100 V0 Z" fill="currentColor" />
         </svg>
-        <img className="auction-card__image" src={auction.image} alt="" />
+        <ProductImage className="auction-card__image" image={auction.image} fallbackImage={auction.fallbackImage} fallbackSrcSet={auction.fallbackSrcSet} sizes="(min-width: 768px) 640px, 100vw" alt={auction.name} />
       </div>
 
       <div className="auction-card__content">
         <div className="auction-card__status-row">
           <p className="auction-card__participants">
             <FontAwesomeIcon icon={faUsers} aria-hidden="true" />
-            {auction.participants} {auction.participants === 1 ? 'participante' : 'participantes'}
+            {auction.participants == null ? 'Participantes: indisponível' : `${auction.participants} ${auction.participants === 1 ? 'participante' : 'participantes'}`}
           </p>
           <span className="auction-card__badge">
             <span className="auction-card__status-dot" aria-hidden="true" />
@@ -75,10 +61,11 @@ function AuctionCard({ auction }: { auction: AuctionCardAuction }) {
         </dl>
 
         <div className="auction-card__footer">
-          <Button className="auction-card__enter" variant="primary" icon={faArrowRight}
-            iconPosition="end" disabled aria-describedby={`${id}-availability`}>
-            Entrar no leilão
-          </Button>
+          {href && !ended ? (
+            <Button href={href} className="auction-card__enter" icon={faArrowRight} iconPosition="end">Entrar no leilão</Button>
+          ) : (
+            <Button className="auction-card__enter" icon={faArrowRight} iconPosition="end" disabled={ended || !onEnter} onClick={onEnter}>Entrar no leilão</Button>
+          )}
         </div>
         <span className="auction-card__announcement" role="status">{ended ? 'O leilão terminou.' : ''}</span>
       </div>

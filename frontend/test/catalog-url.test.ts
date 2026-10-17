@@ -6,16 +6,20 @@ function browserAt(href: string) {
   const calls: string[] = []
   const location = new URL(href)
   const history = {
-    replaceState: (_state: unknown, _title: string, url: URL) => {
+    state: { campoMesa: { key: 'catalog', index: 0, url: location.pathname + location.search } } as Record<string, unknown>,
+    replaceState: (state: Record<string, unknown>, _title: string, url: URL | string) => {
       calls.push('replace')
-      location.href = url.href
+      history.state = state
+      location.href = new URL(url, location).href
     },
-    pushState: (_state: unknown, _title: string, url: URL) => {
+    pushState: (state: Record<string, unknown>, _title: string, url: URL | string) => {
       calls.push('push')
-      location.href = url.href
+      history.state = state
+      location.href = new URL(url, location).href
     },
   }
-  Object.defineProperty(globalThis, 'window', { configurable: true, value: { location, history } })
+  Object.defineProperty(globalThis, 'window', { configurable: true, value: { location, history, scrollX: 0, scrollY: 0, dispatchEvent: () => {} } })
+  Object.defineProperty(globalThis, 'document', { configurable: true, value: { activeElement: null } })
   return { calls, location }
 }
 

@@ -1,0 +1,17 @@
+.loading-placeholder {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+  min-height: 400px;
+  padding-block: 16px;
+
+  &__preview,
+  &__line {
+    border-radius: 16px;
+    background: var(--color-brown-100);
+  }
+
+  &__preview { height: 240px; }
+  &__line { height: 24px; }
+  &__line--short { width: 60%; }
+}

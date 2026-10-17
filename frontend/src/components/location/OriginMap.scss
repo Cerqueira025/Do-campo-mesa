@@ -1,0 +1,51 @@
+.origin-map {
+  min-width: 0;
+  padding: 24px;
+  border-radius: 24px;
+  background: var(--color-white);
+  color: var(--color-green-950);
+
+  &__title {
+    margin: 0 0 8px;
+    font-size: var(--font-size-xl);
+    line-height: 1.2;
+  }
+
+  &__locality {
+    margin: 0 0 16px;
+    overflow-wrap: anywhere;
+    line-height: 1.5;
+  }
+
+  &__figure {
+    margin: 0;
+  }
+
+  &__image {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 360px;
+    aspect-ratio: 3 / 2;
+    object-fit: cover;
+    border-radius: 16px;
+  }
+
+  &__caption {
+    margin-top: 8px;
+    font-size: var(--font-size-xs);
+    line-height: 1.5;
+  }
+
+  &__link {
+    display: inline-block;
+    margin-top: 12px;
+    color: var(--color-green-900);
+    text-underline-offset: 4px;
+
+    &:focus-visible {
+      outline: 3px solid currentColor;
+      outline-offset: 4px;
+    }
+  }
+}

@@ -102,9 +102,10 @@ router.get('/filters', async (_request, response, next) => {
 router.get('/:id', async (request, response, next) => {
   try {
     if (!mongoose.isValidObjectId(request.params.id)) return response.status(404).json({ erro: 'Produto não encontrado.' });
-    const approved = await User.find({ papel: 'produtor', 'perfilProdutor.validacao': 'aceite' }).distinct('_id');
-    const product = await Product.findOne({ _id: request.params.id, publicado: true, produtorId: { $in: approved } }).populate(publicProducer);
-    if (!product) return response.status(404).json({ erro: 'Produto não encontrado.' });
+    const product = await Product.findOne({ _id: request.params.id, publicado: true }).populate({
+      ...publicProducer, match: { papel: 'produtor', 'perfilProdutor.validacao': 'aceite' },
+    }).lean();
+    if (!product?.produtorId) return response.status(404).json({ erro: 'Produto não encontrado.' });
     response.json(product);
   } catch (error) {
     next(error);

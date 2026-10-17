@@ -1,0 +1,969 @@
+{
+  "conditions": {
+    "samplesPerProfile": 5,
+    "desktopViewport": [
+      1440,
+      900
+    ],
+    "limitedViewport": [
+      390,
+      844
+    ],
+    "limitedCpuSlowdown": 4,
+    "limitedLatencyMs": 100,
+    "limitedDownloadBytesPerSecond": 200000,
+    "limitedUploadBytesPerSecond": 100000,
+    "productId": "dca000000000000000000065",
+    "productionServing": "Local static build with gzip for HTML, CSS and JS; same existing API on port 3000 for before and after.",
+    "metric": "Playwright click followed by visible detail heading / visible catalogue links. Includes the browser navigation wait; not an LCP or INP measurement.",
+    "apiValidation": "Updated API separately verified on port 3107 using all 71 Bruno requests.",
+    "baselineDevelopmentSource": "Captured console rows from the original benchmark before the interruption.",
+    "excluded": "Interrupted runs and the intermediate run with a Vite document reload were excluded."
+  },
+  "summary": [
+    {
+      "environment": "development",
+      "profile": "desktop",
+      "before": {
+        "homeMs": 505,
+        "detailMs": 444,
+        "backMs": 421,
+        "documents": 3
+      },
+      "after": {
+        "homeMs": 658,
+        "detailMs": 287,
+        "backMs": 151,
+        "documents": 1
+      }
+    },
+    {
+      "environment": "development",
+      "profile": "mobile-slow",
+      "before": {
+        "homeMs": 17141,
+        "detailMs": 24598,
+        "backMs": 2594,
+        "documents": 3
+      },
+      "after": {
+        "homeMs": 18607,
+        "detailMs": 822,
+        "backMs": 903,
+        "documents": 1
+      }
+    },
+    {
+      "environment": "production",
+      "profile": "desktop",
+      "before": {
+        "homeMs": 375,
+        "detailMs": 339,
+        "backMs": 318,
+        "documents": 3
+      },
+      "after": {
+        "homeMs": 431,
+        "detailMs": 264,
+        "backMs": 78,
+        "documents": 1
+      }
+    },
+    {
+      "environment": "production",
+      "profile": "mobile-slow",
+      "before": {
+        "homeMs": 1674,
+        "detailMs": 23684,
+        "backMs": 1571,
+        "documents": 3
+      },
+      "after": {
+        "homeMs": 2373,
+        "detailMs": 597,
+        "backMs": 375,
+        "documents": 1
+      }
+    }
+  ],
+  "before": [
+    {
+      "environment": "development",
+      "profile": "desktop",
+      "run": 1,
+      "homeMs": 483,
+      "detailMs": 347,
+      "backMs": 403,
+      "documents": 3
+    },
+    {
+      "environment": "development",
+      "profile": "desktop",
+      "run": 2,
+      "homeMs": 470,
+      "detailMs": 346,
+      "backMs": 348,
+      "documents": 3
+    },
+    {
+      "environment": "development",
+      "profile": "desktop",
+      "run": 3,
+      "homeMs": 508,
+      "detailMs": 461,
+      "backMs": 421,
+      "documents": 3
+    },
+    {
+      "environment": "development",
+      "profile": "desktop",
+      "run": 4,
+      "homeMs": 505,
+      "detailMs": 494,
+      "backMs": 502,
+      "documents": 3
+    },
+    {
+      "environment": "development",
+      "profile": "desktop",
+      "run": 5,
+      "homeMs": 531,
+      "detailMs": 444,
+      "backMs": 460,
+      "documents": 3
+    },
+    {
+      "environment": "development",
+      "profile": "mobile-slow",
+      "run": 1,
+      "homeMs": 18873,
+      "detailMs": 24598,
+      "backMs": 3485,
+      "documents": 3
+    },
+    {
+      "environment": "development",
+      "profile": "mobile-slow",
+      "run": 2,
+      "homeMs": 18676,
+      "detailMs": 24587,
+      "backMs": 2214,
+      "documents": 3
+    },
+    {
+      "environment": "development",
+      "profile": "mobile-slow",
+      "run": 3,
+      "homeMs": 17030,
+      "detailMs": 24600,
+      "backMs": 2117,
+      "documents": 3
+    },
+    {
+      "environment": "development",
+      "profile": "mobile-slow",
+      "run": 4,
+      "homeMs": 17141,
+      "detailMs": 24461,
+      "backMs": 2594,
+      "documents": 3
+    },
+    {
+      "environment": "development",
+      "profile": "mobile-slow",
+      "run": 5,
+      "homeMs": 17079,
+      "detailMs": 25004,
+      "backMs": 3618,
+      "documents": 3
+    },
+    {
+      "environment": "production",
+      "profile": "desktop",
+      "run": 1,
+      "homeMs": 353,
+      "detailMs": 306,
+      "backMs": 315,
+      "documents": 3
+    },
+    {
+      "environment": "production",
+      "profile": "desktop",
+      "run": 2,
+      "homeMs": 375,
+      "detailMs": 339,
+      "backMs": 314,
+      "documents": 3
+    },
+    {
+      "environment": "production",
+      "profile": "desktop",
+      "run": 3,
+      "homeMs": 410,
+      "detailMs": 369,
+      "backMs": 328,
+      "documents": 3
+    },
+    {
+      "environment": "production",
+      "profile": "desktop",
+      "run": 4,
+      "homeMs": 382,
+      "detailMs": 337,
+      "backMs": 318,
+      "documents": 3
+    },
+    {
+      "environment": "production",
+      "profile": "desktop",
+      "run": 5,
+      "homeMs": 356,
+      "detailMs": 369,
+      "backMs": 341,
+      "documents": 3
+    },
+    {
+      "environment": "production",
+      "profile": "mobile-slow",
+      "run": 1,
+      "homeMs": 1674,
+      "detailMs": 23684,
+      "backMs": 1664,
+      "documents": 3
+    },
+    {
+      "environment": "production",
+      "profile": "mobile-slow",
+      "run": 2,
+      "homeMs": 1861,
+      "detailMs": 23724,
+      "backMs": 1571,
+      "documents": 3
+    },
+    {
+      "environment": "production",
+      "profile": "mobile-slow",
+      "run": 3,
+      "homeMs": 1673,
+      "detailMs": 23829,
+      "backMs": 1312,
+      "documents": 3
+    },
+    {
+      "environment": "production",
+      "profile": "mobile-slow",
+      "run": 4,
+      "homeMs": 2186,
+      "detailMs": 23307,
+      "backMs": 1582,
+      "documents": 3
+    },
+    {
+      "environment": "production",
+      "profile": "mobile-slow",
+      "run": 5,
+      "homeMs": 1673,
+      "detailMs": 23089,
+      "backMs": 630,
+      "documents": 3
+    }
+  ],
+  "after": [
+    {
+      "environment": "development",
+      "profile": "desktop",
+      "run": 1,
+      "homeMs": 641,
+      "detailMs": 296,
+      "backMs": 137,
+      "documents": 1
+    },
+    {
+      "environment": "development",
+      "profile": "desktop",
+      "run": 2,
+      "homeMs": 687,
+      "detailMs": 273,
+      "backMs": 139,
+      "documents": 1
+    },
+    {
+      "environment": "development",
+      "profile": "desktop",
+      "run": 3,
+      "homeMs": 658,
+      "detailMs": 289,
+      "backMs": 159,
+      "documents": 1
+    },
+    {
+      "environment": "development",
+      "profile": "desktop",
+      "run": 4,
+      "homeMs": 589,
+      "detailMs": 269,
+      "backMs": 151,
+      "documents": 1
+    },
+    {
+      "environment": "development",
+      "profile": "desktop",
+      "run": 5,
+      "homeMs": 671,
+      "detailMs": 287,
+      "backMs": 153,
+      "documents": 1
+    },
+    {
+      "environment": "development",
+      "profile": "mobile-slow",
+      "run": 1,
+      "homeMs": 18557,
+      "detailMs": 822,
+      "backMs": 953,
+      "documents": 1
+    },
+    {
+      "environment": "development",
+      "profile": "mobile-slow",
+      "run": 2,
+      "homeMs": 18607,
+      "detailMs": 795,
+      "backMs": 745,
+      "documents": 1
+    },
+    {
+      "environment": "development",
+      "profile": "mobile-slow",
+      "run": 3,
+      "homeMs": 18929,
+      "detailMs": 1182,
+      "backMs": 903,
+      "documents": 1
+    },
+    {
+      "environment": "development",
+      "profile": "mobile-slow",
+      "run": 4,
+      "homeMs": 18498,
+      "detailMs": 964,
+      "backMs": 1086,
+      "documents": 1
+    },
+    {
+      "environment": "development",
+      "profile": "mobile-slow",
+      "run": 5,
+      "homeMs": 19082,
+      "detailMs": 731,
+      "backMs": 805,
+      "documents": 1
+    },
+    {
+      "environment": "production",
+      "profile": "desktop",
+      "run": 1,
+      "homeMs": 449,
+      "detailMs": 277,
+      "backMs": 77,
+      "documents": 1
+    },
+    {
+      "environment": "production",
+      "profile": "desktop",
+      "run": 2,
+      "homeMs": 419,
+      "detailMs": 189,
+      "backMs": 90,
+      "documents": 1
+    },
+    {
+      "environment": "production",
+      "profile": "desktop",
+      "run": 3,
+      "homeMs": 447,
+      "detailMs": 271,
+      "backMs": 93,
+      "documents": 1
+    },
+    {
+      "environment": "production",
+      "profile": "desktop",
+      "run": 4,
+      "homeMs": 431,
+      "detailMs": 262,
+      "backMs": 78,
+      "documents": 1
+    },
+    {
+      "environment": "production",
+      "profile": "desktop",
+      "run": 5,
+      "homeMs": 425,
+      "detailMs": 264,
+      "backMs": 73,
+      "documents": 1
+    },
+    {
+      "environment": "production",
+      "profile": "mobile-slow",
+      "run": 1,
+      "homeMs": 2373,
+      "detailMs": 597,
+      "backMs": 403,
+      "documents": 1
+    },
+    {
+      "environment": "production",
+      "profile": "mobile-slow",
+      "run": 2,
+      "homeMs": 2294,
+      "detailMs": 549,
+      "backMs": 402,
+      "documents": 1
+    },
+    {
+      "environment": "production",
+      "profile": "mobile-slow",
+      "run": 3,
+      "homeMs": 2327,
+      "detailMs": 611,
+      "backMs": 301,
+      "documents": 1
+    },
+    {
+      "environment": "production",
+      "profile": "mobile-slow",
+      "run": 4,
+      "homeMs": 2940,
+      "detailMs": 703,
+      "backMs": 375,
+      "documents": 1
+    },
+    {
+      "environment": "production",
+      "profile": "mobile-slow",
+      "run": 5,
+      "homeMs": 2611,
+      "detailMs": 455,
+      "backMs": 356,
+      "documents": 1
+    }
+  ],
+  "initialHomeAlternated": [
+    {
+      "run": 1,
+      "version": "before",
+      "ms": 2265,
+      "domReady": 1339,
+      "api": [
+        {
+          "path": "/api/auctions",
+          "ms": 154
+        },
+        {
+          "path": "/api/products/filters",
+          "ms": 151
+        },
+        {
+          "path": "/api/products",
+          "ms": 289
+        }
+      ]
+    },
+    {
+      "run": 1,
+      "version": "after",
+      "ms": 2256,
+      "domReady": 1192,
+      "api": [
+        {
+          "path": "/api/auctions",
+          "ms": 166
+        },
+        {
+          "path": "/api/products/filters",
+          "ms": 126
+        },
+        {
+          "path": "/api/products",
+          "ms": 254
+        }
+      ]
+    },
+    {
+      "run": 2,
+      "version": "after",
+      "ms": 2164,
+      "domReady": 1239,
+      "api": [
+        {
+          "path": "/api/auctions",
+          "ms": 163
+        },
+        {
+          "path": "/api/products/filters",
+          "ms": 147
+        },
+        {
+          "path": "/api/products",
+          "ms": 304
+        }
+      ]
+    },
+    {
+      "run": 2,
+      "version": "before",
+      "ms": 2144,
+      "domReady": 1199,
+      "api": [
+        {
+          "path": "/api/auctions",
+          "ms": 127
+        },
+        {
+          "path": "/api/products/filters",
+          "ms": 138
+        },
+        {
+          "path": "/api/products",
+          "ms": 317
+        }
+      ]
+    },
+    {
+      "run": 3,
+      "version": "before",
+      "ms": 2299,
+      "domReady": 1306,
+      "api": [
+        {
+          "path": "/api/auctions",
+          "ms": 169
+        },
+        {
+          "path": "/api/products/filters",
+          "ms": 151
+        },
+        {
+          "path": "/api/products",
+          "ms": 300
+        }
+      ]
+    },
+    {
+      "run": 3,
+      "version": "after",
+      "ms": 2255,
+      "domReady": 1165,
+      "api": [
+        {
+          "path": "/api/auctions",
+          "ms": 154
+        },
+        {
+          "path": "/api/products/filters",
+          "ms": 165
+        },
+        {
+          "path": "/api/products",
+          "ms": 244
+        }
+      ]
+    },
+    {
+      "run": 4,
+      "version": "after",
+      "ms": 2442,
+      "domReady": 1289,
+      "api": [
+        {
+          "path": "/api/auctions",
+          "ms": 153
+        },
+        {
+          "path": "/api/products/filters",
+          "ms": 146
+        },
+        {
+          "path": "/api/products",
+          "ms": 243
+        }
+      ]
+    },
+    {
+      "run": 4,
+      "version": "before",
+      "ms": 2391,
+      "domReady": 1357,
+      "api": [
+        {
+          "path": "/api/auctions",
+          "ms": 156
+        },
+        {
+          "path": "/api/products/filters",
+          "ms": 128
+        },
+        {
+          "path": "/api/products",
+          "ms": 306
+        }
+      ]
+    },
+    {
+      "run": 5,
+      "version": "before",
+      "ms": 2222,
+      "domReady": 1206,
+      "api": [
+        {
+          "path": "/api/auctions",
+          "ms": 122
+        },
+        {
+          "path": "/api/products/filters",
+          "ms": 137
+        },
+        {
+          "path": "/api/products",
+          "ms": 311
+        }
+      ]
+    },
+    {
+      "run": 5,
+      "version": "after",
+      "ms": 2354,
+      "domReady": 1196,
+      "api": [
+        {
+          "path": "/api/auctions",
+          "ms": 145
+        },
+        {
+          "path": "/api/products/filters",
+          "ms": 126
+        },
+        {
+          "path": "/api/products",
+          "ms": 300
+        }
+      ]
+    }
+  ],
+  "images": {
+    "before": 10105161,
+    "after": 841762,
+    "reductionPercent": 91.7,
+    "rows": [
+      {
+        "file": "frontend/src/assets/Azeite-480.webp",
+        "bytes": 39168
+      },
+      {
+        "file": "frontend/src/assets/Azeite-960.webp",
+        "bytes": 116828
+      },
+      {
+        "file": "frontend/src/assets/Batata-480.webp",
+        "bytes": 28118
+      },
+      {
+        "file": "frontend/src/assets/Batata-960.webp",
+        "bytes": 76280
+      },
+      {
+        "file": "frontend/src/assets/Leite-480.webp",
+        "bytes": 18476
+      },
+      {
+        "file": "frontend/src/assets/Leite-960.webp",
+        "bytes": 50598
+      },
+      {
+        "file": "frontend/src/assets/Mel-480.webp",
+        "bytes": 30486
+      },
+      {
+        "file": "frontend/src/assets/Mel-960.webp",
+        "bytes": 81920
+      },
+      {
+        "file": "frontend/src/assets/Vinho-480.webp",
+        "bytes": 23734
+      },
+      {
+        "file": "frontend/src/assets/Vinho-960.webp",
+        "bytes": 73378
+      },
+      {
+        "file": "frontend/src/assets/Macas-480.webp",
+        "bytes": 38302
+      },
+      {
+        "file": "frontend/src/assets/Macas-960.webp",
+        "bytes": 126408
+      },
+      {
+        "file": "frontend/src/assets/MapaLocalizacao.webp",
+        "bytes": 68762
+      },
+      {
+        "file": "frontend/public/images/hero-campo.webp",
+        "bytes": 69304
+      }
+    ]
+  },
+  "additionalConcurrentHeadingProbe": {
+    "method": "The heading wait was started while the click action was pending; separate exploratory repetition under changing system load.",
+    "before": {
+      "phase": "before-content",
+      "profile": "mobile-slow: CPU4x, latency100ms, download200000B/s; same Batata 101",
+      "results": [
+        {
+          "environment": "production",
+          "profile": "desktop",
+          "run": 1,
+          "homeMs": 370,
+          "detailMs": 265,
+          "backMs": null,
+          "documents": 2,
+          "clickPendingAtTitle": false
+        },
+        {
+          "environment": "production",
+          "profile": "desktop",
+          "run": 2,
+          "homeMs": 363,
+          "detailMs": 225,
+          "backMs": null,
+          "documents": 2,
+          "clickPendingAtTitle": false
+        },
+        {
+          "environment": "production",
+          "profile": "desktop",
+          "run": 3,
+          "homeMs": 449,
+          "detailMs": 413,
+          "backMs": null,
+          "documents": 2,
+          "clickPendingAtTitle": false
+        },
+        {
+          "environment": "production",
+          "profile": "desktop",
+          "run": 4,
+          "homeMs": 430,
+          "detailMs": 319,
+          "backMs": null,
+          "documents": 2,
+          "clickPendingAtTitle": false
+        },
+        {
+          "environment": "production",
+          "profile": "desktop",
+          "run": 5,
+          "homeMs": 456,
+          "detailMs": 275,
+          "backMs": null,
+          "documents": 2,
+          "clickPendingAtTitle": false
+        },
+        {
+          "environment": "production",
+          "profile": "mobile-slow",
+          "run": 1,
+          "homeMs": 3931,
+          "detailMs": 23439,
+          "backMs": null,
+          "documents": 2,
+          "clickPendingAtTitle": false
+        },
+        {
+          "environment": "production",
+          "profile": "mobile-slow",
+          "run": 2,
+          "homeMs": 2493,
+          "detailMs": 23996,
+          "backMs": null,
+          "documents": 2,
+          "clickPendingAtTitle": false
+        },
+        {
+          "environment": "production",
+          "profile": "mobile-slow",
+          "run": 3,
+          "homeMs": 3108,
+          "detailMs": 23797,
+          "backMs": null,
+          "documents": 2,
+          "clickPendingAtTitle": false
+        },
+        {
+          "environment": "production",
+          "profile": "mobile-slow",
+          "run": 4,
+          "homeMs": 3325,
+          "detailMs": 23416,
+          "backMs": null,
+          "documents": 2,
+          "clickPendingAtTitle": false
+        },
+        {
+          "environment": "production",
+          "profile": "mobile-slow",
+          "run": 5,
+          "homeMs": 2438,
+          "detailMs": 24482,
+          "backMs": null,
+          "documents": 2,
+          "clickPendingAtTitle": false
+        }
+      ],
+      "summary": [
+        {
+          "environment": "production",
+          "profile": "desktop",
+          "homeMs": 430,
+          "detailMs": 275,
+          "backMs": null,
+          "documents": 2
+        },
+        {
+          "environment": "production",
+          "profile": "mobile-slow",
+          "homeMs": 3108,
+          "detailMs": 23797,
+          "backMs": null,
+          "documents": 2
+        }
+      ]
+    },
+    "after": {
+      "phase": "after-content",
+      "profile": "mobile-slow: CPU4x, latency100ms, download200000B/s; same Batata 101",
+      "results": [
+        {
+          "environment": "production",
+          "profile": "desktop",
+          "run": 1,
+          "homeMs": 1000,
+          "detailMs": 198,
+          "backMs": null,
+          "documents": 1,
+          "clickPendingAtTitle": false
+        },
+        {
+          "environment": "production",
+          "profile": "desktop",
+          "run": 2,
+          "homeMs": 448,
+          "detailMs": 216,
+          "backMs": null,
+          "documents": 1,
+          "clickPendingAtTitle": false
+        },
+        {
+          "environment": "production",
+          "profile": "desktop",
+          "run": 3,
+          "homeMs": 465,
+          "detailMs": 234,
+          "backMs": null,
+          "documents": 1,
+          "clickPendingAtTitle": false
+        },
+        {
+          "environment": "production",
+          "profile": "desktop",
+          "run": 4,
+          "homeMs": 506,
+          "detailMs": 206,
+          "backMs": null,
+          "documents": 1,
+          "clickPendingAtTitle": false
+        },
+        {
+          "environment": "production",
+          "profile": "desktop",
+          "run": 5,
+          "homeMs": 476,
+          "detailMs": 209,
+          "backMs": null,
+          "documents": 1,
+          "clickPendingAtTitle": false
+        },
+        {
+          "environment": "production",
+          "profile": "mobile-slow",
+          "run": 1,
+          "homeMs": 2725,
+          "detailMs": 1975,
+          "backMs": null,
+          "documents": 1,
+          "clickPendingAtTitle": false
+        },
+        {
+          "environment": "production",
+          "profile": "mobile-slow",
+          "run": 2,
+          "homeMs": 2901,
+          "detailMs": 1029,
+          "backMs": null,
+          "documents": 1,
+          "clickPendingAtTitle": false
+        },
+        {
+          "environment": "production",
+          "profile": "mobile-slow",
+          "run": 3,
+          "homeMs": 2727,
+          "detailMs": 1949,
+          "backMs": null,
+          "documents": 1,
+          "clickPendingAtTitle": false
+        },
+        {
+          "environment": "production",
+          "profile": "mobile-slow",
+          "run": 4,
+          "homeMs": 4209,
+          "detailMs": 1549,
+          "backMs": null,
+          "documents": 1,
+          "clickPendingAtTitle": false
+        },
+        {
+          "environment": "production",
+          "profile": "mobile-slow",
+          "run": 5,
+          "homeMs": 2393,
+          "detailMs": 1780,
+          "backMs": null,
+          "documents": 1,
+          "clickPendingAtTitle": false
+        }
+      ],
+      "summary": [
+        {
+          "environment": "production",
+          "profile": "desktop",
+          "homeMs": 476,
+          "detailMs": 209,
+          "backMs": null,
+          "documents": 1
+        },
+        {
+          "environment": "production",
+          "profile": "mobile-slow",
+          "homeMs": 2727,
+          "detailMs": 1780,
+          "backMs": null,
+          "documents": 1
+        }
+      ]
+    }
+  }
+}

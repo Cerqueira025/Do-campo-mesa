@@ -1,0 +1,34 @@
+meta {
+  name: Avaliação de encomenda temporária entregue
+  type: http
+  seq: 31
+}
+
+post {
+  url: {{baseUrl}}/reviews
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{testBuyerToken}}
+}
+
+body:json {
+  {
+    "encomendaId": "{{functionalOrder}}",
+    "produtoId": "{{functionalProduct1}}",
+    "classificacao": 4,
+    "comentario": "{{testRun}} entregue"
+  }
+}
+
+tests {
+  test("Avaliação de encomenda temporária entregue", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+}
+
+script:post-response {
+  bru.setVar("functionalReview", res.getBody()._id);
+}
