@@ -1,9 +1,13 @@
-import { useEffect, useState } from 'react'
+import InternalLink from '../navigation/InternalLink'
+import { restoreNavigation, returnToCatalog } from '../navigation/navigation'
+import LoadingPlaceholder from '../components/ui/LoadingPlaceholder'
+import { useEffect, useLayoutEffect, useState } from 'react'
 import { faArrowLeft } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import Button from '../components/ui/Button'
 import IconButton from '../components/ui/IconButton'
 import ProductImage from '../components/product/ProductImage'
+import OriginMap from '../components/location/OriginMap'
 import RelatedProducts from '../features/products/RelatedProducts'
 import { catalogReturnUrl, originMapUrl, priceFormatter, productImages, type ProductDetail } from '../features/products/product'
 import { seasons } from '../features/home/catalogFilters'
@@ -14,6 +18,7 @@ export default function ProductDetailPage({ id }: { id: string | null }) {
   const [status, setStatus] = useState<'loading' | 'success' | 'missing' | 'error'>(id ? 'loading' : 'missing')
   const [retry, setRetry] = useState(0)
   const returnUrl = catalogReturnUrl(window.location.search)
+  useLayoutEffect(() => { restoreNavigation(status !== 'loading') }, [status])
 
   useEffect(() => {
     if (!id) return
@@ -27,7 +32,7 @@ export default function ProductDetailPage({ id }: { id: string | null }) {
         }
         if (!response.ok) throw new Error('Produto indisponível')
         const data = await response.json() as ProductDetail
-        if (!data || data._id !== id || typeof data.nome !== 'string' || !Number.isSafeInteger(data.preco) || !Number.isFinite(data.stock) || !data.produtorId?.nome) throw new Error('Resposta inválida')
+        if (!data || data._id!.toLowerCase() !== id!.toLowerCase() || typeof data.nome !== 'string' || !Number.isSafeInteger(data.preco) || !Number.isFinite(data.stock) || !data.produtorId?.nome) throw new Error('Resposta inválida')
         if (!controller.signal.aborted) {
           setProduct(data)
           setStatus('success')
@@ -52,19 +57,19 @@ export default function ProductDetailPage({ id }: { id: string | null }) {
   const backNavigation = (
     <nav className="product-detail__back" aria-label="Regresso ao catálogo">
       <IconButton variant="cream" aria-label="Voltar ao catálogo" icon={<FontAwesomeIcon icon={faArrowLeft} aria-hidden="true" />}
-        onClick={() => window.location.assign(returnUrl)} />
+        onClick={() => returnToCatalog(returnUrl)} />
       {status !== 'success' && <span>Voltar ao catálogo</span>}
     </nav>
   )
 
   return (
-    <main className={`product-detail${status === 'success' ? ' product-detail--loaded' : ''}`}>
+    <main data-navigation-ready={status !== 'loading'} className={`product-detail${status === 'success' ? ' product-detail--loaded' : ''}`}>
       {status === 'success' && product && (
       <header className="product-detail__hero">
         {backNavigation}
-        <div className="product-detail__visual"><ProductImage {...productImages(product)} alt={product.nome} className="product-detail__image" /></div>
+        <div className="product-detail__visual"><ProductImage {...productImages(product)} alt={product.nome} className="product-detail__image" sizes="495px" loading="eager" /></div>
         <div className="product-detail__heading">
-          <p className="product-detail__eyebrow">{product.categoria}</p>
+          <p className="product-detail__eyebrow">Categoria · {product.categoria}</p>
           <h1>{product.nome}</h1>
           <p className="product-detail__price">{priceFormatter.format(product.preco / 100)} <span>/ {product.unidade}</span></p>
         </div>
@@ -72,8 +77,8 @@ export default function ProductDetailPage({ id }: { id: string | null }) {
       )}
       <div className="product-detail__inner">
         {status !== 'success' && backNavigation}
-        {status === 'loading' ? <p role="status">A carregar produto…</p> : status === 'missing' ? (
-          <section className="product-detail__panel"><h1>Produto não encontrado</h1><p>Este produto não existe ou já não está disponível.</p><a href={returnUrl}>Explorar produtos</a></section>
+        {status === 'loading' ? <LoadingPlaceholder label="A carregar produto…" /> : status === 'missing' ? (
+          <section className="product-detail__panel"><h1>Produto não encontrado</h1><p>Este produto não existe ou já não está disponível.</p><InternalLink href={returnUrl}>Explorar produtos</InternalLink></section>
         ) : status === 'error' ? (
           <section className="product-detail__panel" role="alert"><h1>Não foi possível carregar o produto</h1><p>Tenta novamente dentro de instantes.</p>
             <Button onClick={() => { setStatus('loading'); setRetry((value) => value + 1) }}>Tentar novamente</Button>
@@ -102,11 +107,7 @@ export default function ProductDetailPage({ id }: { id: string | null }) {
                   </div>
                   {profile?.descricao && <p className="product-detail__producer-description">{profile.descricao}</p>}
                 </section>
-                {(profile?.localidade || mapUrl) && <section className="product-detail__panel" aria-labelledby="origin-title">
-                  <h2 id="origin-title">A origem, aqui perto</h2>
-                  {profile?.localidade && <p>{profile.localidade}</p>}
-                  {mapUrl && <a href={mapUrl} target="_blank" rel="noopener noreferrer" aria-label="Ver no mapa (abre num novo separador)">Ver no mapa ↗</a>}
-                </section>}
+                <OriginMap locality={profile?.localidade} mapUrl={mapUrl} />
                 <aside className="product-detail__order" aria-label="Encomendar produto">
                   <div className="product-detail__order-row"><div><span>Preço por {product.unidade}</span><strong>{priceFormatter.format(product.preco / 100)}</strong></div>
                     <Button disabled aria-describedby="order-note">{product.stock > 0 ? 'Encomendar agora' : 'Esgotado'}</Button>

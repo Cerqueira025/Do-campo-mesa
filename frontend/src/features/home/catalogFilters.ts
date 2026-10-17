@@ -1,3 +1,5 @@
+import { navigate } from '../../navigation/navigation.ts'
+
 export const seasons = [
   { value: 'primavera', label: 'Primavera' },
   { value: 'verao', label: 'Verão' },
@@ -60,7 +62,6 @@ export function writeCatalogUrl(search: string, filters: CatalogFilters, replace
     else url.searchParams.delete(key)
   }
   if (url.href !== window.location.href) {
-    if (replace) window.history.replaceState(null, '', url)
-    else window.history.pushState(null, '', url)
+    navigate(url.href, { replace, preserveScroll: true })
   }
 }

@@ -23,29 +23,31 @@ export interface ProductDetail extends ApiProduct {
   }
 }
 
-const images: Record<string, string> = {
-  azeite: new URL('../../assets/Azeite.png', import.meta.url).href,
-  batata: new URL('../../assets/Batata.png', import.meta.url).href,
-  leite: new URL('../../assets/Leite.png', import.meta.url).href,
-  mel: new URL('../../assets/Mel.png', import.meta.url).href,
-  vinho: new URL('../../assets/Vinho.png', import.meta.url).href,
-  maçã: new URL('../../assets/Macas.png', import.meta.url).href,
+const images: Record<string, { small: string; large: string }> = {
+  azeite: { small: new URL('../../assets/Azeite-480.webp', import.meta.url).href, large: new URL('../../assets/Azeite-960.webp', import.meta.url).href },
+  batata: { small: new URL('../../assets/Batata-480.webp', import.meta.url).href, large: new URL('../../assets/Batata-960.webp', import.meta.url).href },
+  leite: { small: new URL('../../assets/Leite-480.webp', import.meta.url).href, large: new URL('../../assets/Leite-960.webp', import.meta.url).href },
+  mel: { small: new URL('../../assets/Mel-480.webp', import.meta.url).href, large: new URL('../../assets/Mel-960.webp', import.meta.url).href },
+  vinho: { small: new URL('../../assets/Vinho-480.webp', import.meta.url).href, large: new URL('../../assets/Vinho-960.webp', import.meta.url).href },
+  maçã: { small: new URL('../../assets/Macas-480.webp', import.meta.url).href, large: new URL('../../assets/Macas-960.webp', import.meta.url).href },
 }
 
 export const priceFormatter = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' })
 
-export function productImages(product: ApiProduct) {
+export function productImages(product: Pick<ApiProduct, 'nome' | 'imagens'>) {
   const image = product.imagens?.find((value) => {
     try {
       const url = new URL(value, 'https://local.invalid')
       return value.trim() !== '' && ['http:', 'https:'].includes(url.protocol)
     } catch { return false }
   })
-  const fallbackImage = images[product.nome.trim().toLowerCase()]
+  const fallback = images[product.nome.trim().toLowerCase()]
+  const fallbackImage = fallback?.large
+  const fallbackSrcSet = fallback ? `${fallback.small} 480w, ${fallback.large} 960w` : undefined
   const source = image?.trim()
   const local = source && !/^(https?:)?\/\//i.test(source) ? new URL(source, 'https://local.invalid') : null
   const resolved = local ? `${local.pathname}${local.search}${local.hash}` : source
-  return { image: resolved || fallbackImage, fallbackImage }
+  return { image: resolved || fallbackImage, fallbackImage, fallbackSrcSet }
 }
 
 export function mapProduct(product: ApiProduct) {
@@ -65,7 +67,7 @@ export function productIdFromPath(path: string) {
 
 export function catalogReturnUrl(search: string) {
   const value = new URLSearchParams(search).get('regresso')
-  return value === '/' || value?.startsWith('/?') ? value : '/'
+  return value === '/' || value?.startsWith('/?') || value?.startsWith('/#') ? value : '/'
 }
 
 export function productHref(id: string, catalogUrl = '/') {
@@ -77,5 +79,5 @@ export function originMapUrl(coordinates?: { latitude: number; longitude: number
   if (!coordinates) return null
   const { latitude, longitude } = coordinates
   if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || Math.abs(latitude) > 90 || Math.abs(longitude) > 180) return null
-  return `https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=13/${latitude}/${longitude}`
+  return `https://www.google.com/maps/search/?api=1&query=${latitude}%2C${longitude}`
 }

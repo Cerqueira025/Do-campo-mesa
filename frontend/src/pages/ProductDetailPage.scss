@@ -30,7 +30,7 @@
     position: relative;
     display: flex;
     align-items: flex-end;
-    min-height: clamp(380px, 75vw, 560px);
+    min-height: clamp(380px, 75vw, 400px);
     padding-top: 88px;
     overflow: hidden;
     margin-bottom: 24px;
@@ -244,9 +244,12 @@
 
 
   @include up(desktop) {
-    padding-bottom: 64px;
+    &__hero {
+      padding-top: 112px;
+    }
+    padding-bottom: 55px;
     &__heading {
-      padding-top: 144px;
+      padding-top: 100px;
       padding-bottom: 32px;
     }
 

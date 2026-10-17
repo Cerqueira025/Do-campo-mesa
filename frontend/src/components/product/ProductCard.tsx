@@ -1,3 +1,4 @@
+import InternalLink from '../../navigation/InternalLink'
 import IconButton from '../ui/IconButton'
 import ProductImage from './ProductImage'
 import './ProductCard.scss'
@@ -8,6 +9,7 @@ export interface ProductCardProduct {
   weight: string
   image?: string
   fallbackImage?: string
+  fallbackSrcSet?: string
   imageAlt?: string
 }
 
@@ -21,7 +23,7 @@ function ProductCard({ product, onAdd, href }: ProductCardProps) {
   return (
     <article className="card product-card">
       <h3 className="product-card__title">
-        {href ? <a href={href}>{product.title}</a> : product.title}
+        {href ? <InternalLink href={href}>{product.title}</InternalLink> : product.title}
       </h3>
 
       <div className="product-card__body">
@@ -34,6 +36,9 @@ function ProductCard({ product, onAdd, href }: ProductCardProps) {
           className="product-card__image"
           image={product.image}
           fallbackImage={product.fallbackImage}
+          fallbackSrcSet={product.fallbackSrcSet}
+          sizes="(min-width: 1200px) 400px, (min-width: 768px) 50vw, 100vw"
+          loading="lazy"
           alt={product.imageAlt ?? product.title}
         />
       </div>
