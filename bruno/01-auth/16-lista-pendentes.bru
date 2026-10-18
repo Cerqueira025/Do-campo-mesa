@@ -1,0 +1,24 @@
+meta {
+  name: Administrador consulta produtores pendentes
+  type: http
+  seq: 16
+}
+
+get {
+  url: {{baseUrl}}/producers/pendentes
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{adminToken}}
+}
+
+tests {
+  test("lista inclui o produtor de teste sem hashes", function() {
+    expect(res.getStatus()).to.equal(200);
+    const producer = res.getBody().find(item => item._id === bru.getVar("authProducerId"));
+    expect(producer).to.be.an("object");
+    expect(producer).to.not.have.property("passwordHash");
+  });
+}

@@ -1,33 +1,43 @@
 import jwt from 'jsonwebtoken';
+import mongoose from 'mongoose';
 import User from '../models/User.js';
 
 export function requireAuth(...roles) {
-  return (request, response, next) => {
-    const [scheme, token] = (request.get('authorization') || '').split(' ');
-    if (scheme !== 'Bearer' || !token) {
+  return async (request, response, next) => {
+    const match = /^Bearer ([^\s]+)$/i.exec(request.get('authorization') || '');
+    if (!match) {
       return response.status(401).json({ erro: 'Autenticação necessária.' });
     }
 
+    let claims;
     try {
-      request.user = jwt.verify(token, process.env.JWT_SECRET);
+      claims = jwt.verify(match[1], process.env.JWT_SECRET, { algorithms: ['HS256'] });
+      if (typeof claims !== 'object' || typeof claims.exp !== 'number' ||
+          typeof claims.id !== 'string' || !mongoose.isObjectIdOrHexString(claims.id)) {
+        throw new Error('Token inválido.');
+      }
     } catch {
       return response.status(401).json({ erro: 'Token inválido ou expirado.' });
     }
 
-    if (roles.length && !roles.includes(request.user.papel)) {
-      return response.status(403).json({ erro: 'Sem permissão para esta operação.' });
+    try {
+      const user = await User.findById(claims.id).select('nome email papel perfilProdutor.validacao');
+      if (!user) return response.status(401).json({ erro: 'A conta já não está disponível.' });
+      if (roles.length && !roles.includes(user.papel)) {
+        return response.status(403).json({ erro: 'Sem permissão para esta operação.' });
+      }
+      request.user = user;
+      next();
+    } catch (error) {
+      next(error);
     }
-    next();
   };
 }
 
 export function requireApprovedProducer(request, response, next) {
   if (request.user.papel !== 'produtor') return response.status(403).json({ erro: 'Apenas produtores podem executar esta operação.' });
-  User.findById(request.user.id).select('perfilProdutor.validacao')
-    .then((producer) => {
-      if (!producer || producer.perfilProdutor?.validacao !== 'aceite') {
-        return response.status(403).json({ erro: 'O produtor precisa de aprovação.' });
-      }
-      next();
-    }).catch(next);
+  if (request.user.perfilProdutor?.validacao !== 'aceite') {
+    return response.status(403).json({ erro: 'O produtor precisa de aprovação.' });
+  }
+  next();
 }

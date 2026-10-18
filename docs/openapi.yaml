@@ -71,6 +71,46 @@ paths:
                   utilizador: { $ref: '#/components/schemas/UserPublic' }
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+  /auth/recuperar-password:
+    post:
+      tags: [Autenticação]
+      summary: Substitui a password pelo email na demonstração universitária
+      description: Fluxo simplificado, sem autenticação, envio de email ou token de recuperação. Conhecer o email permite alterar a password da conta. Não é adequado para utilização pública real. Altera apenas o hash da password; os JWT já emitidos continuam válidos até expirar.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, format: password, minLength: 8, maxLength: 72, description: Máximo de 72 bytes em UTF-8. }
+      responses:
+        '200':
+          description: Password atualizada, sem devolver dados da conta ou sessão
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [mensagem]
+                properties:
+                  mensagem: { type: string, example: Palavra-passe atualizada. }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /auth/eu:
+    get:
+      tags: [Autenticação]
+      security: [{ bearerAuth: [] }]
+      summary: Valida a sessão e devolve os dados atuais da conta
+      description: Consulta a conta na base de dados. Tokens expirados, inválidos ou de contas removidas devolvem 401. Nunca devolve passwords ou hashes.
+      responses:
+        '200':
+          description: Utilizador autenticado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserPublic' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
   /products:
     get:
       tags: [Produtos]
@@ -186,6 +226,45 @@ paths:
           content:
             application/json:
               schema: { type: array, items: { $ref: '#/components/schemas/Producer' } }
+  /producers/pendentes:
+    get:
+      tags: [Produtores]
+      security: [{ bearerAuth: [] }]
+      summary: Lista registos pendentes para análise por um administrador
+      responses:
+        '200':
+          description: Produtores pendentes, incluindo dados de contacto e da exploração
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/PendingProducer' } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /producers/{id}/validacao:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    patch:
+      tags: [Produtores]
+      security: [{ bearerAuth: [] }]
+      summary: Aprova ou rejeita um produtor como administrador
+      description: A decisão é consultada na base de dados nas operações protegidas seguintes; o produtor não precisa de um novo JWT.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [validacao]
+              properties:
+                validacao: { type: string, enum: [aceite, rejeitado] }
+      responses:
+        '200':
+          description: Validação atualizada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserPublic' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
   /producers/{id}:
     parameters: [{ $ref: '#/components/parameters/id' }]
     get:
@@ -421,10 +500,12 @@ components:
       properties:
         nome: { type: string, minLength: 2, maxLength: 100 }
         email: { type: string, format: email }
-        password: { type: string, format: password, minLength: 8, maxLength: 72 }
+        password: { type: string, format: password, minLength: 8, maxLength: 72, description: Máximo de 72 bytes em UTF-8. }
         papel: { type: string, enum: [comprador, produtor], default: comprador }
         perfilProdutor:
+          description: Obrigatório quando papel é produtor. Novas contas ficam pendentes; um estado enviado pelo cliente é ignorado.
           type: object
+          required: [localidade, morada, coordenadas]
           properties:
             descricao: { type: string }
             localidade: { type: string }
@@ -435,6 +516,20 @@ components:
               properties:
                 latitude: { type: number, minimum: -90, maximum: 90 }
                 longitude: { type: number, minimum: -180, maximum: 180 }
+    PendingProducer:
+      type: object
+      required: [_id, nome, email, perfilProdutor]
+      properties:
+        _id: { type: string }
+        nome: { type: string }
+        email: { type: string, format: email }
+        perfilProdutor:
+          allOf:
+            - $ref: '#/components/schemas/RegisterInput/properties/perfilProdutor'
+            - type: object
+              properties:
+                validacao: { type: string, enum: [pendente] }
+        createdAt: { type: string, format: date-time }
     Producer:
       type: object
       properties:

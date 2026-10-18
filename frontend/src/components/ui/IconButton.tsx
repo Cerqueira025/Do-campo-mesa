@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
 import './IconButton.scss'
 
-type IconButtonVariant = 'primary' | 'secondary' | 'cream' | 'product'
+type IconButtonVariant = 'primary' | 'secondary' | 'cream' | 'product' | 'plain'
 
 interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'aria-label'> {
   icon: ReactNode

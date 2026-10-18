@@ -4,7 +4,7 @@ import type { AnchorHTMLAttributes, ButtonHTMLAttributes, ReactNode } from 'reac
 import InternalLink from '../../navigation/InternalLink'
 import './Button.scss'
 
-type ButtonVariant = 'primary' | 'secondary' | 'cream'
+type ButtonVariant = 'primary' | 'secondary' | 'cream' | 'dark'
 interface Appearance {
   children: ReactNode
   icon?: IconDefinition

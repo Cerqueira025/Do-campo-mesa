@@ -1,10 +1,10 @@
 import { faMagnifyingGlass, faStore } from '@fortawesome/free-solid-svg-icons'
-import { useState } from 'react'
 import Button from '../../../components/ui/Button'
+import { useAuth } from '../../auth/useAuth'
 import './EntryActions.scss'
 
 function EntryActions() {
-  const [feedback, setFeedback] = useState('')
+  const { utilizador } = useAuth()
 
   return (
     <>
@@ -12,21 +12,21 @@ function EntryActions() {
         <Button
           icon={faMagnifyingGlass}
           variant="primary"
-          onClick={() => setFeedback('A área de produtos estará disponível em breve.')}
+          onClick={() => {
+            const title = document.getElementById('products-title')
+            if (title) { title.tabIndex = -1; title.focus({ preventScroll: true }); title.scrollIntoView({ behavior: 'smooth' }) }
+          }}
         >
           Explorar produtos
         </Button>
         <Button
           icon={faStore}
           variant="secondary"
-          onClick={() => setFeedback('A entrada para produtores estará disponível em breve.')}
+          href={utilizador ? '/conta' : '/registo?papel=produtor'}
         >
-          Sou produtor
+          {utilizador ? 'A minha conta' : 'Sou produtor'}
         </Button>
       </div>
-      <p className="entry-actions__feedback" role="status" aria-live="polite">
-        {feedback}
-      </p>
     </>
   )
 }

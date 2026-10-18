@@ -15,6 +15,18 @@ Mantém um componente em `ui` quando puder ser reutilizado sem conhecer a funcio
 
 Os estilos específicos ficam junto do componente, em ficheiros `.scss`. Usa `@use` para carregar tokens e mixins; evita regras de uma funcionalidade dentro dos estilos globais.
 
+### Autenticação
+
+- `src/pages/auth/` — páginas do fluxo de autenticação: `LoginPage`, `RegisterPage` e `ResetPasswordPage`.
+- `src/pages/` — `AccountPage` e `ProducerApprovalPage`, que representam áreas protegidas da conta e administração.
+- `src/features/auth/components/` — `AuthLayout` e navegação da sessão, com os respetivos estilos.
+- `src/features/auth/` — `AuthProvider`, contexto, hooks e `ProtectedRoute`; `authService.ts` contém os pedidos à API, `auth.ts` os tipos e auxiliares puros e `sessionStorage.ts` a persistência e expiração local da sessão.
+- `src/pages/auth/AuthForm.scss` e `src/features/auth/AuthPage.scss` — estilos partilhados, respetivamente, pelos formulários do fluxo e pelas páginas protegidas. Os estilos exclusivos da conta e da aprovação ficam junto das páginas.
+
+O cliente HTTP partilhado fica em `src/api/client.ts`. Não é necessário criar subpastas para cada hook ou serviço.
+
+Os campos reutilizáveis ficam em `src/components/ui/input/`: `InputField` recebe os atributos nativos de um input, `label`, `icon` e `hint`; `PasswordField` acrescenta a opção de mostrar/ocultar a password. Ambos reutilizam `FormField`, que também envolve selects e textareas e concentra os estilos em `FormField.scss`. O `InputField` associa automaticamente a dica ao input através de `aria-describedby`.
+
 ## Bootstrap 5
 
 O Bootstrap é configurado em `src/styles/_bootstrap.scss` e carregado por `main.scss` antes dos estilos próprios. São importados apenas grelha, botões, cartões e campos de formulário, com as dependências Sass necessárias. O reset existente continua responsável pelas regras globais; não é carregado o Reboot do Bootstrap.

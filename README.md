@@ -128,6 +128,65 @@ de encomendas. Não precisa de Atlas.
 A verificação do índice único de email e da ligação real exige a base acessível.
 
 
+## Autenticação
+
+As páginas `LoginPage`, `RegisterPage` e `ResetPasswordPage` estão em
+`frontend/src/pages/auth/`. Cada uma contém o seu formulário e submissão. Partilham
+`AuthLayout` (marca, título, painel e erros), em `frontend/src/features/auth/components/`,
+e os campos genéricos `InputField` e `PasswordField`, em `frontend/src/components/ui/input/`.
+O `FormField` concentra o estilo, label e ícone dos inputs, selects e textareas;
+o `PasswordField` reutiliza o `InputField` e acrescenta o botão de mostrar/ocultar.
+`AccountPage` e `ProducerApprovalPage`
+também ficam em `pages/`, com os seus estilos específicos. Os pedidos ficam em
+`authService.ts`, os tipos e auxiliares puros em `auth.ts` e a persistência e
+expiração local em `sessionStorage.ts`; a sessão continua no `AuthProvider`.
+Estas três páginas usam apresentação própria;
+a barra de sessão mantém-se no catálogo e nas áreas protegidas.
+
+`/recuperar-password` recebe o email do login, permite corrigi-lo e pede a nova
+password e confirmação. `POST /api/auth/recuperar-password` recebe apenas
+`email` e `password`, normaliza o email e substitui o hash com bcrypt custo 12.
+Devolve 200 em sucesso, 400 para dados inválidos e 404 para conta inexistente.
+Depois da alteração, o utilizador regressa ao login com o email preenchido.
+
+**Recuperação exclusiva da demonstração universitária:** não há envio de email
+nem token de recuperação. Qualquer pessoa que conheça um email pode substituir
+a password dessa conta. Este fluxo não deve ser usado numa aplicação pública real.
+Os JWT anteriormente emitidos continuam válidos até à sua expiração.
+
+`/login` e `/registo` iniciam a sessão na SPA. O registo público aceita apenas
+compradores e produtores; depois de criar a conta, a SPA faz login com as mesmas
+credenciais. Se este segundo pedido falhar, informa que a conta já foi criada
+e permite entrar sem repetir o registo. A conta de administrador é criada pelo seed.
+
+As passwords usam bcrypt com custo 12 (mínimo de 8 caracteres, máximo de 72 bytes
+em UTF-8). O login devolve um JWT com `id`, `papel` e expiração de duas horas,
+e os dados públicos do utilizador. Nunca são devolvidos passwords ou hashes.
+
+O `AuthProvider` guarda a sessão em memória e no `localStorage`, conforme o guia.
+Ao recarregar a SPA, `GET /api/auth/eu` confirma o token e os dados atuais na base
+de dados antes de abrir conteúdo protegido. Falhas de rede permitem tentar
+novamente; respostas 401 ou a expiração terminam a sessão. O logout limpa a
+sessão do browser; um JWT já emitido mantém validade no servidor até expirar.
+
+`/conta` exige autenticação e mostra o estado de aprovação dos produtores.
+`/admin/produtores` exige o papel `administrador` e permite aprovar ou rejeitar
+registos através de `GET /api/producers/pendentes` e
+`PATCH /api/producers/:id/validacao`. As permissões e a aprovação são consultadas
+na base de dados em cada pedido protegido. O produtor pode atualizar o estado
+na sua área de conta sem voltar a fazer login.
+
+Em desenvolvimento, o proxy do Vite encaminha `/api` para a API local. Em produção,
+configura HTTPS e o encaminhamento de `/api` para a API no mesmo domínio da SPA.
+Fornece `JWT_SECRET` nas variáveis de ambiente do serviço; nunca no frontend.
+Como o token no `localStorage` é acessível a JavaScript, os textos dos utilizadores
+devem continuar a ser apresentados como texto pelo React, sem injetar HTML.
+
+`npm test` na API cobre os fluxos HTTP e as permissões com a persistência simulada;
+`npm test` no frontend cobre o cliente HTTP e as regras de sessão. A coleção Bruno
+inclui um ciclo de registo, aprovação e consulta com um produtor de teste, removido
+pela limpeza normal da coleção.
+
 ## Navegação e fluidez
 
 Catálogo, produtos e leilões usam navegação interna sem recarregar a aplicação.

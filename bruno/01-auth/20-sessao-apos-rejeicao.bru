@@ -1,0 +1,22 @@
+meta {
+  name: Sessão reflete rejeição sem novo login
+  type: http
+  seq: 20
+}
+
+get {
+  url: {{baseUrl}}/auth/eu
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{authProducerToken}}
+}
+
+tests {
+  test("mesmo token consulta a rejeição atual", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().validacao).to.equal("rejeitado");
+  });
+}

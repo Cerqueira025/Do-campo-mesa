@@ -35,6 +35,15 @@
     --bs-btn-disabled-bg: var(--color-white-10);
   }
 
+  &--dark {
+    --bs-btn-bg: var(--color-green-950);
+    --bs-btn-hover-bg: var(--color-green-900);
+    --bs-btn-active-bg: var(--color-green-900);
+    --bs-btn-disabled-bg: var(--color-green-950);
+
+    &:focus-visible { outline-color: var(--color-green-900); }
+  }
+
   &--cream {
     --bs-btn-color: var(--color-green-950);
     --bs-btn-hover-color: var(--color-green-950);

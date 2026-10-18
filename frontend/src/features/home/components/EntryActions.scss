@@ -4,15 +4,4 @@
   gap: 12px;
   max-width: 440px;
   margin-top: 24px;
-
-  &__feedback {
-    margin: 16px 0 0;
-    color: var(--color-white);
-    font-size: var(--font-size-xs);
-    line-height: 1.5;
-  }
-
-  &__feedback:empty {
-    display: none;
-  }
 }

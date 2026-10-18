@@ -1,0 +1,26 @@
+meta {
+  name: Produtor pendente pode iniciar sessão
+  type: http
+  seq: 13
+}
+
+post {
+  url: {{baseUrl}}/auth/login
+  body: json
+  auth: none
+}
+
+body:json {
+  { "email": "{{authProducerEmail}}", "password": "{{testPassword}}" }
+}
+
+tests {
+  test("login identifica produtor pendente", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().utilizador.validacao).to.equal("pendente");
+  });
+}
+
+script:post-response {
+  bru.setVar("authProducerToken", res.getBody().token);
+}

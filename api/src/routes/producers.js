@@ -3,9 +3,35 @@ import mongoose from 'mongoose';
 import User from '../models/User.js';
 import Product from '../models/Product.js';
 import Review from '../models/Review.js';
+import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
 const publicFields = 'nome perfilProdutor.descricao perfilProdutor.localidade perfilProdutor.coordenadas createdAt';
+
+router.get('/pendentes', requireAuth('administrador'), async (_request, response, next) => {
+  try {
+    const producers = await User.find({ papel: 'produtor', 'perfilProdutor.validacao': 'pendente' })
+      .select('nome email perfilProdutor createdAt').sort({ createdAt: 1 }).lean();
+    response.json(producers);
+  } catch (error) { next(error); }
+});
+
+router.patch('/:id/validacao', requireAuth('administrador'), async (request, response, next) => {
+  try {
+    const { validacao } = request.body || {};
+    if (!['aceite', 'rejeitado'].includes(validacao)) {
+      return response.status(400).json({ erro: 'A validação deve ser aceite ou rejeitado.' });
+    }
+    if (!mongoose.isValidObjectId(request.params.id)) return response.status(404).json({ erro: 'Produtor não encontrado.' });
+    const producer = await User.findOneAndUpdate(
+      { _id: request.params.id, papel: 'produtor' },
+      { $set: { 'perfilProdutor.validacao': validacao } },
+      { new: true, runValidators: true },
+    );
+    if (!producer) return response.status(404).json({ erro: 'Produtor não encontrado.' });
+    response.json(producer.publico());
+  } catch (error) { next(error); }
+});
 
 router.get('/', async (_request, response, next) => {
   try {

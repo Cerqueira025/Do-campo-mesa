@@ -1,0 +1,26 @@
+meta {
+  name: Administrador rejeita produtor de teste
+  type: http
+  seq: 19
+}
+
+patch {
+  url: {{baseUrl}}/producers/{{authProducerId}}/validacao
+  body: json
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{adminToken}}
+}
+
+body:json {
+  { "validacao": "rejeitado" }
+}
+
+tests {
+  test("decisão de rejeição é guardada", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().validacao).to.equal("rejeitado");
+  });
+}
