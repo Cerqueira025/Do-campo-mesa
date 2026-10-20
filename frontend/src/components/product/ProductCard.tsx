@@ -22,7 +22,7 @@ function ProductCard({ product, onAdd, href }: ProductCardProps) {
   return (
     <article className="card product-card">
       <h3 className="product-card__title">
-        {href ? <InternalLink href={href}>{product.title}</InternalLink> : product.title}
+        {href ? <InternalLink href={href}><span>{product.title}</span></InternalLink> : product.title}
       </h3>
 
       <div className="product-card__body">

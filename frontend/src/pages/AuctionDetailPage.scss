@@ -11,11 +11,28 @@
     background: var(--color-green-950);
   }
 
+  &__session {
+    padding: 20px;
+  }
+
+  &--loaded &__session {
+    position: absolute;
+    z-index: 3;
+    top: 0;
+    left: 0;
+    right: 0;
+  }
+
   &__back {
+    margin: 0 20px 20px;
+  }
+
+  &--loaded &__back {
     position: absolute;
     z-index: 2;
-    top: 20px;
+    top: 160px;
     left: 20px;
+    margin: 0;
   }
 
   &__back .icon-button {
@@ -29,8 +46,8 @@
     display: flex;
     align-items: flex-end;
     min-width: 0;
-    min-height: clamp(480px, 120vw, 720px);
-    padding-top: 235px;
+    min-height: clamp(620px, 120vw, 720px);
+    padding-top: 340px;
     overflow: hidden;
     background: var(--color-brown-100);
   }
@@ -55,7 +72,7 @@
   &__indicators {
     position: absolute;
     z-index: 1;
-    top: 20px;
+    top: 160px;
     right: 20px;
     display: grid;
     gap: 5px;
@@ -275,7 +292,7 @@
 
   &__message {
     margin: 0;
-    padding: 90px 24px 32px;
+    padding: 24px 24px 32px;
   }
 
   &__message h1 {
@@ -319,6 +336,15 @@
     &__hero {
       min-height: 720px;
       height: 100%;
+    }
+
+    &--loaded &__session {
+      width: 60%;
+      right: auto;
+    }
+
+    &--loaded &__back, &__indicators {
+      top: 88px;
     }
 
     &__form {

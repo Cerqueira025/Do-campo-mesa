@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import Button from '../components/ui/Button'
 import LoadingPlaceholder from '../components/ui/LoadingPlaceholder'
 import { useAuth } from '../features/auth/useAuth'
+import SessionNav from '../features/auth/components/SessionNav'
 import type { AuthUser } from '../features/auth/auth'
 import '../features/auth/AuthPage.scss'
 import './ProducerApprovalPage.scss'
@@ -52,7 +53,7 @@ export default function ProducerApprovalPage() {
     finally { setPending(null) }
   }
 
-  return <main className="auth-page auth-page--wide"><section className="auth-panel"><h1>Validar produtores</h1>
+  return <main className="auth-page auth-page--wide"><section className="auth-panel"><SessionNav /><h1>Validar produtores</h1>
     <p>Analise os registos pendentes antes de permitir a publicação de produtos e a criação de leilões.</p>
     <p role="status">{message}</p>
     {error && <div role="alert" className="auth-error"><p>{error}</p><Button onClick={() => { setError(''); setRevision(value => value + 1) }}>Tentar novamente</Button></div>}

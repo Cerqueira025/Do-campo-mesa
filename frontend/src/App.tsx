@@ -7,7 +7,6 @@ import { productIdFromPath } from './features/products/product'
 import { useLocation } from './navigation/useLocation'
 import { initializeNavigation, restoreNavigation } from './navigation/navigation'
 import NavigationAnnouncer from './navigation/NavigationAnnouncer'
-import SessionNav from './features/auth/components/SessionNav'
 import LoginPage from './pages/auth/LoginPage'
 import RegisterPage from './pages/auth/RegisterPage'
 import ResetPasswordPage from './pages/auth/ResetPasswordPage'
@@ -35,9 +34,8 @@ function App() {
   const pathname = location.split(/[?#]/)[0]
   useLayoutEffect(() => { initializeNavigation() }, [])
   useLayoutEffect(() => { restoreNavigation(!document.querySelector('[data-navigation-ready="false"]')) }, [location])
-  const isAuthPage = ['/login', '/registo', '/recuperar-password'].includes(pathname)
   const page = resolvePage(pathname, location)
-  return <><NavigationAnnouncer />{!isAuthPage && pathname !== '/' && <SessionNav />}{page}</>
+  return <><NavigationAnnouncer />{page}</>
 }
 
 export default App

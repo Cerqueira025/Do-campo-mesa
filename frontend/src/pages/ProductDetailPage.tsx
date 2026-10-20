@@ -9,6 +9,7 @@ import IconButton from '../components/ui/IconButton'
 import ProductImage from '../components/product/ProductImage'
 import OriginMap from '../components/location/OriginMap'
 import RelatedProducts from '../features/products/RelatedProducts'
+import SessionNav from '../features/auth/components/SessionNav'
 import { catalogReturnUrl, originMapUrl, priceFormatter, productImages, type ProductDetail } from '../features/products/product'
 import { seasons } from '../features/home/catalogFilters'
 import './ProductDetailPage.scss'
@@ -66,7 +67,10 @@ export default function ProductDetailPage({ id }: { id: string | null }) {
     <main data-navigation-ready={status !== 'loading'} className={`product-detail${status === 'success' ? ' product-detail--loaded' : ''}`}>
       {status === 'success' && product && (
       <header className="product-detail__hero">
-        {backNavigation}
+        <div className="product-detail__top-row">
+          {backNavigation}
+          <SessionNav className="product-detail__session" />
+        </div>
         <div className="product-detail__visual"><ProductImage {...productImages(product)} alt={product.nome} className="product-detail__image" sizes="495px" loading="eager" /></div>
         <div className="product-detail__heading">
           <p className="product-detail__eyebrow">Categoria · {product.categoria}</p>
@@ -76,6 +80,7 @@ export default function ProductDetailPage({ id }: { id: string | null }) {
       </header>
       )}
       <div className="product-detail__inner">
+        {status !== 'success' && <SessionNav className="product-detail__session" />}
         {status !== 'success' && backNavigation}
         {status === 'loading' ? <LoadingPlaceholder label="A carregar produto…" /> : status === 'missing' ? (
           <section className="product-detail__panel"><h1>Produto não encontrado</h1><p>Este produto não existe ou já não está disponível.</p><InternalLink href={returnUrl}>Explorar produtos</InternalLink></section>

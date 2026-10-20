@@ -1,10 +1,8 @@
-import InternalLink from '../../../navigation/InternalLink'
 import SessionActions from './SessionActions'
 import './SessionNav.scss'
 
-export default function SessionNav() {
-  return <header className="session-nav"><nav className="session-nav__inner" aria-label="Navegação da conta">
-    <InternalLink href="/" className="session-nav__brand">Do campo à mesa</InternalLink>
-    <SessionActions />
-  </nav></header>
+export default function SessionNav({ className = '' }: { className?: string }) {
+  return <nav className={`session-nav ${className}`.trim()} aria-label="Navegação da conta">
+    <SessionActions buttonVariant="dark" />
+  </nav>
 }

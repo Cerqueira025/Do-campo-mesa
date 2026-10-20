@@ -1,18 +1,9 @@
 .session-nav {
-  padding: 12px 24px;
-  color: var(--color-white);
-  background: var(--color-green-950);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px 20px;
+  color: var(--color-green-950);
 
-  &__inner {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 12px 20px;
-    max-width: var(--content-max);
-    margin-inline: auto;
-    justify-content: space-between;
-  }
-
-  &__brand { color: inherit; font-weight: 700; }
-  &__brand:focus-visible { outline: 2px solid var(--color-yellow-500); outline-offset: 4px; }
 }

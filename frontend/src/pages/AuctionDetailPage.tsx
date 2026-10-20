@@ -7,6 +7,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import Button from '../components/ui/Button'
 import IconButton from '../components/ui/IconButton'
 import ProductImage from '../components/product/ProductImage'
+import SessionNav from '../features/auth/components/SessionNav'
 import { catalogReturnUrl, priceFormatter, productImages } from '../features/products/product'
 import { cancellationMessages, auctionState, bidInputValue, formatRemaining, isAuction, parseBid, remainingSeconds, type Auction } from '../features/auctions/auction'
 import { useAuctionCountdown } from '../features/auctions/useAuctionCountdown'
@@ -124,6 +125,7 @@ export default function AuctionDetailPage({ id }: { id: string | null }) {
 
   return (
     <main data-navigation-ready={status !== 'loading'} className={`auction-detail${status === 'success' ? ' auction-detail--loaded' : ''}`}>
+      <SessionNav className="auction-detail__session" />
       <nav className="auction-detail__back" aria-label="Regresso ao catálogo">
         <IconButton aria-label="Voltar ao catálogo" icon={<FontAwesomeIcon icon={faArrowLeft} aria-hidden="true" />}
           onClick={() => returnToCatalog(returnUrl)} />

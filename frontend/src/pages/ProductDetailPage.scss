@@ -22,6 +22,10 @@
     margin-bottom: 24px;
   }
 
+  &__session {
+    margin-bottom: 24px;
+  }
+
   &__back .icon-button {
     width: 44px;
   }
@@ -30,18 +34,31 @@
     position: relative;
     display: flex;
     align-items: flex-end;
-    min-height: clamp(380px, 75vw, 400px);
-    padding-top: 88px;
+    min-height: 500px;
+    padding-top: 180px;
     overflow: hidden;
     margin-bottom: 24px;
     background: var(--color-brown-100);
   }
 
-  &__hero &__back {
+  &__top-row {
     position: absolute;
-    z-index: 1;
+    z-index: 2;
     top: 20px;
     left: max(24px, calc((100% - var(--content-max)) / 2 + 24px));
+    right: max(24px, calc((100% - var(--content-max)) / 2 + 24px));
+    display: flex;
+    align-items: flex-start;
+    gap: 12px 20px;
+  }
+
+  &__top-row &__session {
+    flex: 1;
+    margin: 0;
+  }
+
+  &__top-row &__back {
+    flex: 0 0 auto;
     margin: 0;
   }
 
@@ -159,7 +176,7 @@
     padding: 4px 12px;
     border-radius: 20px;
     background: var(--color-green-500);
-    color: white;
+    color: var(--color-white);
     font-size: var(--font-size-xs);
     font-weight: 700;
   }
@@ -245,7 +262,8 @@
 
   @include up(desktop) {
     &__hero {
-      padding-top: 112px;
+      min-height: 460px;
+      padding-top: 150px;
     }
     padding-bottom: 55px;
     &__heading {

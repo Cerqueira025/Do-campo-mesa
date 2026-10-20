@@ -37,8 +37,20 @@
     color: inherit;
     text-decoration: none;
 
-    &:hover { text-decoration: underline; }
     &:focus-visible { outline: 3px solid currentColor; outline-offset: 4px; }
+
+    &::after {
+      position: absolute;
+      z-index: 2;
+      inset: 0;
+      content: '';
+    }
+  }
+
+  &__title a span {
+    display: inline-block;
+    transform-origin: left center;
+    transition: transform 250ms ease;
   }
 
   span.product-card__image {
@@ -69,15 +81,25 @@
     display: block;
     height: auto;
     object-fit: contain;
+    transition: transform 250ms ease;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    &:hover &__image,
+    &:focus-within &__image,
+    &:hover &__title a span,
+    &:focus-within &__title a span { transform: scale(1.06); }
   }
 
   &__add {
     position: absolute;
-    z-index: 2;
+    z-index: 3;
     top: 24px;
     right: 24px;
     width: 40px;
     font-size: var(--font-size-2xl);
     line-height: 1;
   }
+
+  &__add:disabled { pointer-events: none; }
 }
