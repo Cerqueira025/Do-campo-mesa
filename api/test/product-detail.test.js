@@ -18,7 +18,7 @@ test('Detalhe carrega só o produtor do produto e mantém a resposta pública', 
   t.mock.method(User, 'find', () => { throw new Error('Não deve listar produtores.'); });
   t.mock.method(Product, 'findOne', filter => {
     assert.deepEqual(filter, { _id: id, publicado: true });
-    return { populate(options) {
+    return { select(fields) { assert.equal(fields, '-imagens'); return this; }, populate(options) {
       assert.equal(options.path, 'produtorId');
       assert.deepEqual(options.match, { papel: 'produtor', 'perfilProdutor.validacao': 'aceite' });
       assert.equal(options.select.includes('passwordHash'), false);
@@ -30,7 +30,7 @@ test('Detalhe carrega só o produtor do produto e mantém a resposta pública', 
 
 for (const reason of ['produto inexistente ou privado', 'produtor pendente', 'produtor rejeitado', 'produtor removido']) {
   test(`Detalhe devolve 404 para ${reason}`, async t => {
-    t.mock.method(Product, 'findOne', () => ({ populate: () => ({ lean: async () => reason.startsWith('produto') ? null : { _id: id, produtorId: null } }) }));
+    t.mock.method(Product, 'findOne', () => ({ select() { return this; }, populate: () => ({ lean: async () => reason.startsWith('produto') ? null : { _id: id, produtorId: null } }) }));
     assert.equal((await invoke()).status, 404);
   });
 }

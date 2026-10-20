@@ -9,7 +9,7 @@ const producerId = 'dca000000000000000000004';
 const now = Date.parse('2026-10-18T12:00:00Z');
 const valid = {
   _id: id, estado: 'ativo', reservaStock: 'reservada', dataInicio: new Date(now - 1000), dataFim: new Date(now + 1000),
-  produtos: [{ produtoId: { nome: 'Azeite', imagens: [], publicado: true, produtorId: producerId }, quantidade: 2, unidade: 'l' }],
+  produtos: [{ produtoId: { nome: 'Azeite', publicado: true, produtorId: producerId }, quantidade: 2, unidade: 'l' }],
   produtorId: { _id: producerId, nome: 'Quinta', papel: 'produtor', perfilProdutor: { validacao: 'aceite' } },
 };
 
@@ -39,6 +39,7 @@ function populated(value) {
         const result = structuredClone(record);
         for (const option of options) {
           assert.equal(option.select.includes('passwordHash'), false);
+          assert.equal(option.select.includes('imagens'), false);
           if (option.path === 'produtos.produtoId') {
             for (const line of result.produtos || []) {
               if (!line.produtoId || !matches(line.produtoId, option.match)) line.produtoId = null;

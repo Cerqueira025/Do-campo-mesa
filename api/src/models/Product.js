@@ -11,7 +11,6 @@ const productSchema = new mongoose.Schema({
   stock: { type: Number, required: true, min: 0, validate: Number.isFinite },
   epoca: { type: [String], default: [] },
   biologico: { type: Boolean, default: false },
-  imagens: { type: [String], default: [] },
   dataValidade: Date,
   publicado: { type: Boolean, default: true },
   revisaoLeiloes: { type: Number, default: 0, select: false },

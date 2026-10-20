@@ -24,7 +24,7 @@ export function seedData(passwordHash, now = new Date()) {
     { _id: id(101), nome: 'Batata', categoria: 'Hortícolas', preco: 150, unidade: 'kg', stock: 80, epoca: ['verao', 'outono'], biologico: true },
     { _id: id(102), nome: 'Maçã', categoria: 'Fruta', preco: 240, unidade: 'kg', stock: 40, epoca: ['outono'], biologico: false },
     { _id: id(103), nome: 'Mel', categoria: 'Mel', preco: 700, unidade: 'unidade', stock: 15, epoca: ['todo-o-ano'], biologico: true },
-  ].map((product) => ({ ...product, produtorId: id(4), descricao: `${product.nome} de demonstração.`, imagens: [] }));
+  ].map((product) => ({ ...product, produtorId: id(4), descricao: `${product.nome} de demonstração.` }));
 
   const line = (product, quantidade) => ({
     produtoId: product._id, nome: product.nome, precoUnitario: product.preco, quantidade, unidade: product.unidade,
@@ -79,7 +79,7 @@ export function seedData(passwordHash, now = new Date()) {
       nome, categoria, unidade, preco, descricao: `${nome} da exploração funcional ${i + 1}.`,
       stock: i % 10 === 8 ? 0 : i % 10 === 9 ? 0.5 : 40 + i,
       epoca: [['primavera'], ['verao'], ['outono'], ['inverno'], ['todo-o-ano']][i % 5],
-      biologico: i % 2 === 0, publicado: i !== 30 && i !== 31, imagens: [],
+      biologico: i % 2 === 0, publicado: i !== 30 && i !== 31,
       createdAt: at(-200 + i), updatedAt: at(-200 + i) };
   });
   products.push(...extraProducts);

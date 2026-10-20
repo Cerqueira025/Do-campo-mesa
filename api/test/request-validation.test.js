@@ -128,7 +128,7 @@ test('Catálogo preserva defaults, filtros textuais vazios, parâmetros desconhe
   t.mock.method(User, 'find', () => ({ distinct: async () => [] }));
   t.mock.method(Product, 'find', value => {
     filter = value;
-    const query = { sort() { return this; }, skip(value) { skip = value; return this; },
+    const query = { select() { return this; }, sort() { return this; }, skip(value) { skip = value; return this; },
       limit(value) { limit = value; return this; }, populate: async () => [] };
     return query;
   });
@@ -154,7 +154,7 @@ test('Catálogo preserva defaults, filtros textuais vazios, parâmetros desconhe
 
 test('Produtos preservam validação do Mongoose, conversões, campos desconhecidos e PUT vazio', async t => {
   noBusinessAccess(t);
-  const data = { nome: 'Mel', descricao: 'Mel local', categoria: 'Mel', preco: '150', unidade: 'kg', stock: '2', campoDesconhecido: 'ignorar' };
+  const data = { nome: 'Mel', descricao: 'Mel local', categoria: 'Mel', preco: '150', unidade: 'kg', stock: '2', imagens: ['https://example.test/mel.png'], campoDesconhecido: 'ignorar' };
   let stored;
   t.mock.method(Product, 'create', async value => {
     stored = new Product(value);
@@ -167,8 +167,9 @@ test('Produtos preservam validação do Mongoose, conversões, campos desconheci
   assert.equal(created.status, 201);
   assert.equal(created.body.preco, 150);
   assert.equal(created.body.stock, 2);
+  assert.equal(created.body.imagens, undefined);
   assert.equal(created.body.campoDesconhecido, undefined);
-  t.mock.method(Product, 'findOne', async () => stored);
+  t.mock.method(Product, 'findOne', () => ({ select: async () => stored }));
   stored.save = async () => { await stored.validate(); return stored; };
   const updated = await call(writes[4], '{}');
   assert.equal(updated.status, 200);

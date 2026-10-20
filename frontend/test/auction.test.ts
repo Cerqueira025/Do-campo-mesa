@@ -6,7 +6,7 @@ import { catalogReturnUrl } from '../src/features/products/product.ts'
 const id = 'dca000000000000000004001'
 const now = Date.parse('2026-10-15T12:00:00Z')
 const auction: Auction = {
-  _id: id, produtos: [{ produtoId: { nome: 'Azeite', imagens: [] }, quantidade: 12, unidade: 'unidade' }], lote: '12 garrafas',
+  _id: id, produtos: [{ produtoId: { nome: 'Azeite' }, quantidade: 12, unidade: 'unidade' }], lote: '12 garrafas',
   incremento: 500, licitacaoAtual: { valor: 8400 }, estado: 'ativo', reservaStock: 'reservada',
   dataInicio: '2026-10-15T11:00:00Z', dataFim: '2026-10-15T13:00:00Z',
 }
@@ -64,7 +64,7 @@ test('Rejeita respostas sem produto, datas válidas ou montantes inteiros seguro
     { ...auction, dataFim: 'inválida' }, { ...auction, dataFim: auction.dataInicio },
     { ...auction, estado: 'desconhecido' }, { ...auction, licitacaoAtual: { valor: 84.5 } },
     { ...auction, licitacaoAtual: { valor: Number.MAX_SAFE_INTEGER } },
-    { ...auction, produtos: [{ ...auction.produtos[0], produtoId: { nome: 'Azeite', imagens: [123] } }] }]) assert.equal(isAuction(value), false)
+    { ...auction, produtos: [{ ...auction.produtos[0], produtoId: { nome: 123 } }] }]) assert.equal(isAuction(value), false)
 })
 
 test('Destaque ignora entradas inválidas sem perder os leilões válidos', () => {
@@ -77,7 +77,7 @@ test('Destaque ignora entradas inválidas sem perder os leilões válidos', () =
 
 test('Valida todas as linhas de um lote misto e exige pelo menos uma', () => {
   const mixed = { ...auction, produtos: [...auction.produtos,
-    { produtoId: { nome: 'Mel', imagens: [] }, quantidade: 2, unidade: 'unidade' }] }
+    { produtoId: { nome: 'Mel' }, quantidade: 2, unidade: 'unidade' }] }
   assert.equal(isAuction(mixed), true)
   for (const produtos of [undefined, [], [null], [...mixed.produtos, { produtoId: null }],
     [{ ...auction.produtos[0], quantidade: 0 }], [{ ...auction.produtos[0], unidade: 'caixa' }]]) {

@@ -31,7 +31,7 @@ router.get('/', async (request, response, next) => {
       return response.status(400).json({ erro: 'Estado de leilão inválido.' });
     }
     const auctions = await Auction.find(auctionStateFilter(estado, now)).sort({ dataFim: 1 })
-      .populate({ ...publicProduct, select: 'nome imagens produtorId' })
+      .populate({ ...publicProduct, select: 'nome produtorId' })
       .populate({ ...publicProducer, select: 'nome perfilProdutor.localidade' }).lean();
     response.json(auctions.map(auction => publicAuction(auction, now)).filter(Boolean));
   } catch (error) {
@@ -44,7 +44,7 @@ router.get('/:id', async (request, response, next) => {
     const now = Date.now();
     if (!mongoose.isObjectIdOrHexString(request.params.id)) return response.status(404).json({ erro: 'Leilão não encontrado.' });
     const auction = await Auction.findById(request.params.id)
-      .populate({ ...publicProduct, select: 'nome descricao unidade imagens produtorId' })
+      .populate({ ...publicProduct, select: 'nome descricao unidade produtorId' })
       .populate({ ...publicProducer, select: 'nome perfilProdutor.descricao perfilProdutor.localidade' }).lean();
     const result = publicAuction(auction, now);
     if (!result) return response.status(404).json({ erro: 'Leilão não encontrado.' });
@@ -98,7 +98,7 @@ router.post('/', requireAuth('produtor'), requireApprovedProducer, requireObject
       }], { session });
     });
     auction.$session(null);
-    await auction.populate('produtos.produtoId', 'nome imagens');
+    await auction.populate('produtos.produtoId', 'nome');
     response.status(201).location(`/api/auctions/${auction.id}`).json(auction);
   } catch (error) {
     next(error);

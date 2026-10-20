@@ -9,7 +9,7 @@ import { requireObjectBody } from '../middleware/requestBody.js';
 
 const router = Router();
 const publicProducer = { path: 'produtorId', select: 'nome perfilProdutor.descricao perfilProdutor.localidade perfilProdutor.coordenadas' };
-const fields = ['nome', 'descricao', 'categoria', 'preco', 'unidade', 'stock', 'epoca', 'biologico', 'imagens', 'dataValidade', 'publicado'];
+const fields = ['nome', 'descricao', 'categoria', 'preco', 'unidade', 'stock', 'epoca', 'biologico', 'dataValidade', 'publicado'];
 const pickProduct = (body) => Object.fromEntries(fields.filter((field) => body[field] !== undefined).map((field) => [field, body[field]]));
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -76,7 +76,7 @@ router.get('/', async (request, response, next) => {
     }
     filter.$and = constraints;
     const [items, total] = await Promise.all([
-      Product.find(filter).sort({ createdAt: -1, _id: 1 }).skip(skip).limit(limitNumber).populate(publicProducer),
+      Product.find(filter).select('-imagens').sort({ createdAt: -1, _id: 1 }).skip(skip).limit(limitNumber).populate(publicProducer),
       Product.countDocuments(filter),
     ]);
     response.json({ items, page: pageNumber, limit: limitNumber, total });
@@ -112,7 +112,7 @@ router.get('/filters', async (_request, response, next) => {
 router.get('/:id', async (request, response, next) => {
   try {
     if (!mongoose.isValidObjectId(request.params.id)) return response.status(404).json({ erro: 'Produto não encontrado.' });
-    const product = await Product.findOne({ _id: request.params.id, publicado: true }).populate({
+    const product = await Product.findOne({ _id: request.params.id, publicado: true }).select('-imagens').populate({
       ...publicProducer, match: { papel: 'produtor', 'perfilProdutor.validacao': 'aceite' },
     }).lean();
     if (!product?.produtorId) return response.status(404).json({ erro: 'Produto não encontrado.' });
@@ -137,7 +137,7 @@ router.put('/:id', requireAuth('produtor'), requireApprovedProducer, requireObje
   try {
     let product;
     async function update() {
-      const query = Product.findOne({ _id: request.params.id, produtorId: request.user.id });
+      const query = Product.findOne({ _id: request.params.id, produtorId: request.user.id }).select('-imagens');
       product = await (session ? query.session(session) : query);
       if (!product) throw Object.assign(new Error('Produto não encontrado.'), { status: 404 });
       product.set(pickProduct(request.body));

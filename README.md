@@ -10,6 +10,10 @@ Plataforma web para aproximar produtores locais de consumidores e restauração.
 - `backoffice/app/` — aplicação Laravel existente, reservada ao backoffice opcional.
 - `docs/` — documentação técnica e especificação OpenAPI.
 
+As imagens dos produtos são ficheiros WebP locais do frontend, com variantes de 480 e 960 px.
+O frontend associa-as pelo nome do produto; a API não recebe nem devolve imagens.
+Para acrescentar uma imagem, consulta [as instruções do frontend](frontend/README.md#imagens-dos-produtos).
+
 ## Quick Start
 
 1. Clone do repositório:
@@ -64,7 +68,7 @@ Usar o seed apenas na base de desenvolvimento/demonstração.
 | Coleção | Organização |
 | --- | --- |
 | `users` | Conta, papel e perfil do produtor embebido; email único e password com hash bcrypt. |
-| `products` | Produtor referenciado, preço, unidade, stock e URLs das imagens. |
+| `products` | Produtor referenciado, preço, unidade e stock. |
 | `orders` | Comprador e produtor referenciados; linhas embebidas com nome, preço e unidade no momento da compra. |
 | `auctions` | Produtor referenciado, lista obrigatória de produtos com quantidade/unidade por linha, lote, início/fim e licitação atual embebida. |
 | `bids` | Histórico separado de licitações, referenciado por leilão e comprador. |
@@ -120,7 +124,7 @@ de ligação.
 Leilões recebem `produtos: [{ produtoId, quantidade }]`, com pelo menos um produto
 distinto, publicado e pertencente ao produtor autenticado. O servidor obtém a unidade
 de cada produto; o preço base e as licitações referem-se ao lote completo.
-As respostas incluem `produtos: [{ produtoId: { _id, nome, imagens, ... }, quantidade, unidade }]`.
+As respostas incluem `produtos: [{ produtoId: { _id, nome, ... }, quantidade, unidade }]`.
 Um produto associado a qualquer leilão, incluindo terminado, não pode ser apagado (`409`).
 Se qualquer produto ficar indisponível, o leilão completo é omitido da lista pública
 e o detalhe devolve `404`.

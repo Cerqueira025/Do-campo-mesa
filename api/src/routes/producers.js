@@ -58,7 +58,7 @@ router.get('/:id', async (request, response, next) => {
       .select(publicFields).lean();
     if (!producer) return response.status(404).json({ erro: 'Produtor não encontrado.' });
     const [products, reviews] = await Promise.all([
-      Product.find({ produtorId: producer._id, publicado: true }).sort({ nome: 1 }),
+      Product.find({ produtorId: producer._id, publicado: true }).select('-imagens').sort({ nome: 1 }),
       Review.find({ produtorId: producer._id, estado: 'publicada' }).sort({ createdAt: -1 }).populate('autorId', 'nome'),
     ]);
     const rating = reviews.length ? Math.round(reviews.reduce((sum, review) => sum + review.classificacao, 0) / reviews.length * 100) / 100 : null;

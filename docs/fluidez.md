@@ -22,9 +22,10 @@ Mudanças de identificador reiniciam o estado e cancelam pedidos anteriores. Pro
 
 ## Recursos e API
 
-Os seis fallbacks de produtos têm variantes WebP de 480 e 960 px, com transparência preservada.
+Na versão desta medição, seis imagens de produtos tinham variantes WebP de 480 e 960 px, com transparência preservada.
+Atualmente, as 20 imagens de produtos disponíveis no projeto usam variantes locais nesses tamanhos.
 Os cartões e produtos relacionados usam carregamento lazy; o detalhe carrega a sua imagem imediatamente.
-O mapa continua lazy. URLs de imagem fornecidas pela API e o fallback quando uma imagem falha mantêm-se suportados.
+O mapa continua lazy. Se não houver imagem local ou esta falhar, é apresentada uma mensagem.
 
 O conjunto de imagens substituído passou de **10 105 161 bytes para 841 762 bytes**, incluindo todas as variantes:
 **redução de 91,7%**. Os originais substituídos sem referências foram removidos.

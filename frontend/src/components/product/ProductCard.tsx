@@ -8,8 +8,7 @@ export interface ProductCardProduct {
   category: string
   weight: string
   image?: string
-  fallbackImage?: string
-  fallbackSrcSet?: string
+  srcSet?: string
   imageAlt?: string
 }
 
@@ -35,9 +34,8 @@ function ProductCard({ product, onAdd, href }: ProductCardProps) {
         <ProductImage
           className="product-card__image"
           image={product.image}
-          fallbackImage={product.fallbackImage}
-          fallbackSrcSet={product.fallbackSrcSet}
-          sizes="(min-width: 1200px) 400px, (min-width: 768px) 50vw, 100vw"
+          srcSet={product.srcSet}
+          sizes="(min-width: 1200px) 240px, (min-width: 768px) 30vw, 60vw"
           loading="lazy"
           alt={product.imageAlt ?? product.title}
         />

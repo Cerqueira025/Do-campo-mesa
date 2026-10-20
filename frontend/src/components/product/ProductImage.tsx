@@ -3,22 +3,19 @@ import type { ImgHTMLAttributes } from 'react'
 
 interface Props {
   image?: string
-  fallbackImage?: string
-  fallbackSrcSet?: string
+  srcSet?: string
   alt: string
   className?: string
   sizes?: string
   loading?: ImgHTMLAttributes<HTMLImageElement>['loading']
 }
 
-export default function ProductImage({ image, fallbackImage, fallbackSrcSet, alt, className, sizes, loading = 'eager' }: Props) {
+export default function ProductImage({ image, srcSet, alt, className, sizes, loading = 'eager' }: Props) {
   const [failed, setFailed] = useState<string[]>([])
-  const source = [image, fallbackImage].find(value => value && !failed.includes(value))
-  const local = source === fallbackImage && Boolean(fallbackSrcSet)
-  return source ? (
-    <img className={className} src={source} alt={alt}
-      srcSet={local ? fallbackSrcSet : undefined} sizes={local ? sizes : undefined}
-      width={local ? 960 : undefined} height={local ? 960 : undefined} loading={loading} decoding="async"
-      onError={() => setFailed(values => [...values, source])} />
+  return image && !failed.includes(image) ? (
+    <img className={className} src={image} alt={alt}
+      srcSet={srcSet} sizes={srcSet ? sizes : undefined}
+      width={960} height={960} loading={loading} decoding="async"
+      onError={() => setFailed(values => [...values, image])} />
   ) : <span className={className} role="img" aria-label={`${alt}: imagem indisponível`}>Imagem indisponível</span>
 }

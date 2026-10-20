@@ -1,6 +1,6 @@
 export interface Auction {
   _id: string
-  produtos: { produtoId: { nome: string; imagens: string[] }; quantidade: number; unidade: string }[]
+  produtos: { produtoId: { nome: string }; quantidade: number; unidade: string }[]
   lote: string
   incremento: number
   dataInicio: string
@@ -23,7 +23,6 @@ export function isAuction(value: unknown): value is Auction {
   return typeof auction._id === 'string' && /^[a-f\d]{24}$/i.test(auction._id) &&
     Array.isArray(auction.produtos) && auction.produtos.length > 0 && auction.produtos.every(line =>
       !!line?.produtoId && typeof line.produtoId.nome === 'string' &&
-      Array.isArray(line.produtoId.imagens) && line.produtoId.imagens.every(image => typeof image === 'string') &&
       Number.isFinite(line.quantidade) && line.quantidade > 0 && ['kg', 'g', 'l', 'unidade'].includes(line.unidade)) &&
     typeof auction.lote === 'string' && Number.isSafeInteger(auction.incremento) && auction.incremento > 0 &&
     Number.isSafeInteger(auction.licitacaoAtual?.valor) && auction.licitacaoAtual.valor >= 0 &&

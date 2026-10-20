@@ -37,7 +37,8 @@ Converter cada ID numérico com `seedId(n)` de `api/src/scripts/seed-data.js`:
 O stock dos produtos representa a disponibilidade remanescente; não é deduzido novamente ao inserir encomendas históricas.
 As linhas guardam preços históricos diferentes dos atuais. Valores monetários são cêntimos inteiros;
 o total soma o arredondamento individual de cada linha. Existem stocks zero e fracionários e as quatro unidades suportadas.
-As imagens ficam vazias, exercitando os fallbacks existentes do frontend.
+As imagens dos produtos são escolhidas no frontend pelo nome, a partir de ficheiros WebP locais.
+Produtos sem imagem correspondente apresentam “Imagem indisponível”.
 
 ## Resultados esperados após inserção inicial
 

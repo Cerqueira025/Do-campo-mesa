@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { catalogReturnUrl, mapProduct, originMapUrl, productHref, productIdFromPath, productImages } from '../src/features/products/product.ts'
 
 const id = 'dca000000000000000000101'
-const product = { _id: id, nome: 'Batata', categoria: 'Hortícolas', preco: 150, unidade: 'kg', imagens: [] as string[] }
+const product = { _id: id, nome: 'Batata', categoria: 'Hortícolas', preco: 150, unidade: 'kg' }
 
 test('Resolve apenas endereços de produtos com identificadores válidos', () => {
   assert.equal(productIdFromPath(`/produtos/${id}`), id)
@@ -19,17 +19,16 @@ test('Preserva filtros no regresso e rejeita destinos externos', () => {
   for (const value of ['', '?regresso=https://evil.test', '?regresso=//evil.test', '?regresso=/produtos/123']) assert.equal(catalogReturnUrl(value), '/')
 })
 
-test('Transforma preço em cêntimos e escolhe imagem remota antes do fallback', () => {
+test('Transforma preço em cêntimos e escolhe apenas imagens locais', () => {
   const mapped = mapProduct(product)
   assert.match(mapped.weight, /^1,50\s€\/kg$/)
   assert.equal(mapped.id, id)
-  assert.match(mapped.fallbackSrcSet!, /Batata-480\.webp 480w, .*Batata-960\.webp 960w/)
+  assert.match(mapped.srcSet!, /Batata-480\.webp 480w, .*Batata-960\.webp 960w/)
   assert.ok(mapped.image?.endsWith('Batata-960.webp'))
-  const remote = productImages({ ...product, imagens: ['javascript:alert(1)', '', 'https://example.test/batata.png'] })
-  assert.equal(remote.image, 'https://example.test/batata.png')
-  assert.ok(remote.fallbackImage?.endsWith('Batata-960.webp'))
+  const legacy = { ...product, imagens: ['https://example.test/batata.png'] }
+  assert.ok(productImages(legacy).image?.endsWith('Batata-960.webp'))
+  assert.ok(productImages({ nome: 'Cenoura' }).image?.endsWith('Cenoura-960.webp'))
   assert.equal(productImages({ ...product, nome: 'Desconhecido' }).image, undefined)
-  assert.equal(productImages({ ...product, imagens: ['images/batata.png'] }).image, '/images/batata.png')
 })
 
 test('Mapa só é disponibilizado com coordenadas válidas, incluindo zero', () => {

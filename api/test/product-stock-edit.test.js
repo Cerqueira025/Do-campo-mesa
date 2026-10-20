@@ -18,7 +18,7 @@ function setup(t, reserved) {
   const session = { async withTransaction(fn) { await fn(); }, async endSession() {} };
   t.mock.method(mongoose, 'startSession', async () => session);
   const product = Product.hydrate({ _id: id, produtorId: owner, nome: 'Batata', stock: 10, unidade: 'kg' });
-  t.mock.method(Product, 'findOne', () => ({ session(value) { assert.equal(value, session); return Promise.resolve(product); }, then(resolve) { resolve(product); } }));
+  t.mock.method(Product, 'findOne', () => ({ select(value) { assert.equal(value, '-imagens'); return this; }, session(value) { assert.equal(value, session); return Promise.resolve(product); }, then(resolve) { resolve(product); } }));
   t.mock.method(Auction, 'exists', filter => {
     assert.deepEqual(filter.reservaStock, { $in: ['reservada', 'atribuida'] });
     assert.equal(String(filter['produtos.produtoId']), id);

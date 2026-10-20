@@ -12,8 +12,7 @@ export interface AuctionCardAuction {
   name: string
   lotDescription: string
   image?: string
-  fallbackImage?: string
-  fallbackSrcSet?: string
+  srcSet?: string
   currentBid: number
   endsAt: number
   participants?: number | null
@@ -30,7 +29,7 @@ function AuctionCard({ auction, onEnter, href }: { auction: AuctionCardAuction; 
         <svg className="auction-card__wave" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" focusable="false">
           <path className="auction-card__wave" d="M45 0 C15 20 40 100 0 100 H100 V0 Z" fill="currentColor" />
         </svg>
-        <ProductImage className="auction-card__image" image={auction.image} fallbackImage={auction.fallbackImage} fallbackSrcSet={auction.fallbackSrcSet} sizes="(min-width: 768px) 640px, 100vw" alt={auction.name} />
+        <ProductImage className="auction-card__image" image={auction.image} srcSet={auction.srcSet} sizes="320px" alt={auction.name} />
       </div>
 
       <div className="auction-card__content">

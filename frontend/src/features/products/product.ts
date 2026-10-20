@@ -4,7 +4,6 @@ export interface ApiProduct {
   categoria: string
   preco: number
   unidade: string
-  imagens: string[]
 }
 
 export interface ProductDetail extends ApiProduct {
@@ -24,30 +23,33 @@ export interface ProductDetail extends ApiProduct {
 }
 
 const images: Record<string, { small: string; large: string }> = {
+  abóbora: { small: new URL('../../assets/Abobora-480.webp', import.meta.url).href, large: new URL('../../assets/Abobora-960.webp', import.meta.url).href },
+  alho: { small: new URL('../../assets/Alho-480.webp', import.meta.url).href, large: new URL('../../assets/Alho-960.webp', import.meta.url).href },
   azeite: { small: new URL('../../assets/Azeite-480.webp', import.meta.url).href, large: new URL('../../assets/Azeite-960.webp', import.meta.url).href },
   batata: { small: new URL('../../assets/Batata-480.webp', import.meta.url).href, large: new URL('../../assets/Batata-960.webp', import.meta.url).href },
+  brócolos: { small: new URL('../../assets/Brocolos-480.webp', import.meta.url).href, large: new URL('../../assets/Brocolos-960.webp', import.meta.url).href },
+  cebola: { small: new URL('../../assets/Cebola-480.webp', import.meta.url).href, large: new URL('../../assets/Cebola-960.webp', import.meta.url).href },
+  cenoura: { small: new URL('../../assets/Cenoura-480.webp', import.meta.url).href, large: new URL('../../assets/Cenoura-960.webp', import.meta.url).href },
+  cereja: { small: new URL('../../assets/Cereja-480.webp', import.meta.url).href, large: new URL('../../assets/Cereja-960.webp', import.meta.url).href },
+  laranja: { small: new URL('../../assets/Laranja-480.webp', import.meta.url).href, large: new URL('../../assets/Laranja-960.webp', import.meta.url).href },
   leite: { small: new URL('../../assets/Leite-480.webp', import.meta.url).href, large: new URL('../../assets/Leite-960.webp', import.meta.url).href },
   mel: { small: new URL('../../assets/Mel-480.webp', import.meta.url).href, large: new URL('../../assets/Mel-960.webp', import.meta.url).href },
+  morango: { small: new URL('../../assets/Morango-480.webp', import.meta.url).href, large: new URL('../../assets/Morango-960.webp', import.meta.url).href },
+  nozes: { small: new URL('../../assets/Nozes-480.webp', import.meta.url).href, large: new URL('../../assets/Nozes-960.webp', import.meta.url).href },
+  ovos: { small: new URL('../../assets/Ovos-480.webp', import.meta.url).href, large: new URL('../../assets/Ovos-960.webp', import.meta.url).href },
+  pão: { small: new URL('../../assets/Pao-480.webp', import.meta.url).href, large: new URL('../../assets/Pao-960.webp', import.meta.url).href },
+  pera: { small: new URL('../../assets/Pera-480.webp', import.meta.url).href, large: new URL('../../assets/Pera-960.webp', import.meta.url).href },
+  queijo: { small: new URL('../../assets/Queijo-480.webp', import.meta.url).href, large: new URL('../../assets/Queijo-960.webp', import.meta.url).href },
+  tomate: { small: new URL('../../assets/Tomate-480.webp', import.meta.url).href, large: new URL('../../assets/Tomate-960.webp', import.meta.url).href },
   vinho: { small: new URL('../../assets/Vinho-480.webp', import.meta.url).href, large: new URL('../../assets/Vinho-960.webp', import.meta.url).href },
   maçã: { small: new URL('../../assets/Macas-480.webp', import.meta.url).href, large: new URL('../../assets/Macas-960.webp', import.meta.url).href },
 }
 
 export const priceFormatter = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' })
 
-export function productImages(product: Pick<ApiProduct, 'nome' | 'imagens'>) {
-  const image = product.imagens?.find((value) => {
-    try {
-      const url = new URL(value, 'https://local.invalid')
-      return value.trim() !== '' && ['http:', 'https:'].includes(url.protocol)
-    } catch { return false }
-  })
-  const fallback = images[product.nome.trim().toLowerCase()]
-  const fallbackImage = fallback?.large
-  const fallbackSrcSet = fallback ? `${fallback.small} 480w, ${fallback.large} 960w` : undefined
-  const source = image?.trim()
-  const local = source && !/^(https?:)?\/\//i.test(source) ? new URL(source, 'https://local.invalid') : null
-  const resolved = local ? `${local.pathname}${local.search}${local.hash}` : source
-  return { image: resolved || fallbackImage, fallbackImage, fallbackSrcSet }
+export function productImages(product: Pick<ApiProduct, 'nome'>) {
+  const image = images[product.nome.trim().toLowerCase()]
+  return { image: image?.large, srcSet: image ? `${image.small} 480w, ${image.large} 960w` : undefined }
 }
 
 export function mapProduct(product: ApiProduct) {

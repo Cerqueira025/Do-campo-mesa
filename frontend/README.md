@@ -41,6 +41,13 @@ O Sass atual emite avisos de depreciação provenientes dos imports e funções 
 
 ## Desenvolvimento
 
+### Imagens dos produtos
+
+As imagens dos produtos ficam em `src/assets/` e são incluídas no build do frontend.
+Cada produto conhecido tem variantes WebP quadradas de 480 e 960 px, com transparência.
+Para acrescentar um produto, cria as duas variantes e associa o nome em `src/features/products/product.ts`.
+Produtos sem associação apresentam “Imagem indisponível”. A API não recebe nem devolve imagens.
+
 ### Endereços e alojamento
 
 O catálogo está em `/` e o detalhe em `/produtos/:id`, com navegação por ligações nativas. O parâmetro `regresso` conserva o endereço do catálogo e os seus filtros. As encomendas ainda não estão disponíveis.

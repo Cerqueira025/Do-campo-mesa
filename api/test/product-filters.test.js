@@ -51,7 +51,7 @@ test('Estações incluem todo o ano e bio=false mantém a restrição não biol�
   t.mock.method(User, 'find', () => ({ distinct: async () => [] }));
   t.mock.method(Product, 'find', (filter) => {
     captured = filter;
-    const chain = { sort: () => chain, skip: () => chain, limit: () => chain, populate: async () => [] };
+    const chain = { select: () => chain, sort: () => chain, skip: () => chain, limit: () => chain, populate: async () => [] };
     return chain;
   });
   t.mock.method(Product, 'countDocuments', async () => 0);
@@ -80,7 +80,7 @@ test('Avaliação mínima usa a média pública do produto e combina com os rest
   });
   t.mock.method(Product, 'find', (filter) => {
     captured = filter;
-    const chain = { sort: () => chain, skip: () => chain, limit: () => chain, populate: async () => [] };
+    const chain = { select: () => chain, sort: () => chain, skip: () => chain, limit: () => chain, populate: async () => [] };
     return chain;
   });
   t.mock.method(Product, 'countDocuments', async (filter) => {

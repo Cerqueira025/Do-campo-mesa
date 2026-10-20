@@ -554,12 +554,11 @@ components:
             properties:
               produtoId:
                 type: object
-                required: [_id, nome, imagens]
+                required: [_id, nome]
                 properties:
                   _id: { type: string }
                   nome: { type: string }
                   descricao: { type: string }
-                  imagens: { type: array, items: { type: string } }
               quantidade: { type: number, exclusiveMinimum: 0 }
               unidade: { type: string, enum: [kg, g, l, unidade] }
         lote: { type: string }
@@ -649,7 +648,6 @@ components:
         stock: { type: number, minimum: 0 }
         epoca: { type: array, items: { type: string } }
         biologico: { type: boolean }
-        imagens: { type: array, items: { type: string, format: uri } }
         dataValidade: { type: string, format: date-time }
         publicado: { type: boolean }
     Product:
