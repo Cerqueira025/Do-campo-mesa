@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import { requireAuth } from '../middleware/auth.js';
+import { requireObjectBody } from '../middleware/requestBody.js';
 
 const router = Router();
 const validPassword = (password) => typeof password === 'string' && password.length >= 8 && Buffer.byteLength(password, 'utf8') <= 72;
@@ -13,7 +14,7 @@ const tokenFor = (user) => jwt.sign(
   { expiresIn: '2h' },
 );
 
-router.post('/registo', async (request, response, next) => {
+router.post('/registo', requireObjectBody, async (request, response, next) => {
   try {
     const { nome, email, password, papel = 'comprador', perfilProdutor } = request.body || {};
     if (!validPassword(password)) {
@@ -44,7 +45,7 @@ router.post('/registo', async (request, response, next) => {
   }
 });
 
-router.post('/login', async (request, response, next) => {
+router.post('/login', requireObjectBody, async (request, response, next) => {
   try {
     const { email, password } = request.body || {};
     if (typeof email !== 'string' || typeof password !== 'string') {
@@ -68,7 +69,7 @@ router.get('/eu', requireAuth(), (request, response) => {
 });
 
 // Recuperação simplificada para a demonstração: não verifica a posse do email.
-router.post('/recuperar-password', async (request, response, next) => {
+router.post('/recuperar-password', requireObjectBody, async (request, response, next) => {
   try {
     const { email, password } = request.body || {};
     if (typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {

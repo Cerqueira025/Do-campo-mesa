@@ -12,6 +12,8 @@ const rows = (data, model) => data.find(([candidate]) => candidate === model)[1]
 test('Conjunto funcional cobre contagens, visibilidade, estados e médias dos filtros', async () => {
   const data = fresh();
   await validateSeedData(data);
+  assert.ok(rows(data, Auction).some(auction => auction.produtos.length > 1 &&
+    new Set(auction.produtos.map(line => line.unidade)).size > 1));
   assert.deepEqual(data.map(([, docs]) => docs.length), [18, 39, 27, 12, 27, 38]);
   const users = rows(data, User);
   const approved = new Set(users.filter(u => u.perfilProdutor?.validacao === 'aceite').map(u => String(u._id)));
@@ -28,7 +30,7 @@ test('Conjunto funcional cobre contagens, visibilidade, estados e médias dos fi
   assert.deepEqual([...new Set([...averages.values()].map(a => a.reduce((n, r) => n + r, 0) / a.length))].sort(), [3, 3.5, 4, 4.5, 5]);
   for (const [model, field, expected] of [
     [Order, 'estado', { entregue: 12, pendente: 4, confirmada: 4, pronta: 4 }],
-    [Auction, 'estado', { agendado: 3, ativo: 3, terminado: 3 }],
+    [Auction, 'estado', { agendado: 6, terminado: 3 }],
     [Review, 'estado', { publicada: 24, denunciada: 6, oculta: 6 }],
   ]) {
     const offset = model === Review ? 2 : 3;
@@ -45,6 +47,34 @@ test('Dados inválidos no fim do conjunto impedem qualquer escrita', async (t) =
   for (const [model] of data) t.mock.method(model, 'updateOne', async () => { writes++; });
   await assert.rejects(insertSeedData(data), { name: 'ValidationError' });
   assert.equal(writes, 0);
+});
+
+for (const target of ['produtoId', 'produtorId']) {
+  for (const estado of ['publicada', 'oculta', 'denunciada']) {
+    test(`Seed recusa avaliação repetida de ${target} (${estado}) antes de criar índices ou escrever`, async t => {
+      const data = fresh();
+      const review = rows(data, Review).find(record => record[target]);
+      rows(data, Review).push({ ...review, _id: seedId(99999), estado });
+      for (const [model] of data) {
+        for (const method of ['find', 'createCollection', 'createIndexes', 'updateOne']) {
+          t.mock.method(model, method, () => { throw new Error('Não deve consultar nem escrever antes da validação.'); });
+        }
+      }
+      await assert.rejects(insertSeedData(data), { name: 'SeedConflictError',
+        message: 'Seed incompatível: Avaliação repetida para o mesmo autor, encomenda e alvo.' });
+    });
+  }
+}
+
+test('Preflight recusa duplicados entre exemplos existentes e exemplos a inserir', async t => {
+  const data = fresh();
+  const reviews = rows(data, Review);
+  const replacement = { ...reviews[0], _id: reviews[2]._id, estado: 'oculta' };
+  for (const [model] of data) t.mock.method(model, 'find', () => ({ select: () => ({ lean: async () =>
+    model === Review ? [replacement] : []
+  }) }));
+  await assert.rejects(checkExistingSeedData(data), { name: 'SeedConflictError',
+    message: 'Seed incompatível: Avaliação repetida para o mesmo autor, encomenda e alvo.' });
 });
 
 test('Validação rejeita IDs, emails, papéis, referências e históricos incompatíveis', async () => {

@@ -14,6 +14,7 @@ const productSchema = new mongoose.Schema({
   imagens: { type: [String], default: [] },
   dataValidade: Date,
   publicado: { type: Boolean, default: true },
+  revisaoLeiloes: { type: Number, default: 0, select: false },
 }, { timestamps: true });
 
 productSchema.index({ produtorId: 1 });

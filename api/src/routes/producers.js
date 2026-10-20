@@ -4,6 +4,7 @@ import User from '../models/User.js';
 import Product from '../models/Product.js';
 import Review from '../models/Review.js';
 import { requireAuth } from '../middleware/auth.js';
+import { requireObjectBody } from '../middleware/requestBody.js';
 
 const router = Router();
 const publicFields = 'nome perfilProdutor.descricao perfilProdutor.localidade perfilProdutor.coordenadas createdAt';
@@ -16,7 +17,7 @@ router.get('/pendentes', requireAuth('administrador'), async (_request, response
   } catch (error) { next(error); }
 });
 
-router.patch('/:id/validacao', requireAuth('administrador'), async (request, response, next) => {
+router.patch('/:id/validacao', requireAuth('administrador'), requireObjectBody, async (request, response, next) => {
   try {
     const { validacao } = request.body || {};
     if (!['aceite', 'rejeitado'].includes(validacao)) {

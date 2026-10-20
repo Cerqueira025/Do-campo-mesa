@@ -13,17 +13,18 @@ import { emptyFilters, readCatalogUrl, writeCatalogUrl, type FilterOptions } fro
 import { mapProduct, productHref } from '../features/products/product'
 import { useLocation } from '../navigation/useLocation'
 import { locationSnapshot, restoreNavigation } from '../navigation/navigation'
-import { catalogQuery, readCatalogCache, writeCatalogCache, readFilterCache, writeFilterCache, readFiltersOpen, writeFiltersOpen, type CatalogResponse } from '../features/home/catalogCache'
+import { catalogPageSize, catalogQuery, readCatalogCache, writeCatalogCache, readFilterCache, writeFilterCache, readFiltersOpen, writeFiltersOpen, type CatalogResponse } from '../features/home/catalogCache'
 import './HomePage.scss'
 
 function HomePage() {
   const location = useLocation()
   const filtersId = useId()
   const [isFiltersOpen, setIsFiltersOpen] = useState(readFiltersOpen)
-  const { search, filters } = readCatalogUrl()
+  const { search, filters, page } = useMemo(() => readCatalogUrl(new URL(location, window.location.origin).search), [location])
   const [draft, setDraft] = useState(() => ({ location, value: search }))
   const query = search.trim()
-  const requestKey = catalogQuery(search, filters)
+  const requestKey = catalogQuery(search, filters, page)
+  const pageNavigation = useRef<string | null>(null)
   const cached = useMemo(() => readCatalogCache(requestKey), [requestKey])
   const [result, setResult] = useState<{ key: string; data?: CatalogResponse; loading: boolean; error: boolean }>(
     () => ({ key: requestKey, data: cached, loading: true, error: false }))
@@ -32,6 +33,7 @@ function HomePage() {
   const error = result.key === requestKey && result.error
   const products = data?.items.map(mapProduct) ?? []
   const total = data?.total ?? 0
+  const pages = Math.max(1, Math.ceil(total / catalogPageSize))
   const [options, setOptions] = useState<FilterOptions | null>(readFilterCache)
   const [optionsError, setOptionsError] = useState(false)
   const [optionsRetry, setOptionsRetry] = useState(0)
@@ -49,7 +51,21 @@ function HomePage() {
     document.getElementById(`${filtersId}-toggle`)?.focus()
   }
 
-  useLayoutEffect(() => { restoreNavigation(Boolean(data) || !loading) }, [data, loading, location])
+  useLayoutEffect(() => {
+    restoreNavigation(Boolean(data) || !loading)
+    if (pageNavigation.current && pageNavigation.current !== requestKey) pageNavigation.current = null
+    if (pageNavigation.current === requestKey && !loading) {
+      pageNavigation.current = null
+      const results = document.getElementById('products-results')
+      results?.focus({ preventScroll: true })
+      results?.scrollIntoView({ block: 'start' })
+    }
+  }, [data, loading, location, requestKey])
+
+  function changePage(next: number) {
+    pageNavigation.current = catalogQuery(search, filters, next)
+    writeCatalogUrl(search, filters, false, next)
+  }
 
   useEffect(() => {
     const controller = new AbortController()
@@ -79,6 +95,15 @@ function HomePage() {
         const data = await response.json() as CatalogResponse
         if (!Array.isArray(data.items) || !Number.isInteger(data.total) || data.total < 0) throw new Error('Resposta de produtos inválida.')
         if (!controller.signal.aborted) {
+          const lastPage = Math.max(1, Math.ceil(data.total / catalogPageSize))
+          if (page > lastPage) {
+            if (pageNavigation.current) pageNavigation.current = catalogQuery(search, filters, lastPage)
+            writeCatalogUrl(search, filters, true, lastPage)
+            return
+          }
+          // Canonicaliza page=1 e valores inválidos sem criar entradas no histórico.
+          const rawPage = new URLSearchParams(window.location.search).get('page')
+          if (rawPage !== null && rawPage !== (page > 1 ? String(page) : null)) writeCatalogUrl(search, filters, true, page)
           writeCatalogCache(requestKey, data)
           setResult({ key: requestKey, data, loading: false, error: false })
         }
@@ -87,7 +112,7 @@ function HomePage() {
       }
     }, query !== requestedQuery.current ? 250 : 0)
     return () => { window.clearTimeout(timeout); controller.abort() }
-  }, [query, requestKey, retry])
+  }, [query, requestKey, retry, page, search, filters])
 
   return (
     <main className="home-page" data-navigation-ready={Boolean(data) || !loading}>
@@ -126,7 +151,7 @@ function HomePage() {
                 setOptionsError(false)
                 setOptionsRetry((value) => value + 1)
               }} />
-            <div className="home-page__results" id="products-results" aria-busy={loading}>
+            <div className="home-page__results" id="products-results" tabIndex={-1} aria-label="Resultados do catálogo" aria-busy={loading}>
               {!data && loading ? (
                 <LoadingPlaceholder label="A carregar produtos…" />
               ) : !data && error ? (
@@ -138,7 +163,7 @@ function HomePage() {
                 <>
                   <p className="home-page__message" role="status" aria-live="polite">
                     {error ? <>Não foi possível atualizar os produtos. A mostrar os resultados anteriores. <Button variant="cream" onClick={() => setRetry(value => value + 1)}>Tentar novamente</Button></>
-                      : <>A mostrar {products.length} de {total} produtos.{loading && ' A atualizar…'}</>}
+                      : <>A mostrar {products.length ? `${(page - 1) * catalogPageSize + 1}–${(page - 1) * catalogPageSize + products.length}` : '0'} de {total} produtos.{loading && ' A atualizar…'}</>}
                   </p>
                   {products.length > 0 ? (
                     <ul className={`row row-cols-1 row-cols-md-2 ${isFiltersOpen ? 'row-cols-lg-1 row-cols-xl-2' : 'row-cols-lg-3'} home-page__product-grid`}>
@@ -153,6 +178,11 @@ function HomePage() {
                       {query || hasFilters ? 'Não foram encontrados produtos para a pesquisa e os filtros selecionados.' : 'Ainda não existem produtos disponíveis.'}
                     </p>
                   )}
+                  {total > 0 && <nav className="home-page__pagination" aria-label="Paginação do catálogo">
+                    <Button variant="cream" disabled={page <= 1 || loading} onClick={() => changePage(page - 1)}>Anterior</Button>
+                    <span aria-live="polite">Página {page} de {pages}</span>
+                    <Button variant="cream" disabled={page >= pages || loading} onClick={() => changePage(page + 1)}>Seguinte</Button>
+                  </nav>}
                 </>
               )}
             </div>

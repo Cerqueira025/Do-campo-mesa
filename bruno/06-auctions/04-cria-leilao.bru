@@ -16,9 +16,8 @@ auth:bearer {
 
 body:json {
   {
-    "produtoId": "dca000000000000000000065",
+    "produtos": [{ "produtoId": "dca000000000000000000065", "quantidade": 2 }],
     "lote": "{{testRun}} lote de teste",
-    "quantidade": 2,
     "precoBase": 500,
     "incremento": 50,
     "dataInicio": "2099-01-01T10:00:00.000Z",
@@ -30,6 +29,7 @@ tests {
   test("cria leilão agendado com licitação base", function() {
     expect(res.getStatus()).to.equal(201);
     expect(res.getBody().estado).to.equal("agendado");
+    expect(res.getBody().reservaStock).to.equal("pendente");
     expect(res.getBody().licitacaoAtual.valor).to.equal(500);
     expect(res.getBody().licitacaoAtual.compradorId).to.equal(null);
   });

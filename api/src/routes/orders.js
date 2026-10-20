@@ -4,11 +4,12 @@ import Order from '../models/Order.js';
 import Product from '../models/Product.js';
 import User from '../models/User.js';
 import { requireAuth } from '../middleware/auth.js';
+import { requireObjectBody } from '../middleware/requestBody.js';
 
 const router = Router();
 const states = ['pendente', 'confirmada', 'pronta', 'entregue'];
 
-router.post('/', requireAuth('comprador'), async (request, response, next) => {
+router.post('/', requireAuth('comprador'), requireObjectBody, async (request, response, next) => {
   const { linhas, entrega } = request.body;
   if (!Array.isArray(linhas) || !linhas.length || linhas.some((line) =>
     !line || !mongoose.isValidObjectId(line.produtoId) || !Number.isFinite(line.quantidade) || line.quantidade <= 0)) {
@@ -94,7 +95,7 @@ router.get('/:id', requireAuth(), async (request, response, next) => {
   }
 });
 
-router.patch('/:id/estado', requireAuth('produtor'), async (request, response, next) => {
+router.patch('/:id/estado', requireAuth('produtor'), requireObjectBody, async (request, response, next) => {
   try {
     const { estado } = request.body;
     if (!states.includes(estado)) return response.status(400).json({ erro: 'Estado de encomenda inválido.' });
@@ -103,10 +104,13 @@ router.patch('/:id/estado', requireAuth('produtor'), async (request, response, n
     if (states.indexOf(estado) !== states.indexOf(order.estado) + 1) {
       return response.status(409).json({ erro: 'A encomenda só pode avançar para o estado seguinte.' });
     }
-    order.estado = estado;
-    if (estado === 'entregue') order.dataEntrega = new Date();
-    await order.save();
-    response.json(order);
+    const updated = await Order.findOneAndUpdate({
+      _id: order._id, produtorId: request.user.id, estado: order.estado,
+    }, { $set: { estado, ...(estado === 'entregue' ? { dataEntrega: new Date() } : {}) } }, {
+      new: true, runValidators: true,
+    });
+    if (!updated) return response.status(409).json({ erro: 'A encomenda foi alterada por outro pedido. Atualize os dados e tente novamente.' });
+    response.json(updated);
   } catch (error) {
     next(error);
   }

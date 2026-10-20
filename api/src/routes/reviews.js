@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import Order from '../models/Order.js';
 import Review from '../models/Review.js';
 import { requireAuth } from '../middleware/auth.js';
+import { requireObjectBody } from '../middleware/requestBody.js';
 
 const router = Router();
 
@@ -14,9 +15,9 @@ async function publicReviews(filter, response) {
   response.json({ items, media: summary.length ? Math.round(summary[0].media * 100) / 100 : null, total: summary[0]?.total || 0 });
 }
 
-router.post('/', requireAuth('comprador'), async (request, response, next) => {
+router.post('/', requireAuth('comprador'), requireObjectBody, async (request, response, next) => {
   try {
-    const { encomendaId, produtoId, produtorId, classificacao, comentario } = request.body;
+    const { encomendaId, produtoId, produtorId, classificacao, comentario } = request.body || {};
     if (!mongoose.isValidObjectId(encomendaId) || (Boolean(produtoId) === Boolean(produtorId))) {
       return response.status(400).json({ erro: 'Indica uma encomenda e um único produto ou produtor.' });
     }
@@ -36,6 +37,10 @@ router.post('/', requireAuth('comprador'), async (request, response, next) => {
     await review.populate('autorId', 'nome');
     response.status(201).location(`/api/reviews/${review.id}`).json(review);
   } catch (error) {
+    if (error.code === 11000 && Object.keys(error.keyPattern || {}).length === 4 &&
+        ['autorId', 'encomendaId', 'produtoId', 'produtorId'].every(field => error.keyPattern[field] === 1)) {
+      return response.status(409).json({ erro: 'Já avaliou este alvo nesta encomenda.' });
+    }
     next(error);
   }
 });
@@ -58,7 +63,7 @@ router.get('/producers/:id', async (request, response, next) => {
   }
 });
 
-router.patch('/:id/moderacao', requireAuth('administrador'), async (request, response, next) => {
+router.patch('/:id/moderacao', requireAuth('administrador'), requireObjectBody, async (request, response, next) => {
   try {
     const { estado } = request.body;
     if (!['publicada', 'oculta'].includes(estado)) return response.status(400).json({ erro: 'A moderação deve publicar ou ocultar a avaliação.' });

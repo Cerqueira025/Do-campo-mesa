@@ -35,13 +35,16 @@ export const emptyFilters: CatalogFilters = {
   categoria: '', epoca: '', bio: '', produtorId: '', localidade: '', avaliacaoMin: '',
 }
 
-export function readCatalogUrl() {
-  const params = new URLSearchParams(window.location.search)
+export function readCatalogUrl(search = window.location.search) {
+  const params = new URLSearchParams(search)
   const epoca = params.get('epoca') ?? ''
   const bio = params.get('bio')
   const produtorId = params.get('produtorId') ?? ''
   const avaliacaoMin = params.get('avaliacaoMin') ?? ''
+  const value = params.get('page') ?? '1'
+  const page = /^\d+$/.test(value) && Number.isSafeInteger(Number(value)) && Number(value) > 0 ? Number(value) : 1
   return {
+    page,
     search: (params.get('q') ?? '').slice(0, 100),
     filters: {
       categoria: params.get('categoria') ?? '',
@@ -54,9 +57,11 @@ export function readCatalogUrl() {
   }
 }
 
-export function writeCatalogUrl(search: string, filters: CatalogFilters, replace: boolean) {
+export function writeCatalogUrl(search: string, filters: CatalogFilters, replace: boolean, page = 1) {
   const url = new URL(window.location.href)
   const values = { q: search.trim(), ...filters }
+  if (page > 1) url.searchParams.set('page', String(page))
+  else url.searchParams.delete('page')
   for (const [key, value] of Object.entries(values)) {
     if (value) url.searchParams.set(key, value)
     else url.searchParams.delete(key)

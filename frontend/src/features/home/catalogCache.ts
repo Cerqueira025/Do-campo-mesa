@@ -5,8 +5,12 @@ export interface CatalogResponse { items: ApiProduct[]; total: number }
 const queries = new Map<string, CatalogResponse>()
 let options: FilterOptions | null = null
 
-export function catalogQuery(search: string, filters: CatalogFilters) {
+export const catalogPageSize = 24
+
+export function catalogQuery(search: string, filters: CatalogFilters, page = 1) {
   const params = new URLSearchParams({ limit: '24' })
+  // Mantém o offset dentro dos inteiros seguros aceites pela API, mesmo com URLs extremas.
+  params.set('page', String(Math.min(page, Math.floor(Number.MAX_SAFE_INTEGER / catalogPageSize))))
   if (search.trim()) params.set('q', search.trim())
   for (const key of Object.keys(filters).sort() as (keyof CatalogFilters)[]) {
     if (filters[key]) params.set(key, filters[key])

@@ -30,7 +30,7 @@ Converter cada ID numérico com `seedId(n)` de `api/src/scripts/seed-data.js`:
 | 2033–2034 / 2035–2036 | Produtos dos produtores pendente e rejeitado |
 | 3001–3012 | Encomendas entregues com duas linhas e avaliações elegíveis |
 | 3013–3016 / 3017–3020 / 3021–3024 | Encomendas pendentes, confirmadas e prontas |
-| 4001–4003 / 4004–4006 / 4007–4009 | Leilões agendados, ativos e terminados |
+| 4001–4003 / 4004–4006 / 4007–4009 | Leilões de início futuro, início já atingido e históricos terminados |
 | 5001–5024 | Seis licitações por cada leilão 4004, 4005, 4007 e 4008 |
 | 6001–6036 | Três avaliações por encomenda entregue: dois produtos e um produtor |
 
@@ -63,9 +63,23 @@ usa as sessões criadas nas pastas anteriores e `demoPassword` do ambiente Bruno
 Os pedidos que alteram stock, encomendas ou moderação criam documentos temporários com os marcadores existentes;
 a limpeza remove-os e devolve as reservas. Os exemplos persistentes não usam esses marcadores.
 
-As datas dos leilões são relativas à primeira inserção e não são renovadas pelo seed. Não existem transições automáticas,
-licitações em tempo real ou conversão de leilão em encomenda. Testar a listagem pelos estados guardados não prova execução temporal.
-A interface só apresenta os primeiros 24 produtos e o leilão da página inicial é fictício; a paginação é testada na API.
+As datas dos leilões são relativas à primeira inserção e não são renovadas pelo seed.
+O seed guarda os exemplos ainda por terminar como `agendado`/`pendente`.
+A API reserva o lote no início antes de o marcar `ativo`; só a passagem do tempo
+não o ativa. Finais sem vencedor devolvem a reserva; com vencedor mantêm o lote
+atribuído. Falta de stock ou produto/produtor indisponível cancela sem reserva parcial.
+O processamento é retomado no arranque e repetido com cinco segundos de intervalo.
+Exemplos históricos terminados têm `sem-reserva`, sem descontos retroativos.
+A listagem pública exige todos os produtos existentes e publicados, pertencentes ao produtor do leilão, e produtor atualmente aprovado;
+leilões indisponíveis são omitidos e o detalhe devolve 404, incluindo identificadores inválidos.
+Leilões terminados continuam consultáveis se cumprirem essas condições.
+
+O destaque da página inicial usa leilões reais da API e seleciona o ativo com fim mais próximo.
+O destaque e o detalhe voltam a consultar a API a cada cinco segundos.
+Os contadores atualizam-se localmente a cada segundo, sem inferir uma ativação.
+Entradas inválidas são ignoradas individualmente no destaque. Não existem ainda
+licitações em tempo real ou conversão de leilão em encomenda.
+A interface só apresenta os primeiros 24 produtos; a paginação é testada na API.
 
 ## Verificação em 15 de outubro de 2026
 
@@ -73,3 +87,9 @@ A interface só apresenta os primeiros 24 produtos e o leilão da página inicia
 - Foram inseridos exatamente 141 documentos. A repetição inseriu zero e a comparação do conteúdo completo confirmou preservação dos documentos e dos timestamps.
 - Índices existentes confirmados, incluindo o índice único de email.
 - A base continha uma conta adicional aos exemplos: os totais após expansão são 19 utilizadores, 39 produtos, 27 encomendas, 12 leilões, 27 licitações e 38 avaliações.
+
+Os leilões usam `produtos`, uma lista obrigatória com quantidade e unidade por produto.
+O exemplo 4004 é um lote misto de 2 kg de Batata e 10 g de Mel do mesmo produtor.
+Esse exemplo só é acrescentado em novas inserções; o seed preserva leilões já existentes.
+A imagem de capa vem do primeiro produto e a licitação aplica-se ao lote completo.
+Antes de usar uma base antiga, executar a migração descrita no README, com a API parada.

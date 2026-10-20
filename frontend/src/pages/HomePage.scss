@@ -88,6 +88,17 @@
     }
   }
 
+  &__pagination {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    margin-top: 24px;
+  }
+
+  &__results:focus-visible { outline: 2px solid var(--color-green-900); outline-offset: 4px; }
+
   @include up(desktop) {
     &__catalog--filters-open {
       grid-template-columns: 360px minmax(0, 1fr);

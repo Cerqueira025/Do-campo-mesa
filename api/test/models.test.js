@@ -63,7 +63,7 @@ test('Rejeita estados, preços e quantidades inválidos', async () => {
     [Product, { preco: -1 }], [Product, { preco: 1.5 }], [Product, { stock: -1 }],
     [Order, { estado: 'desconhecido' }], [Order, { linhas: [] }], [Order, { total: 1 }],
     [Auction, { estado: 'desconhecido' }], [Auction, { incremento: 0 }],
-    [Auction, { quantidade: 0 }], [Auction, { dataFim: new Date(0) }],
+    [Auction, { produtos: [] }], [Auction, { dataFim: new Date(0) }],
     [Bid, { valor: -1 }], [Review, { classificacao: 6 }], [Review, { classificacao: 2.5 }],
   ];
   for (const [model, changes] of cases) {

@@ -5,6 +5,8 @@ import jwt from 'jsonwebtoken';
 import app from '../src/app.js';
 import User from '../src/models/User.js';
 import Product from '../src/models/Product.js';
+import Auction from '../src/models/Auction.js';
+import mongoose from 'mongoose';
 
 const buyerId = 'dca000000000000000000002';
 const producerId = 'dca000000000000000000004';
@@ -70,6 +72,7 @@ test('Registo de produtor ignora aprovação manipulada e exige perfil completo'
   const body = { nome: 'Quinta', email: 'quinta@example.test', password: 'PasswordTeste123!', papel: 'produtor' };
   assert.equal((await call('/auth/registo', { method: 'POST', body })).status, 400);
   const response = await call('/auth/registo', { method: 'POST', body: { ...body,
+    validacao: 'aceite',
     perfilProdutor: { localidade: 'Viana', morada: 'Rua da Quinta', coordenadas: { latitude: 41.7, longitude: -8.8 }, validacao: 'aceite' },
   } });
   assert.equal(response.status, 201);
@@ -193,22 +196,58 @@ test('Aprovação e rejeição alteram permissões do produtor com o mesmo JWT',
   const admin = account(adminId, 'administrador');
   users(t, [producer, admin, account()]);
   t.mock.method(User, 'findOneAndUpdate', async (filter, update, options) => {
+    assert.deepEqual(Object.keys(update.$set), ['perfilProdutor.validacao']);
     assert.equal(filter.papel, 'produtor');
     assert.equal(options.runValidators, true);
     if (filter._id !== producerId) return null;
     producer.perfilProdutor.validacao = update.$set['perfilProdutor.validacao'];
     return producer;
   });
-  t.mock.method(Product, 'create', async data => ({ ...data, id: 'dca000000000000000000065', async populate() {} }));
-  const producerToken = tokenFor(producerId);
+  const productId = 'dca000000000000000000065';
+  const productWrite = t.mock.method(Product, 'create', async data => ({ ...data, id: productId, async populate() {} }));
+  t.mock.method(mongoose, 'startSession', async () => ({ async withTransaction(fn) { await fn(); }, async endSession() {} }));
+  const productRead = t.mock.method(Product, 'findOneAndUpdate', async filter => {
+    assert.deepEqual(filter, { _id: productId, produtorId: producerId, publicado: true });
+    return { _id: productId, stock: 10, unidade: 'kg' };
+  });
+  const auctionWrite = t.mock.method(Auction, 'create', async ([data]) => [{ ...data, id: 'dca000000000000000004001', $session() {}, async populate() {} }]);
+  t.mock.method(Product, 'findOneAndDelete', () => { throw new Error('Não deve apagar.'); });
+  t.mock.method(Product.prototype, 'save', () => { throw new Error('Não deve alterar.'); });
+  const session = await call('/auth/login', { method: 'POST', body: { email: producer.email, password: 'PasswordTeste123!' } });
+  assert.equal(session.status, 200);
+  const producerToken = session.body.token;
   const product = () => call('/products', { token: producerToken, method: 'POST', body: { nome: 'Produto teste' } });
+  const auction = () => call('/auctions', { token: producerToken, method: 'POST', body: {
+    produtos: [{ produtoId: productId, quantidade: 5 }], lote: '5 kg', precoBase: 100, incremento: 10,
+    dataInicio: new Date(Date.now()).toISOString(), dataFim: new Date(Date.now() + 3600000).toISOString(),
+  } });
+  async function blocked(validacao) {
+    const writes = [productWrite.mock.callCount(), auctionWrite.mock.callCount(), productRead.mock.callCount()];
+    assert.equal((await product()).status, 403);
+    assert.equal((await auction()).status, 403);
+    for (const method of ['PUT', 'DELETE']) {
+      assert.equal((await call(`/products/${productId}`, { token: producerToken, method, body: { nome: 'Alterado' } })).status, 403);
+    }
+    assert.deepEqual([productWrite.mock.callCount(), auctionWrite.mock.callCount(), productRead.mock.callCount()], writes);
+    const current = await call('/auth/eu', { token: producerToken });
+    assert.equal(current.status, 200);
+    assert.equal(current.body.validacao, validacao);
+  }
   const decide = (validacao, token = tokenFor(adminId), id = producerId) => call(`/producers/${id}/validacao`, { token, method: 'PATCH', body: { validacao } });
-  assert.equal((await product()).status, 403);
+  await blocked('pendente');
   assert.equal((await decide('aceite', tokenFor())).status, 403);
   assert.equal((await decide('pendente')).status, 400);
   assert.equal((await decide('aceite', undefined, buyerId)).status, 404);
   assert.equal((await decide('aceite')).body.validacao, 'aceite');
   assert.equal((await product()).status, 201);
+  assert.equal((await auction()).status, 201);
+  assert.equal(productWrite.mock.callCount(), 1);
+  assert.equal(auctionWrite.mock.callCount(), 1);
+  assert.equal((await call('/auth/eu', { token: producerToken })).body.validacao, 'aceite');
   assert.equal((await decide('rejeitado')).body.validacao, 'rejeitado');
-  assert.equal((await product()).status, 403);
+  await blocked('rejeitado');
+  assert.equal((await call('/auth/login', { method: 'POST', body: { email: producer.email, password: 'PasswordTeste123!' } })).status, 200);
+  assert.equal((await decide('aceite')).body.validacao, 'aceite');
+  assert.equal((await product()).status, 201);
+  assert.equal((await auction()).status, 201);
 });

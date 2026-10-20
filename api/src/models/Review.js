@@ -19,4 +19,7 @@ reviewSchema.pre('validate', function () {
 
 reviewSchema.index({ produtoId: 1, estado: 1 });
 reviewSchema.index({ produtorId: 1, estado: 1 });
+reviewSchema.index({ autorId: 1, encomendaId: 1, produtoId: 1, produtorId: 1 }, {
+  unique: true, name: 'review_author_order_target_unique',
+});
 export default mongoose.model('Review', reviewSchema, 'reviews');

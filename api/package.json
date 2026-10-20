@@ -8,6 +8,8 @@
     "start": "node src/server.js",
     "db:init": "node src/scripts/init-db.js",
     "db:seed": "node src/scripts/seed-db.js",
+    "db:migrate:auction-products": "node src/scripts/migrate-auction-products.js",
+    "db:migrate:auction-stock": "node src/scripts/migrate-auction-stock.js",
     "test": "node --test test/*.test.js",
     "test:api": "node src/scripts/test-api.js"
   },

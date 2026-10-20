@@ -2,7 +2,21 @@ openapi: 3.0.3
 info:
   title: Do Campo à Mesa API
   version: 1.0.0
-  description: API REST para autenticação, catálogo, encomendas, avaliações e leilões.
+  description: >-
+    API REST para autenticação, catálogo, encomendas, avaliações e leilões.
+    O registo de produtor fica sempre pendente, independentemente de aprovações enviadas pelo cliente.
+    Produtores pendentes ou rejeitados podem iniciar sessão e consultar a conta, mas recebem 403
+    ao criar, alterar ou apagar produtos e ao criar leilões. A aprovação atual é consultada na base
+    de dados em cada pedido protegido, sem exigir novo login após uma decisão administrativa.
+    Produtos, perfis e leilões de produtores não aceites são omitidos das listas públicas e devolvem
+    404 no detalhe. Aprovar novamente repõe a visibilidade dos conteúdos elegíveis; a decisão não
+    elimina documentos nem cancela leilões, incluindo os terminados.
+    Pedidos POST, PUT e PATCH exigem um corpo que seja um objeto JSON; corpo ausente,
+    null, arrays e valores primitivos devolvem 400. Um objeto vazio passa pela validação dos
+    campos da operação. Campos desconhecidos mantêm o comportamento de cada endpoint.
+    Em rotas protegidas, a validação comum do corpo ocorre depois da autenticação e autorização.
+    O parser JSON é global: sintaxe inválida é rejeitada com 400 antes dessas verificações.
+    As respostas de erro preservam o formato { erro: string }; falhas internas inesperadas devolvem 500.
 servers:
   - url: http://localhost:3000/api
 tags:
@@ -48,6 +62,7 @@ paths:
     post:
       tags: [Autenticação]
       summary: Inicia sessão e devolve um JWT válido por duas horas
+      description: Produtores pendentes ou rejeitados também podem iniciar sessão; o login não concede aprovação para publicar produtos ou criar leilões.
       requestBody:
         required: true
         content:
@@ -103,7 +118,7 @@ paths:
       tags: [Autenticação]
       security: [{ bearerAuth: [] }]
       summary: Valida a sessão e devolve os dados atuais da conta
-      description: Consulta a conta na base de dados. Tokens expirados, inválidos ou de contas removidas devolvem 401. Nunca devolve passwords ou hashes.
+      description: Consulta a conta na base de dados, incluindo o estado atual de aprovação de produtores pendentes, aceites ou rejeitados. Tokens expirados, inválidos ou de contas removidas devolvem 401. Nunca devolve passwords ou hashes.
       responses:
         '200':
           description: Utilizador autenticado
@@ -115,6 +130,13 @@ paths:
     get:
       tags: [Produtos]
       summary: Pesquisa produtos publicados de produtores aprovados
+      description: >-
+        Cada parâmetro conhecido aceita um único valor; parâmetros repetidos devolvem 400.
+        Filtros numéricos vazios, não finitos ou preços cuja conversão em cêntimos exceda o limite
+        de inteiro seguro devolvem 400. page e limit exigem dígitos decimais positivos, com limit
+        até 100; page e o deslocamento (page - 1) * limit não podem exceder 9007199254740991.
+        Parâmetros omitidos mantêm os defaults. q, categoria, localidade, epoca e produtorId
+        vazios são ignorados; q composto apenas por espaços devolve 400. Parâmetros desconhecidos são ignorados.
       parameters:
         - { name: q, in: query, schema: { type: string, maxLength: 100 }, description: Pesquisa sem distinção de maiúsculas em produto, categoria e produtor. }
         - { name: categoria, in: query, schema: { type: string } }
@@ -144,6 +166,7 @@ paths:
       tags: [Produtos]
       security: [{ bearerAuth: [] }]
       summary: Cria um produto para o produtor autenticado e aprovado
+      description: Exige aprovação atual na base de dados. Produtores pendentes ou rejeitados recebem 403 sem criar o produto.
       requestBody:
         required: true
         content:
@@ -195,7 +218,8 @@ paths:
     put:
       tags: [Produtos]
       security: [{ bearerAuth: [] }]
-      summary: Atualiza um produto pertencente ao produtor autenticado
+      summary: Atualiza um produto pertencente ao produtor autenticado e aprovado
+      description: Alterar stock ou unidade exige ausência de quantidades reservadas ou atribuídas a leilões; caso contrário devolve 409. Os restantes campos podem ser editados.
       requestBody:
         required: true
         content:
@@ -206,13 +230,16 @@ paths:
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
         '404': { $ref: '#/components/responses/NotFound' }
     delete:
       tags: [Produtos]
       security: [{ bearerAuth: [] }]
-      summary: Apaga um produto pertencente ao produtor autenticado
+      summary: Apaga um produto pertencente ao produtor autenticado e aprovado
+      description: Produtos com leilões associados, incluindo terminados, não podem ser apagados. A verificação e eliminação são transacionais e sincronizadas com a criação de leilões; requer MongoDB com suporte a transações (replica set).
       responses:
         '204': { description: Produto apagado }
+        '409': { $ref: '#/components/responses/Conflict' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
@@ -245,7 +272,7 @@ paths:
       tags: [Produtores]
       security: [{ bearerAuth: [] }]
       summary: Aprova ou rejeita um produtor como administrador
-      description: A decisão é consultada na base de dados nas operações protegidas seguintes; o produtor não precisa de um novo JWT.
+      description: A decisão é consultada na base de dados nas operações protegidas e consultas públicas seguintes; o produtor não precisa de um novo JWT. A rejeição oculta os produtos, o perfil e todos os leilões, incluindo terminados, sem eliminar documentos ou cancelar leilões. Voltar a aprovar repõe a visibilidade dos conteúdos que cumpram as restantes condições públicas.
       requestBody:
         required: true
         content:
@@ -325,6 +352,7 @@ paths:
       tags: [Encomendas]
       security: [{ bearerAuth: [] }]
       summary: Avança a encomenda própria para o estado seguinte
+      description: A atualização é atómica e condicionada ao estado anterior. Um pedido ultrapassado por outro recebe 409 sem alterar a encomenda. A transição para entregue grava dataEntrega na mesma operação; estados não podem recuar nem saltar etapas.
       requestBody:
         required: true
         content:
@@ -346,6 +374,12 @@ paths:
       tags: [Avaliações]
       security: [{ bearerAuth: [] }]
       summary: Avalia um produto ou produtor de uma encomenda entregue própria
+      description: >-
+        Cada comprador pode avaliar uma vez cada produto e uma vez o produtor de cada encomenda
+        entregue que lhe pertence. Uma nova encomenda permite avaliar novamente os mesmos alvos.
+        Repetir o mesmo alvo na mesma encomenda devolve 409 com a mensagem
+        "Já avaliou este alvo nesta encomenda.", mesmo se a avaliação estiver oculta ou denunciada.
+        A avaliação original não é alterada. Um índice único na base de dados impede também pedidos simultâneos.
       requestBody:
         required: true
         content:
@@ -363,6 +397,8 @@ paths:
         '201': { description: Avaliação criada }
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
   /reviews/products/{id}:
     parameters: [{ $ref: '#/components/parameters/id' }]
     get:
@@ -403,43 +439,63 @@ paths:
   /auctions:
     get:
       tags: [Leilões]
-      summary: Lista leilões, opcionalmente filtrados pelo estado
+      summary: Lista leilões públicos, opcionalmente filtrados pelo estado efetivo
+      description: >-
+        A ativação exige estado ativo e reservaStock reservada, dentro do intervalo de datas.
+        Um leilão pendente continua agendado até confirmação da reserva pelo servidor.
+        A partir de dataFim é apresentado como terminado; cancelado prevalece sobre as datas.
+        O filtro usa estas mesmas regras. O processamento transacional ocorre no arranque
+        e com intervalo de cinco segundos após cada ciclo, incluindo o tempo de processamento.
+        Exige todos os produtos existentes e publicados, pertencentes ao produtor do leilão, e produtor atualmente aprovado. Se uma linha estiver indisponível, o lote completo é omitido.
+        Leilões indisponíveis são omitidos; os terminados continuam públicos se cumprirem estas condições.
+        A consulta não altera os documentos guardados. Valores de estado repetidos ou desconhecidos devolvem 400.
       parameters:
-        - { name: estado, in: query, schema: { type: string, enum: [agendado, ativo, terminado] } }
+        - { name: estado, in: query, schema: { type: string, enum: [agendado, ativo, terminado, cancelado] } }
       responses:
-        '200': { description: Lista de leilões }
+        '200': { description: Lista de leilões, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/Auction' } } } } }
         '400': { $ref: '#/components/responses/BadRequest' }
     post:
       tags: [Leilões]
       security: [{ bearerAuth: [] }]
-      summary: Cria um leilão para um produto próprio de produtor aprovado
+      summary: Cria um leilão com um ou vários produtos próprios de produtor aprovado
+      description: Exige lista não vazia de produtos distintos, publicados e pertencentes ao produtor autenticado. Cada quantidade deve ser positiva e não exceder o stock; a unidade vem do produto, ignorando valores enviados pelo cliente. Preço base e licitações aplicam-se ao lote completo. Exige aprovação atual na base de dados; produtores pendentes ou rejeitados recebem 403. O servidor guarda agendado com reservaStock pendente; valores de estado, reserva e motivo enviados pelo cliente são ignorados. Datas devem ser strings válidas, com fim posterior ao início e ao instante do pedido. A reserva integral ocorre no início; falta de stock ou indisponibilidade cancela o lote sem desconto parcial. Fim sem vencedor devolve a reserva uma vez, com vencedor mantém quantidades atribuídas. A associação dos produtos e a criação do leilão são transacionais e coordenadas com a eliminação de produtos; requer MongoDB com suporte a transações (replica set).
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [produtoId, lote, quantidade, precoBase, incremento, dataInicio, dataFim]
+              required: [produtos, lote, precoBase, incremento, dataInicio, dataFim]
               properties:
-                produtoId: { type: string }
+                produtos:
+                  type: array
+                  minItems: 1
+                  description: Produtos distintos do mesmo produtor, na ordem de apresentação do lote.
+                  items:
+                    type: object
+                    required: [produtoId, quantidade]
+                    properties:
+                      produtoId: { type: string }
+                      quantidade: { type: number, exclusiveMinimum: 0 }
                 lote: { type: string }
-                quantidade: { type: number, exclusiveMinimum: 0 }
                 precoBase: { type: integer, minimum: 0, description: Cêntimos. }
                 incremento: { type: integer, minimum: 1, description: Cêntimos. }
                 dataInicio: { type: string, format: date-time }
                 dataFim: { type: string, format: date-time }
       responses:
-        '201': { description: Leilão criado }
+        '201': { description: Leilão criado, content: { application/json: { schema: { $ref: '#/components/schemas/Auction' } } } }
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
   /auctions/{id}:
     parameters: [{ $ref: '#/components/parameters/id' }]
     get:
       tags: [Leilões]
       summary: Obtém um leilão e os dados públicos do lote e produtor
+      description: Devolve o estado efetivo com as mesmas regras da listagem. Um identificador inválido, leilão inexistente, produto apagado, despublicado ou de outro produtor, ou produtor removido ou não aprovado devolve 404. A consulta não altera o documento guardado.
       responses:
-        '200': { description: Leilão }
+        '200': { description: Leilão, content: { application/json: { schema: { $ref: '#/components/schemas/Auction' } } } }
         '404': { $ref: '#/components/responses/NotFound' }
 components:
   securitySchemes:
@@ -455,7 +511,7 @@ components:
       schema: { type: string }
   responses:
     BadRequest:
-      description: Dados ou parâmetros inválidos
+      description: Dados ou parâmetros inválidos, incluindo corpo ausente ou que não seja objeto JSON, JSON malformado e formatos de query inválidos.
       content:
         application/json:
           schema: { $ref: '#/components/schemas/Error' }
@@ -480,6 +536,45 @@ components:
         application/json:
           schema: { $ref: '#/components/schemas/Error' }
   schemas:
+    Auction:
+      type: object
+      required: [_id, produtos, lote, precoBase, incremento, dataInicio, dataFim, estado, reservaStock, licitacaoAtual]
+      properties:
+        _id: { type: string }
+        produtorId:
+          oneOf:
+            - { type: string }
+            - { $ref: '#/components/schemas/Producer' }
+        produtos:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [produtoId, quantidade, unidade]
+            properties:
+              produtoId:
+                type: object
+                required: [_id, nome, imagens]
+                properties:
+                  _id: { type: string }
+                  nome: { type: string }
+                  descricao: { type: string }
+                  imagens: { type: array, items: { type: string } }
+              quantidade: { type: number, exclusiveMinimum: 0 }
+              unidade: { type: string, enum: [kg, g, l, unidade] }
+        lote: { type: string }
+        precoBase: { type: integer, minimum: 0, description: Preço do lote completo em cêntimos. }
+        incremento: { type: integer, minimum: 1 }
+        dataInicio: { type: string, format: date-time }
+        dataFim: { type: string, format: date-time }
+        estado: { type: string, enum: [agendado, ativo, terminado, cancelado] }
+        reservaStock: { type: string, enum: [pendente, reservada, libertada, atribuida, sem-reserva] }
+        motivoCancelamento: { type: string, enum: [stock-insuficiente, produto-indisponivel, produtor-indisponivel] }
+        licitacaoAtual:
+          type: object
+          properties:
+            valor: { type: integer, minimum: 0 }
+            compradorId: { type: string, nullable: true }
     Error:
       type: object
       required: [erro]

@@ -3,7 +3,9 @@ import mongoose from 'mongoose';
 import Product from '../models/Product.js';
 import User from '../models/User.js';
 import Review from '../models/Review.js';
+import Auction from '../models/Auction.js';
 import { requireApprovedProducer, requireAuth } from '../middleware/auth.js';
+import { requireObjectBody } from '../middleware/requestBody.js';
 
 const router = Router();
 const publicProducer = { path: 'produtorId', select: 'nome perfilProdutor.descricao perfilProdutor.localidade perfilProdutor.coordenadas' };
@@ -14,13 +16,22 @@ const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 router.get('/', async (request, response, next) => {
   try {
     const { q, categoria, precoMin, precoMax, bio, epoca, localidade, produtorId, avaliacaoMin, page = '1', limit = '24' } = request.query;
-    if ((q && (q.length > 100 || !q.trim())) || (precoMin !== undefined && (!Number.isFinite(Number(precoMin)) || Number(precoMin) < 0)) ||
-      (precoMax !== undefined && (!Number.isFinite(Number(precoMax)) || Number(precoMax) < 0)) ||
+    if ([q, categoria, precoMin, precoMax, bio, epoca, localidade, produtorId, avaliacaoMin, page, limit]
+      .some(value => value !== undefined && typeof value !== 'string')) {
+      return response.status(400).json({ erro: 'Filtros ou paginação inválidos.' });
+    }
+    const invalidPrice = value => value !== undefined && (!value.trim() || Number(value) < 0 ||
+      !Number.isSafeInteger(Math.round(Number(value) * 100)));
+    const pageNumber = Number(page);
+    const limitNumber = Number(limit);
+    const skip = (pageNumber - 1) * limitNumber;
+    if ((q && (q.length > 100 || !q.trim())) || invalidPrice(precoMin) || invalidPrice(precoMax) ||
       (bio !== undefined && !['true', 'false'].includes(bio)) || (produtorId && !mongoose.isValidObjectId(produtorId)) ||
-      (avaliacaoMin !== undefined && (typeof avaliacaoMin !== 'string' || !Number.isFinite(Number(avaliacaoMin)) ||
+      (avaliacaoMin !== undefined && (!avaliacaoMin.trim() || !Number.isFinite(Number(avaliacaoMin)) ||
         Number(avaliacaoMin) < 1 || Number(avaliacaoMin) > 5)) ||
       (localidade && localidade.length > 100) || !/^\d+$/.test(page) || !/^\d+$/.test(limit) ||
-      Number(page) < 1 || Number(limit) < 1 || Number(limit) > 100) {
+      !Number.isSafeInteger(pageNumber) || pageNumber < 1 || !Number.isSafeInteger(skip) ||
+      limitNumber < 1 || limitNumber > 100) {
       return response.status(400).json({ erro: 'Filtros ou paginação inválidos.' });
     }
     if (precoMin !== undefined && precoMax !== undefined && Number(precoMin) > Number(precoMax)) {
@@ -64,12 +75,11 @@ router.get('/', async (request, response, next) => {
       filter._id = { $in: ratings.map((rating) => rating._id) };
     }
     filter.$and = constraints;
-    const skip = (Number(page) - 1) * Number(limit);
     const [items, total] = await Promise.all([
-      Product.find(filter).sort({ createdAt: -1, _id: 1 }).skip(skip).limit(Number(limit)).populate(publicProducer),
+      Product.find(filter).sort({ createdAt: -1, _id: 1 }).skip(skip).limit(limitNumber).populate(publicProducer),
       Product.countDocuments(filter),
     ]);
-    response.json({ items, page: Number(page), limit: Number(limit), total });
+    response.json({ items, page: pageNumber, limit: limitNumber, total });
   } catch (error) {
     next(error);
   }
@@ -112,7 +122,7 @@ router.get('/:id', async (request, response, next) => {
   }
 });
 
-router.post('/', requireAuth('produtor'), requireApprovedProducer, async (request, response, next) => {
+router.post('/', requireAuth('produtor'), requireApprovedProducer, requireObjectBody, async (request, response, next) => {
   try {
     const product = await Product.create({ ...pickProduct(request.body), produtorId: request.user.id });
     await product.populate(publicProducer);
@@ -122,26 +132,57 @@ router.post('/', requireAuth('produtor'), requireApprovedProducer, async (reques
   }
 });
 
-router.put('/:id', requireAuth('produtor'), requireApprovedProducer, async (request, response, next) => {
+router.put('/:id', requireAuth('produtor'), requireApprovedProducer, requireObjectBody, async (request, response, next) => {
+  let session;
   try {
-    const product = await Product.findOne({ _id: request.params.id, produtorId: request.user.id });
-    if (!product) return response.status(404).json({ erro: 'Produto não encontrado.' });
-    product.set(pickProduct(request.body));
-    await product.save();
+    let product;
+    async function update() {
+      const query = Product.findOne({ _id: request.params.id, produtorId: request.user.id });
+      product = await (session ? query.session(session) : query);
+      if (!product) throw Object.assign(new Error('Produto não encontrado.'), { status: 404 });
+      product.set(pickProduct(request.body));
+      if (session && (product.isModified('stock') || product.isModified('unidade')) &&
+          await Auction.exists({ 'produtos.produtoId': product._id, reservaStock: { $in: ['reservada', 'atribuida'] } }).session(session)) {
+        throw Object.assign(new Error('Não é possível alterar stock ou unidade de um produto com quantidades reservadas ou atribuídas.'), { status: 409 });
+      }
+      await product.save(session ? { session } : {});
+    }
+    if (request.body.stock !== undefined || request.body.unidade !== undefined) {
+      session = await mongoose.startSession();
+      await session.withTransaction(update);
+      product.$session(null);
+    } else await update();
     await product.populate(publicProducer);
     response.json(product);
   } catch (error) {
     next(error);
+  } finally {
+    if (session) await session.endSession();
   }
 });
 
 router.delete('/:id', requireAuth('produtor'), requireApprovedProducer, async (request, response, next) => {
+  let session;
   try {
-    const deleted = await Product.findOneAndDelete({ _id: request.params.id, produtorId: request.user.id });
-    if (!deleted) return response.status(404).json({ erro: 'Produto não encontrado.' });
+    const filter = { _id: request.params.id, produtorId: request.user.id };
+    session = await mongoose.startSession();
+    await session.withTransaction(async () => {
+      // A mesma escrita na criação de leilões serializa as duas operações.
+      const product = await Product.findOneAndUpdate(filter, { $inc: { revisaoLeiloes: 1 } }, {
+        new: true, session, timestamps: false,
+      });
+      if (!product) throw Object.assign(new Error('Produto não encontrado.'), { status: 404 });
+      if (await Auction.exists({ 'produtos.produtoId': product._id }).session(session)) {
+        throw Object.assign(new Error('Não é possível apagar um produto com leilões associados.'), { status: 409 });
+      }
+      const deleted = await Product.findOneAndDelete(filter, { session });
+      if (!deleted) throw Object.assign(new Error('Produto não encontrado.'), { status: 404 });
+    });
     response.status(204).end();
   } catch (error) {
     next(error);
+  } finally {
+    if (session) await session.endSession();
   }
 });
 

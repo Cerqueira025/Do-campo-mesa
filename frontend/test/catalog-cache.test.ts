@@ -7,6 +7,10 @@ test('Chave normalizada inclui pesquisa, filtros e limite e distingue bio=false'
   assert.equal(catalogQuery(' mel ', { ...emptyFilters, bio: 'false' }), catalogQuery('mel', { ...emptyFilters, bio: 'false' }))
   assert.notEqual(catalogQuery('mel', emptyFilters), catalogQuery('mel', { ...emptyFilters, bio: 'false' }))
   assert.match(catalogQuery('', emptyFilters), /limit=24/)
+  assert.notEqual(catalogQuery('', emptyFilters, 1), catalogQuery('', emptyFilters, 2))
+  assert.equal(new URLSearchParams(catalogQuery('', emptyFilters, 2)).get('page'), '2')
+  const extreme = Number(new URLSearchParams(catalogQuery('', emptyFilters, Number.MAX_SAFE_INTEGER)).get('page'))
+  assert.ok(Number.isSafeInteger((extreme - 1) * 24))
 })
 
 test('Cache mantém dez consultas, promove as reutilizadas e substitui resultados', () => {

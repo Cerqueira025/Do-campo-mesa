@@ -6,9 +6,11 @@ const same = (a, b) => String(a) === String(b);
 export async function validateSeedData(dataset) {
   const records = new Map();
   const emails = new Set();
+  const reviews = new Set();
   for (const [model, documents] of dataset) {
     for (const data of documents) {
-      await new model(data).validate();
+      const document = new model(data);
+      await document.validate();
       const key = String(data._id);
       if (records.has(key)) fail(`ID repetido ${key}.`);
       records.set(key, { model, data });
@@ -16,6 +18,11 @@ export async function validateSeedData(dataset) {
         const email = data.email.trim().toLowerCase();
         if (emails.has(email)) fail('Email repetido.');
         emails.add(email);
+      }
+      if (model === Review) {
+        const target = JSON.stringify([document.autorId, document.encomendaId, document.produtoId ?? null, document.produtorId ?? null]);
+        if (reviews.has(target)) fail('Avaliação repetida para o mesmo autor, encomenda e alvo.');
+        reviews.add(target);
       }
     }
   }
@@ -51,8 +58,10 @@ export async function validateSeedData(dataset) {
       }
       if (model === Auction) {
         get(data.produtorId, User, 'produtor');
-        const product = get(data.produtoId, Product);
-        if (!same(product.produtorId, data.produtorId) || product.unidade !== data.unidade) fail('Produto do leilão incompatível.');
+        for (const line of data.produtos) {
+          const product = get(line.produtoId, Product);
+          if (!same(product.produtorId, data.produtorId) || product.unidade !== line.unidade) fail('Produto do leilão incompatível.');
+        }
         const bids = dataset.find(([candidate]) => candidate === Bid)[1]
           .filter((bid) => same(bid.leilaoId, data._id)).sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
         let previous = data.precoBase;

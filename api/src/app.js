@@ -8,7 +8,11 @@ import auctionRoutes from './routes/auctions.js';
 
 const app = express();
 
-app.use(express.json({ limit: '100kb' }));
+app.use(express.json({
+  limit: '100kb',
+  // O parser transforma um corpo vazio em {}; preservar a distinção para as rotas.
+  verify(request, _response, buffer) { request.emptyJsonBody = buffer.length === 0; },
+}));
 
 app.get('/api/health', (_request, response) => {
   response.json({ status: 'ok' });

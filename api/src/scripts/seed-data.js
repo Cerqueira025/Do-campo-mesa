@@ -39,7 +39,8 @@ export function seedData(passwordHash, now = new Date()) {
     { _id: id(301), lote: 'Lote de batata agendado', quantidade: 10, precoBase: 1000, incremento: 100, dataInicio: at(24), dataFim: at(25), estado: 'agendado', licitacaoAtual: { valor: 1000, compradorId: null } },
     { _id: id(302), lote: 'Lote de batata ativo', quantidade: 20, precoBase: 2000, incremento: 100, dataInicio: at(-1), dataFim: at(1), estado: 'ativo', licitacaoAtual: { valor: 2500, compradorId: id(3) } },
     { _id: id(303), lote: 'Lote de batata terminado', quantidade: 10, precoBase: 1000, incremento: 100, dataInicio: at(-48), dataFim: at(-47), estado: 'terminado', licitacaoAtual: { valor: 1600, compradorId: id(2) } },
-  ].map((auction) => ({ ...auction, produtorId: id(4), produtoId: id(101), unidade: 'kg' }));
+  ].map(({ quantidade, ...auction }) => ({ ...auction, produtorId: id(4),
+    produtos: [{ produtoId: id(101), quantidade, unidade: 'kg' }] }));
 
   const bids = [
     { _id: id(401), leilaoId: id(302), compradorId: id(2), valor: 2100, createdAt: at(-0.8) },
@@ -99,10 +100,15 @@ export function seedData(passwordHash, now = new Date()) {
     const estado = ['agendado', 'ativo', 'terminado'][Math.floor(i / 3)];
     const start = i < 3 ? 24 : i < 6 ? -12 : -48;
     const end = i < 3 ? 48 : i < 6 ? 24 : -24;
-    const auction = { _id: id(4001 + i), produtorId: product.produtorId, produtoId: product._id,
-      lote: `Lote funcional ${i + 1}`, quantidade: 2, unidade: product.unidade,
+    const auction = { _id: id(4001 + i), produtorId: product.produtorId,
+      produtos: [{ produtoId: product._id, quantidade: 2, unidade: product.unidade }],
+      lote: `Lote funcional ${i + 1}`,
       precoBase: 1000, incremento: 100, dataInicio: at(start), dataFim: at(end), estado,
       licitacaoAtual: { valor: 1000, compradorId: null } };
+    if (i === 3) {
+      const second = extraProducts[2];
+      auction.produtos.push({ produtoId: second._id, quantidade: 10, unidade: second.unidade });
+    }
     if ([3, 4, 6, 7].includes(i)) {
       for (let j = 0; j < 6; j++) {
         const bid = { _id: id(5001 + bids.length - 3), leilaoId: auction._id,
@@ -126,6 +132,11 @@ export function seedData(passwordHash, now = new Date()) {
     }
   }
 
+  for (const auction of auctions) {
+    const ended = auction.estado === 'terminado';
+    auction.reservaStock = ended ? 'sem-reserva' : 'pendente';
+    if (!ended) auction.estado = 'agendado';
+  }
   return [[User, users], [Product, products], [Order, orders], [Auction, auctions], [Bid, bids], [Review, reviews]];
 }
 

@@ -1,24 +1,36 @@
 export interface Auction {
   _id: string
-  produtoId: { nome: string; imagens: string[] }
+  produtos: { produtoId: { nome: string; imagens: string[] }; quantidade: number; unidade: string }[]
   lote: string
   incremento: number
   dataInicio: string
   dataFim: string
-  estado: 'agendado' | 'ativo' | 'terminado'
+  estado: 'agendado' | 'ativo' | 'terminado' | 'cancelado'
+  reservaStock: 'pendente' | 'reservada' | 'libertada' | 'atribuida' | 'sem-reserva'
+  motivoCancelamento?: keyof typeof cancellationMessages
   licitacaoAtual: { valor: number }
+}
+
+export const cancellationMessages = {
+  'stock-insuficiente': 'O stock disponível não é suficiente para todos os produtos do lote.',
+  'produto-indisponivel': 'Um dos produtos do lote já não está disponível ou foi alterado.',
+  'produtor-indisponivel': 'O produtor já não está disponível para realizar o leilão.',
 }
 
 export function isAuction(value: unknown): value is Auction {
   if (!value || typeof value !== 'object') return false
   const auction = value as Auction
   return typeof auction._id === 'string' && /^[a-f\d]{24}$/i.test(auction._id) &&
-    !!auction.produtoId && typeof auction.produtoId.nome === 'string' &&
-    Array.isArray(auction.produtoId.imagens) && auction.produtoId.imagens.every((image) => typeof image === 'string') &&
+    Array.isArray(auction.produtos) && auction.produtos.length > 0 && auction.produtos.every(line =>
+      !!line?.produtoId && typeof line.produtoId.nome === 'string' &&
+      Array.isArray(line.produtoId.imagens) && line.produtoId.imagens.every(image => typeof image === 'string') &&
+      Number.isFinite(line.quantidade) && line.quantidade > 0 && ['kg', 'g', 'l', 'unidade'].includes(line.unidade)) &&
     typeof auction.lote === 'string' && Number.isSafeInteger(auction.incremento) && auction.incremento > 0 &&
     Number.isSafeInteger(auction.licitacaoAtual?.valor) && auction.licitacaoAtual.valor >= 0 &&
     Number.isSafeInteger(auction.licitacaoAtual.valor + auction.incremento) &&
-    ['agendado', 'ativo', 'terminado'].includes(auction.estado) &&
+    ['agendado', 'ativo', 'terminado', 'cancelado'].includes(auction.estado) &&
+    ['pendente', 'reservada', 'libertada', 'atribuida', 'sem-reserva'].includes(auction.reservaStock) &&
+    (auction.estado !== 'cancelado' || Object.hasOwn(cancellationMessages, auction.motivoCancelamento ?? '')) &&
     Number.isFinite(Date.parse(auction.dataInicio)) && Number.isFinite(Date.parse(auction.dataFim)) &&
     Date.parse(auction.dataInicio) < Date.parse(auction.dataFim)
 }
@@ -33,13 +45,14 @@ export function auctionHref(id: string, catalogUrl = '/') {
 }
 
 export function auctionState(auction: Auction, now: number): Auction['estado'] {
+  if (auction.estado === 'cancelado') return 'cancelado'
   if (auction.estado === 'terminado' || now >= Date.parse(auction.dataFim)) return 'terminado'
   if (now < Date.parse(auction.dataInicio)) return 'agendado'
-  return 'ativo'
+  return auction.estado === 'ativo' && auction.reservaStock === 'reservada' ? 'ativo' : 'agendado'
 }
 
-export function featuredAuction(auctions: Auction[], now: number) {
-  return auctions.filter((auction) => auctionState(auction, now) === 'ativo')
+export function featuredAuction(auctions: unknown[], now: number) {
+  return auctions.filter(isAuction).filter((auction) => auctionState(auction, now) === 'ativo')
     .sort((a, b) => Date.parse(a.dataFim) - Date.parse(b.dataFim))[0] ?? null
 }
 

@@ -66,15 +66,28 @@ Usar o seed apenas na base de desenvolvimento/demonstração.
 | `users` | Conta, papel e perfil do produtor embebido; email único e password com hash bcrypt. |
 | `products` | Produtor referenciado, preço, unidade, stock e URLs das imagens. |
 | `orders` | Comprador e produtor referenciados; linhas embebidas com nome, preço e unidade no momento da compra. |
-| `auctions` | Produto/produtor referenciados, lote, início/fim e licitação atual embebida. |
+| `auctions` | Produtor referenciado, lista obrigatória de produtos com quantidade/unidade por linha, lote, início/fim e licitação atual embebida. |
 | `bids` | Histórico separado de licitações, referenciado por leilão e comprador. |
-| `reviews` | Autor e encomenda referenciados; um único alvo, produto ou produtor, e estado de moderação. |
+| `reviews` | Autor e encomenda referenciados; um único alvo, produto ou produtor, e estado de moderação. Índice único por autor, encomenda e alvo. |
 
 Valores monetários (`preco`, `precoUnitario`, `total`, `precoBase`, `incremento`
 e `valor`) são inteiros em cêntimos: `150` representa 1,50 €.
 Quantidades e stock admitem frações. O total da encomenda soma cada linha
 arredondada a cêntimos (`Math.round(precoUnitario * quantidade)`).
 Datas usam o tipo Date; `createdAt` e `updatedAt` são automáticos.
+
+Cada comprador pode avaliar uma vez cada produto e uma vez o produtor de uma
+encomenda entregue própria. Uma nova encomenda permite voltar a avaliar esses
+alvos. Repetições devolvem `409` com “Já avaliou este alvo nesta encomenda.”,
+sem alterar a avaliação original, mesmo que esteja oculta ou denunciada.
+
+Antes de disponibilizar esta regra numa base existente, executa `npm run db:init`
+dentro de `api/` para criar o índice `review_author_order_target_unique`.
+Iniciar ou reiniciar a API não cria índices automaticamente. O índice único é
+necessário para impedir também pedidos simultâneos. Se já existirem avaliações
+duplicadas por autor, encomenda e alvo, a criação do índice falha; o comando não
+apaga nem escolhe avaliações para conservar. Resolve esses dados separadamente
+e repete `npm run db:init` antes de disponibilizar a API.
 
 As validações são aplicadas pelo Mongoose, não por validadores nativos nas
 coleções. Escritas diretas no Atlas não passam pelos schemas. Referências
@@ -104,6 +117,55 @@ de ligação.
 
 ## API REST e coleção Bruno
 
+Leilões recebem `produtos: [{ produtoId, quantidade }]`, com pelo menos um produto
+distinto, publicado e pertencente ao produtor autenticado. O servidor obtém a unidade
+de cada produto; o preço base e as licitações referem-se ao lote completo.
+As respostas incluem `produtos: [{ produtoId: { _id, nome, imagens, ... }, quantidade, unidade }]`.
+Um produto associado a qualquer leilão, incluindo terminado, não pode ser apagado (`409`).
+Se qualquer produto ficar indisponível, o leilão completo é omitido da lista pública
+e o detalhe devolve `404`.
+
+O stock representa a quantidade disponível para novas vendas. A criação do leilão
+não o desconta: o lote começa `agendado`, com `reservaStock: pendente`, e exige uma
+data de fim futura. No início, a API tenta reservar todos os produtos numa transação.
+Só fica `ativo` após a reserva; falta de stock ou indisponibilidade cancela o lote
+sem descontos parciais. `motivoCancelamento` indica `stock-insuficiente`,
+`produto-indisponivel` ou `produtor-indisponivel`.
+Ao terminar sem vencedor, o stock é devolvido uma única vez (`libertada`); com
+vencedor, mantém-se descontado (`atribuida`), sem criar ainda uma encomenda.
+Enquanto houver quantidades `reservada` ou `atribuida`, alterar stock ou unidade
+do produto devolve `409`. Os restantes dados continuam editáveis.
+
+O processamento corre no arranque, antes de aceitar pedidos, e após cada ciclo
+aguarda cinco segundos antes do seguinte. Atrasos incluem o tempo da base de dados.
+Finaliza leilões antes de iniciar os seguintes, por data e ID, e recupera trabalho
+pendente após reiniciar. Um leilão cujo intervalo inteiro tenha passado sem reserva
+termina com `sem-reserva`, sem alterações ao stock. Falhas técnicas são repetidas
+no ciclo seguinte; não são motivos de cancelamento. Leituras GET não escrevem.
+Destaque e detalhe consultam a API a cada cinco segundos; o contador local nunca
+ativa um leilão sem confirmação do servidor.
+
+Para bases com leilões no formato antigo, para a API e executa dentro de `api/`:
+
+```powershell
+npm run db:migrate:auction-products
+npm run db:migrate:auction-stock
+npm run db:init
+npm run dev
+```
+
+A migração é explícita e não corre no arranque nem no seed. Converte cada associação
+antiga numa lista de uma linha e remove `produtoId`, `quantidade` e `unidade` do topo.
+Preserva IDs, timestamps e licitações; pode ser repetida. Valida todos os documentos
+antes de escrever e interrompe com os IDs problemáticos se houver dados incompletos
+ou formatos misturados. Não corrige produtos órfãos. Mantém a API parada até concluir
+as duas migrações e a criação dos índices. A migração `auction-stock` marca os
+antigos já terminados como `sem-reserva`, sem deduções retroativas, e coloca os
+restantes em `agendado`/`pendente`. Documentos já migrados ficam intactos.
+A API recusa arrancar se ainda houver documentos sem estado de reserva.
+Numa base nova basta o processo normal de init/seed; exemplos ainda por terminar
+começam pendentes e só ficam ativos depois de o servidor reservar o lote.
+
 `docs/openapi.yaml` descreve os endpoints de autenticação, produtos,
 produtores, encomendas, avaliações e leilões. Os pedidos usam JWT onde exigido;
 os valores monetários enviados e devolvidos pela API são cêntimos inteiros.
@@ -118,7 +180,9 @@ Licitações Socket.IO ficam fora desta coleção.
 Os testes usam a base de demonstração configurada em `MONGODB_DB_NAME`. Antes
 e depois da execução, a limpeza remove apenas contas de teste `bruno-test-*`
 e documentos com o marcador `BRUNO_AUTOTEST_`; devolve também ao stock as
-quantidades reservadas pelas encomendas de teste. Não usar estes marcadores
+quantidades reservadas pelas encomendas e leilões de teste. A remoção de cada
+leilão e a devolução das suas reservas são transacionais; históricos e reservas
+já libertadas não devolvem stock novamente. Não usar estes marcadores
 em dados próprios. A execução pode alterar dados da base de demonstração
 durante o teste, pelo que convém não a usar simultaneamente.
 
@@ -191,8 +255,33 @@ pela limpeza normal da coleção.
 
 Catálogo, produtos e leilões usam navegação interna sem recarregar a aplicação.
 O regresso recupera a lista, os filtros, o scroll e o foco, atualizando os resultados em segundo plano.
+O catálogo apresenta 24 produtos por página, com Anterior/Seguinte e `page` na URL
+(omitido na primeira página). Pesquisa e filtros regressam à primeira página;
+o histórico e o regresso do detalhe preservam a página escolhida. Se uma página
+deixar de existir, a aplicação regressa à última disponível sem criar outra entrada
+no histórico. Os controlos de paginação levam o foco e o scroll aos resultados.
 Os detalhes continuam a confirmar disponibilidade na API. A cache é apenas em memória.
 
 Consulta [a implementação e as medições de fluidez](docs/fluidez.md).
 Depois de alterar código da API, reinicia-a se a estiveres a executar com `npm start`;
 `npm run dev` acompanha as alterações automaticamente.
+
+
+## Testes de concorrência dos leilões
+
+As mudanças de estado das encomendas são condicionadas atomicamente ao estado
+anterior: um pedido concorrente ultrapassado recebe `409` sem fazer recuar a
+encomenda nem alterar a data de entrega. Criar leilões e apagar produtos também
+usa transações, coordenadas por uma revisão interna do produto. Essa revisão não
+é devolvida nas consultas normais nem altera o stock ou `updatedAt`. O primeiro
+incremento inicializa documentos antigos, sem migração adicional.
+Estas operações exigem um MongoDB com suporte a transações (replica set, como
+o Atlas). A criação de leilões só confirma após o commit; uma falha reverte o lote
+inteiro. A eliminação continua bloqueada por qualquer leilão associado.
+
+`npm test` na API inclui testes de reservas, reversão, repetição, migração e edição
+protegida, com persistência simulada. O teste de concorrência real é optativo:
+configura `MONGODB_TEST_URI` no ambiente para um MongoDB de testes com suporte a
+transações (replica set), depois executa `npm test`. Não reutilizes o URI da base
+de demonstração ou produção. O teste cria e remove exclusivamente uma base com
+nome aleatório `codex_stock_test_*`; sem esta variável, é marcado como ignorado.
