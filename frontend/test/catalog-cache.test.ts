@@ -6,8 +6,10 @@ import {
   writeCatalogCache,
   readFilterCache,
   writeFilterCache,
+  readCatalogProduct,
 } from "../src/features/home/catalogCache.ts";
 import { emptyFilters } from "../src/features/home/catalogFilters.ts";
+import type { ProductDetail } from "../src/features/products/product.ts";
 
 test("Chave normalizada inclui pesquisa, filtros e limite e distingue bio=false", () => {
   assert.equal(
@@ -51,4 +53,31 @@ test("Opções de filtros são partilhadas apenas em memória", () => {
   const value = { categorias: ["Mel"], produtores: [], localidades: [] };
   writeFilterCache(value);
   assert.equal(readFilterCache(), value);
+});
+
+test("Detalhe reutiliza o produto completo da consulta mais recente", () => {
+  const product: ProductDetail = {
+    _id: "dca000000000000000000101",
+    nome: "Batata",
+    descricao: "Batata local",
+    categoria: "Hortícolas",
+    preco: 150,
+    unidade: "kg",
+    stock: 10,
+    epoca: ["todo-o-ano"],
+    biologico: true,
+    produtorId: { _id: "dca000000000000000000001", nome: "Produtor" },
+  };
+  assert.equal(readCatalogProduct(product._id), undefined);
+  writeCatalogCache("product-original", { items: [product], total: 1 });
+  assert.equal(readCatalogProduct(product._id.toUpperCase()), product);
+
+  const updated = { ...product, stock: 5 };
+  writeCatalogCache("product-updated", { items: [updated], total: 1 });
+  assert.equal(readCatalogProduct(product._id), updated);
+  assert.equal(readCatalogProduct("dca000000000000000000999"), undefined);
+
+  for (let i = 0; i < 10; i++)
+    writeCatalogCache(`product-eviction-${i}`, { items: [], total: 0 });
+  assert.equal(readCatalogProduct(product._id), undefined);
 });

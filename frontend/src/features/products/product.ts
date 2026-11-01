@@ -2,6 +2,7 @@ export interface ApiProduct {
   _id: string;
   nome: string;
   categoria: string;
+  stock?: number;
   preco: number;
   unidade: string;
 }
@@ -121,16 +122,12 @@ export function productImages(product: Pick<ApiProduct, "nome">) {
 export function mapProduct(product: ApiProduct) {
   return {
     id: product._id,
+    stock: product.stock,
     title: product.nome,
     category: product.categoria,
     weight: `${priceFormatter.format(product.preco / 100)}/${product.unidade}`,
     ...productImages(product),
   };
-}
-
-export function productIdFromPath(path: string) {
-  const match = /^\/produtos\/([a-f\d]{24})\/?$/i.exec(path);
-  return match?.[1] ?? null;
 }
 
 export function catalogReturnUrl(search: string) {
@@ -159,4 +156,9 @@ export function originMapUrl(coordinates?: {
   )
     return null;
   return `https://www.google.com/maps/search/?api=1&query=${latitude}%2C${longitude}`;
+}
+
+export function productIdFromPath(path: string) {
+  const match = /^\/produtos\/([a-f\d]{24})\/?$/i.exec(path);
+  return match?.[1] ?? null;
 }

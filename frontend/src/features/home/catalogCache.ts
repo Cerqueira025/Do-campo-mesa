@@ -1,8 +1,8 @@
-import type { ApiProduct } from "../products/product";
+import type { ProductDetail } from "../products/product";
 import type { CatalogFilters, FilterOptions } from "./catalogFilters";
 
 export interface CatalogResponse {
-  items: ApiProduct[];
+  items: ProductDetail[];
   total: number;
 }
 const queries = new Map<string, CatalogResponse>();
@@ -43,6 +43,15 @@ export function writeCatalogCache(key: string, value: CatalogResponse) {
   queries.delete(key);
   queries.set(key, value);
   if (queries.size > 10) queries.delete(queries.keys().next().value!);
+}
+
+export function readCatalogProduct(id: string) {
+  for (const result of [...queries.values()].reverse()) {
+    const product = result.items.find(
+      (item) => item._id.toLowerCase() === id.toLowerCase(),
+    );
+    if (product) return product;
+  }
 }
 
 export const readFilterCache = () => options;

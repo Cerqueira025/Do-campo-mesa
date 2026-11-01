@@ -2,7 +2,7 @@
 
 .home-page {
   &__auction {
-    padding: 24px 24px 0;
+    padding-block: 24px 0;
   }
 
   &__auction-inner {
@@ -11,7 +11,7 @@
   }
 
   &__products {
-    padding: 24px 24px 64px;
+    padding-block: 24px 64px;
   }
 
   &__products-inner {

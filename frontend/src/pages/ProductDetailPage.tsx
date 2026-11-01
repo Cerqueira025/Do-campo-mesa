@@ -1,7 +1,7 @@
 import InternalLink from "../navigation/InternalLink";
 import { restoreNavigation, returnToCatalog } from "../navigation/navigation";
 import LoadingPlaceholder from "../components/ui/LoadingPlaceholder";
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { faArrowLeft } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Button from "../components/ui/Button";
@@ -18,13 +18,20 @@ import {
   type ProductDetail,
 } from "../features/products/product";
 import { seasons } from "../features/home/catalogFilters";
+import { readCatalogProduct } from "../features/home/catalogCache";
 import "./ProductDetailPage.scss";
 
 export default function ProductDetailPage({ id }: { id: string | null }) {
-  const [product, setProduct] = useState<ProductDetail | null>(null);
+  const cachedProduct = useMemo(
+    () => (id ? readCatalogProduct(id) : undefined),
+    [id],
+  );
+  const [product, setProduct] = useState<ProductDetail | null>(
+    cachedProduct ?? null,
+  );
   const [status, setStatus] = useState<
     "loading" | "success" | "missing" | "error"
-  >(id ? "loading" : "missing");
+  >(cachedProduct ? "success" : id ? "loading" : "missing");
   const [retry, setRetry] = useState(0);
   const returnUrl = catalogReturnUrl(window.location.search);
   useLayoutEffect(() => {
@@ -32,7 +39,7 @@ export default function ProductDetailPage({ id }: { id: string | null }) {
   }, [status]);
 
   useEffect(() => {
-    if (!id) return;
+    if (!id || cachedProduct) return;
     const controller = new AbortController();
     async function load() {
       try {
@@ -64,7 +71,7 @@ export default function ProductDetailPage({ id }: { id: string | null }) {
     }
     void load();
     return () => controller.abort();
-  }, [id, retry]);
+  }, [id, retry, cachedProduct]);
 
   useEffect(() => {
     const previousTitle = document.title;

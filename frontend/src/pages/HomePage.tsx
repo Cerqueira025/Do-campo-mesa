@@ -16,6 +16,7 @@ import ProductCard from "../components/product/ProductCard";
 import SearchBar from "../components/ui/input/SearchBar";
 import WelcomeHero from "../features/home/components/WelcomeHero";
 import ProductFilters from "../features/home/components/ProductFilters";
+import ActiveFilters from "../features/home/components/ActiveFilters";
 import {
   emptyFilters,
   readCatalogUrl,
@@ -26,7 +27,6 @@ import { mapProduct, productHref } from "../features/products/product";
 import { useLocation } from "../navigation/useLocation";
 import { locationSnapshot, restoreNavigation } from "../navigation/navigation";
 import {
-  catalogPageSize,
   catalogQuery,
   readCatalogCache,
   writeCatalogCache,
@@ -42,14 +42,10 @@ function HomePage() {
   const location = useLocation();
   const filtersId = useId();
   const [isFiltersOpen, setIsFiltersOpen] = useState(readFiltersOpen);
-  const { search, filters, page } = useMemo(
-    () => readCatalogUrl(new URL(location, window.location.origin).search),
-    [location],
-  );
+  const { search, filters } = readCatalogUrl();
   const [draft, setDraft] = useState(() => ({ location, value: search }));
   const query = search.trim();
-  const requestKey = catalogQuery(search, filters, page);
-  const pageNavigation = useRef<string | null>(null);
+  const requestKey = catalogQuery(search, filters);
   const cached = useMemo(() => readCatalogCache(requestKey), [requestKey]);
   const [result, setResult] = useState<{
     key: string;
@@ -62,7 +58,6 @@ function HomePage() {
   const error = result.key === requestKey && result.error;
   const products = data?.items.map(mapProduct) ?? [];
   const total = data?.total ?? 0;
-  const pages = Math.max(1, Math.ceil(total / catalogPageSize));
   const [options, setOptions] = useState<FilterOptions | null>(readFilterCache);
   const [optionsError, setOptionsError] = useState(false);
   const [optionsRetry, setOptionsRetry] = useState(0);
@@ -82,20 +77,7 @@ function HomePage() {
 
   useLayoutEffect(() => {
     restoreNavigation(Boolean(data) || !loading);
-    if (pageNavigation.current && pageNavigation.current !== requestKey)
-      pageNavigation.current = null;
-    if (pageNavigation.current === requestKey && !loading) {
-      pageNavigation.current = null;
-      const results = document.getElementById("products-results");
-      results?.focus({ preventScroll: true });
-      results?.scrollIntoView({ block: "start" });
-    }
-  }, [data, loading, location, requestKey]);
-
-  function changePage(next: number) {
-    pageNavigation.current = catalogQuery(search, filters, next);
-    writeCatalogUrl(search, filters, false, next);
-  }
+  }, [data, loading, location]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -152,29 +134,6 @@ function HomePage() {
           )
             throw new Error("Resposta de produtos inválida.");
           if (!controller.signal.aborted) {
-            const lastPage = Math.max(
-              1,
-              Math.ceil(data.total / catalogPageSize),
-            );
-            if (page > lastPage) {
-              if (pageNavigation.current)
-                pageNavigation.current = catalogQuery(
-                  search,
-                  filters,
-                  lastPage,
-                );
-              writeCatalogUrl(search, filters, true, lastPage);
-              return;
-            }
-            // Canonicaliza page=1 e valores inválidos sem criar entradas no histórico.
-            const rawPage = new URLSearchParams(window.location.search).get(
-              "page",
-            );
-            if (
-              rawPage !== null &&
-              rawPage !== (page > 1 ? String(page) : null)
-            )
-              writeCatalogUrl(search, filters, true, page);
             writeCatalogCache(requestKey, data);
             setResult({ key: requestKey, data, loading: false, error: false });
           }
@@ -193,7 +152,7 @@ function HomePage() {
       window.clearTimeout(timeout);
       controller.abort();
     };
-  }, [query, requestKey, retry, page, search, filters]);
+  }, [query, requestKey, retry]);
 
   return (
     <main
@@ -202,13 +161,19 @@ function HomePage() {
     >
       <WelcomeHero />
 
-      <section className="home-page__auction" aria-label="Leilão em destaque">
+      <section
+        className="home-page__auction page-content"
+        aria-label="Leilão em destaque"
+      >
         <div className="home-page__auction-inner">
           <FeaturedAuction />
         </div>
       </section>
 
-      <section className="home-page__products" aria-labelledby="products-title">
+      <section
+        className="home-page__products page-content"
+        aria-labelledby="products-title"
+      >
         <div className="home-page__products-inner">
           <h2 className="home-page__products-title" id="products-title">
             Explorar produtos
@@ -236,6 +201,13 @@ function HomePage() {
               }}
             />
           </div>
+          <ActiveFilters
+            value={filters}
+            options={options}
+            onRemove={(key) =>
+              writeCatalogUrl(search, { ...filters, [key]: "" }, false)
+            }
+          />
           <div
             className={`home-page__catalog${isFiltersOpen ? " home-page__catalog--filters-open" : ""}`}
           >
@@ -263,8 +235,6 @@ function HomePage() {
             <div
               className="home-page__results"
               id="products-results"
-              tabIndex={-1}
-              aria-label="Resultados do catálogo"
               aria-busy={loading}
             >
               {!data && loading ? (
@@ -299,11 +269,8 @@ function HomePage() {
                       </>
                     ) : (
                       <>
-                        A mostrar{" "}
-                        {products.length
-                          ? `${(page - 1) * catalogPageSize + 1}–${(page - 1) * catalogPageSize + products.length}`
-                          : "0"}{" "}
-                        de {total} produtos.{loading && " A atualizar…"}
+                        A mostrar {products.length} de {total} produtos.
+                        {loading && " A atualizar…"}
                       </>
                     )}
                   </p>
@@ -333,30 +300,6 @@ function HomePage() {
                         ? "Não foram encontrados produtos para a pesquisa e os filtros selecionados."
                         : "Ainda não existem produtos disponíveis."}
                     </p>
-                  )}
-                  {total > 0 && (
-                    <nav
-                      className="home-page__pagination"
-                      aria-label="Paginação do catálogo"
-                    >
-                      <Button
-                        variant="cream"
-                        disabled={page <= 1 || loading}
-                        onClick={() => changePage(page - 1)}
-                      >
-                        Anterior
-                      </Button>
-                      <span aria-live="polite">
-                        Página {page} de {pages}
-                      </span>
-                      <Button
-                        variant="cream"
-                        disabled={page >= pages || loading}
-                        onClick={() => changePage(page + 1)}
-                      >
-                        Seguinte
-                      </Button>
-                    </nav>
                   )}
                 </>
               )}
