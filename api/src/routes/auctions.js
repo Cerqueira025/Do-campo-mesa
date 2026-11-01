@@ -4,36 +4,15 @@ import Auction from "../models/Auction.js";
 import Product from "../models/Product.js";
 import { requireApprovedProducer, requireAuth } from "../middleware/auth.js";
 import { requireObjectBody } from "../middleware/requestBody.js";
-import { auctionState, auctionStateFilter } from "../domain/auction.js";
+import { auctionStateFilter } from "../domain/auction.js";
+import {
+  findPublicAuction,
+  publicAuction,
+  publicProduct,
+  publicProducer,
+} from "../services/publicAuction.js";
 
 const router = Router();
-const publicProduct = {
-  path: "produtos.produtoId",
-  match: { publicado: true },
-};
-const publicProducer = {
-  path: "produtorId",
-  match: { papel: "produtor", "perfilProdutor.validacao": "aceite" },
-};
-
-function publicAuction(auction, now) {
-  if (
-    !auction?.produtorId ||
-    !auction.produtos?.length ||
-    auction.produtos.some(
-      (line) =>
-        !line.produtoId ||
-        String(line.produtoId.produtorId) !== String(auction.produtorId._id),
-    )
-  )
-    return null;
-  const produtos = auction.produtos.map((line) => {
-    const product = { ...line.produtoId };
-    delete product.produtorId;
-    return { ...line, produtoId: product };
-  });
-  return { ...auction, produtos, estado: auctionState(auction, now) };
-}
 
 router.get("/", async (request, response, next) => {
   try {
@@ -64,17 +43,7 @@ router.get("/:id", async (request, response, next) => {
     const now = Date.now();
     if (!mongoose.isObjectIdOrHexString(request.params.id))
       return response.status(404).json({ erro: "Leilão não encontrado." });
-    const auction = await Auction.findById(request.params.id)
-      .populate({
-        ...publicProduct,
-        select: "nome descricao unidade produtorId",
-      })
-      .populate({
-        ...publicProducer,
-        select: "nome perfilProdutor.descricao perfilProdutor.localidade",
-      })
-      .lean();
-    const result = publicAuction(auction, now);
+    const result = await findPublicAuction(request.params.id, now);
     if (!result)
       return response.status(404).json({ erro: "Leilão não encontrado." });
     response.json(result);
@@ -143,7 +112,12 @@ router.post(
         const byId = new Map();
         for (const id of [...ids].sort()) {
           const product = await Product.findOneAndUpdate(
-            { _id: id, produtorId: request.user.id, publicado: true },
+            {
+              _id: id,
+              produtorId: request.user.id,
+              publicado: true,
+              bloqueado: { $ne: true },
+            },
             {
               $inc: { revisaoLeiloes: 1 },
             },

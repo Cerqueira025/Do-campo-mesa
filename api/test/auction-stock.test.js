@@ -37,6 +37,7 @@ function matches(record, filter) {
       if (op === "$lte") return actual <= expected;
       if (op === "$gt") return actual > expected;
       if (op === "$gte") return actual >= expected;
+      if (op === "$ne") return actual !== expected;
       throw new Error(`Operador inesperado: ${op}`);
     });
   });
@@ -185,11 +186,19 @@ test("Stock insuficiente no segundo produto cancela sem descontos parciais", asy
   );
 });
 
-for (const change of ["removed", "private", "owner", "unit", "producer"]) {
+for (const change of [
+  "removed",
+  "private",
+  "blocked",
+  "owner",
+  "unit",
+  "producer",
+]) {
   test(`Revalida disponibilidade ao iniciar: ${change}`, async (t) => {
     const db = fixture(t);
     if (change === "removed") db.products.pop();
     if (change === "private") db.products[1].publicado = false;
+    if (change === "blocked") db.products[1].bloqueado = true;
     if (change === "owner") db.products[1].produtorId = "other";
     if (change === "unit") db.products[1].unidade = "g";
     if (change === "producer") db.approved = false;

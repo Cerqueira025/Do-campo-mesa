@@ -59,6 +59,7 @@ router.post(
         const products = await Product.find({
           _id: { $in: [...quantities.keys()] },
           publicado: true,
+          bloqueado: { $ne: true },
         }).session(session);
         if (products.length !== quantities.size)
           throw Object.assign(
@@ -143,6 +144,7 @@ router.post(
             {
               _id: product._id,
               publicado: true,
+              bloqueado: { $ne: true },
               stock: { $gte: quantities.get(String(product._id)) },
             },
             { $inc: { stock: -quantities.get(String(product._id)) } },

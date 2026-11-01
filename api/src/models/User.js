@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { text } from "./fields.js";
+import { decision, privateDecision } from "./decision.js";
 
 const producerSchema = new mongoose.Schema(
   {
@@ -22,6 +23,7 @@ const producerSchema = new mongoose.Schema(
 
 const userSchema = new mongoose.Schema(
   {
+    ultimaDecisao: decision,
     papel: {
       type: String,
       required: true,
@@ -52,7 +54,7 @@ const userSchema = new mongoose.Schema(
       },
     },
   },
-  { timestamps: true },
+  { timestamps: true, toJSON: { transform: privateDecision } },
 );
 
 userSchema.index({ email: 1 }, { unique: true });

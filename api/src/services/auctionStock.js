@@ -72,6 +72,7 @@ export async function processAuctionStock(id, now) {
       const products = await Product.find({
         _id: { $in: auction.produtos.map((line) => line.produtoId) },
       })
+        .select("+bloqueado")
         .session(session)
         .lean();
       if (new Date(auction.dataFim).getTime() <= (now ?? Date.now())) {
@@ -89,6 +90,7 @@ export async function processAuctionStock(id, now) {
           return (
             !product ||
             !product.publicado ||
+            product.bloqueado ||
             String(product.produtorId) !== String(auction.produtorId) ||
             product.unidade !== line.unidade
           );
@@ -118,6 +120,7 @@ export async function processAuctionStock(id, now) {
             _id: line.produtoId,
             produtorId: auction.produtorId,
             publicado: true,
+            bloqueado: { $ne: true },
             unidade: line.unidade,
             stock: { $gte: line.quantidade },
           },

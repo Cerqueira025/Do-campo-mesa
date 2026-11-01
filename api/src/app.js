@@ -5,6 +5,7 @@ import producerRoutes from "./routes/producers.js";
 import orderRoutes from "./routes/orders.js";
 import reviewRoutes from "./routes/reviews.js";
 import auctionRoutes from "./routes/auctions.js";
+import adminRoutes from "./routes/admin.js";
 
 const app = express();
 
@@ -28,6 +29,7 @@ app.use("/api/producers", producerRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/auctions", auctionRoutes);
+app.use("/api/admin", adminRoutes);
 
 app.use((error, _request, response, _next) => {
   if (response.headersSent) return _next(error);

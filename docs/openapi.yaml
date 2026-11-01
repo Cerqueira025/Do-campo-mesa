@@ -9,8 +9,9 @@ info:
     ao criar, alterar ou apagar produtos e ao criar leilões. A aprovação atual é consultada na base
     de dados em cada pedido protegido, sem exigir novo login após uma decisão administrativa.
     Produtos, perfis e leilões de produtores não aceites são omitidos das listas públicas e devolvem
-    404 no detalhe. Aprovar novamente repõe a visibilidade dos conteúdos elegíveis; a decisão não
-    elimina documentos nem cancela leilões, incluindo os terminados.
+    404 no detalhe. Apenas registos pendentes podem ser aprovados ou rejeitados, uma única vez.
+    Produtos bloqueados administrativamente também ficam indisponíveis; repor remove apenas o bloqueio.
+    Motivos e autoria das decisões só são acessíveis nas consultas administrativas.
     Pedidos POST, PUT e PATCH exigem um corpo que seja um objeto JSON; corpo ausente,
     null, arrays e valores primitivos devolvem 400. Um objeto vazio passa pela validação dos
     campos da operação. Campos desconhecidos mantêm o comportamento de cada endpoint.
@@ -20,6 +21,7 @@ info:
 servers:
   - url: http://localhost:3000/api
 tags:
+  - name: Administração
   - name: Saúde
   - name: Autenticação
   - name: Produtos
@@ -33,7 +35,7 @@ paths:
       tags: [Saúde]
       summary: Verifica se a API está disponível
       responses:
-        "200":
+        '200':
           description: API disponível
           content:
             application/json:
@@ -49,15 +51,15 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: "#/components/schemas/RegisterInput" }
+            schema: { $ref: '#/components/schemas/RegisterInput' }
       responses:
-        "201":
+        '201':
           description: Conta criada
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/UserPublic" }
-        "400": { $ref: "#/components/responses/BadRequest" }
-        "409": { $ref: "#/components/responses/Conflict" }
+              schema: { $ref: '#/components/schemas/UserPublic' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '409': { $ref: '#/components/responses/Conflict' }
   /auth/login:
     post:
       tags: [Autenticação]
@@ -74,7 +76,7 @@ paths:
                 email: { type: string, format: email }
                 password: { type: string, format: password }
       responses:
-        "200":
+        '200':
           description: Sessão iniciada
           content:
             application/json:
@@ -83,9 +85,9 @@ paths:
                 required: [token, utilizador]
                 properties:
                   token: { type: string }
-                  utilizador: { $ref: "#/components/schemas/UserPublic" }
-        "400": { $ref: "#/components/responses/BadRequest" }
-        "401": { $ref: "#/components/responses/Unauthorized" }
+                  utilizador: { $ref: '#/components/schemas/UserPublic' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
   /auth/recuperar-password:
     post:
       tags: [Autenticação]
@@ -100,16 +102,9 @@ paths:
               required: [email, password]
               properties:
                 email: { type: string, format: email }
-                password:
-                  {
-                    type: string,
-                    format: password,
-                    minLength: 8,
-                    maxLength: 72,
-                    description: Máximo de 72 bytes em UTF-8.,
-                  }
+                password: { type: string, format: password, minLength: 8, maxLength: 72, description: Máximo de 72 bytes em UTF-8. }
       responses:
-        "200":
+        '200':
           description: Password atualizada, sem devolver dados da conta ou sessão
           content:
             application/json:
@@ -118,8 +113,8 @@ paths:
                 required: [mensagem]
                 properties:
                   mensagem: { type: string, example: Palavra-passe atualizada. }
-        "400": { $ref: "#/components/responses/BadRequest" }
-        "404": { $ref: "#/components/responses/NotFound" }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
   /auth/eu:
     get:
       tags: [Autenticação]
@@ -127,12 +122,12 @@ paths:
       summary: Valida a sessão e devolve os dados atuais da conta
       description: Consulta a conta na base de dados, incluindo o estado atual de aprovação de produtores pendentes, aceites ou rejeitados. Tokens expirados, inválidos ou de contas removidas devolvem 401. Nunca devolve passwords ou hashes.
       responses:
-        "200":
+        '200':
           description: Utilizador autenticado
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/UserPublic" }
-        "401": { $ref: "#/components/responses/Unauthorized" }
+              schema: { $ref: '#/components/schemas/UserPublic' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
   /products:
     get:
       tags: [Produtos]
@@ -145,74 +140,30 @@ paths:
         Parâmetros omitidos mantêm os defaults. q, categoria, localidade, epoca e produtorId
         vazios são ignorados; q composto apenas por espaços devolve 400. Parâmetros desconhecidos são ignorados.
       parameters:
-        - {
-            name: q,
-            in: query,
-            schema: { type: string, maxLength: 100 },
-            description: Pesquisa sem distinção de maiúsculas em produto,
-            categoria e produtor.,
-          }
+        - { name: q, in: query, schema: { type: string, maxLength: 100 }, description: Pesquisa sem distinção de maiúsculas em produto, categoria e produtor. }
         - { name: categoria, in: query, schema: { type: string } }
-        - {
-            name: precoMin,
-            in: query,
-            schema: { type: number, minimum: 0 },
-            description: Preço em euros.,
-          }
-        - {
-            name: precoMax,
-            in: query,
-            schema: { type: number, minimum: 0 },
-            description: Preço em euros.,
-          }
+        - { name: precoMin, in: query, schema: { type: number, minimum: 0 }, description: Preço em euros. }
+        - { name: precoMax, in: query, schema: { type: number, minimum: 0 }, description: Preço em euros. }
         - { name: bio, in: query, schema: { type: boolean } }
-        - {
-            name: avaliacaoMin,
-            in: query,
-            schema: { type: number, minimum: 1, maximum: 5 },
-            description: Média mínima das avaliações públicas do produto. Exclui produtos sem avaliações públicas quando usado.,
-          }
-        - {
-            name: epoca,
-            in: query,
-            schema: { type: string },
-            description: Primavera (primavera),
-            verão (verao),
-            outono e inverno incluem produtos de todo-o-ano. Todo-o-ano seleciona apenas produtos disponíveis todo o ano.,
-          }
-        - {
-            name: localidade,
-            in: query,
-            schema: { type: string, maxLength: 100 },
-          }
+        - { name: avaliacaoMin, in: query, schema: { type: number, minimum: 1, maximum: 5 }, description: Média mínima das avaliações públicas do produto. Exclui produtos sem avaliações públicas quando usado. }
+        - { name: epoca, in: query, schema: { type: string }, description: Primavera (primavera), verão (verao), outono e inverno incluem produtos de todo-o-ano. Todo-o-ano seleciona apenas produtos disponíveis todo o ano. }
+        - { name: localidade, in: query, schema: { type: string, maxLength: 100 } }
         - { name: produtorId, in: query, schema: { type: string } }
-        - {
-            name: page,
-            in: query,
-            schema: { type: integer, minimum: 1, default: 1 },
-          }
-        - {
-            name: limit,
-            in: query,
-            schema: { type: integer, minimum: 1, maximum: 100, default: 24 },
-          }
+        - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 24 } }
       responses:
-        "200":
+        '200':
           description: Página de produtos; valores monetários são cêntimos inteiros
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  items:
-                    {
-                      type: array,
-                      items: { $ref: "#/components/schemas/Product" },
-                    }
+                  items: { type: array, items: { $ref: '#/components/schemas/Product' } }
                   page: { type: integer }
                   limit: { type: integer }
                   total: { type: integer }
-        "400": { $ref: "#/components/responses/BadRequest" }
+        '400': { $ref: '#/components/responses/BadRequest' }
     post:
       tags: [Produtos]
       security: [{ bearerAuth: [] }]
@@ -222,25 +173,25 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: "#/components/schemas/ProductInput" }
+            schema: { $ref: '#/components/schemas/ProductInput' }
       responses:
-        "201":
+        '201':
           description: Produto criado
           headers:
             Location: { schema: { type: string } }
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/Product" }
-        "400": { $ref: "#/components/responses/BadRequest" }
-        "401": { $ref: "#/components/responses/Unauthorized" }
-        "403": { $ref: "#/components/responses/Forbidden" }
+              schema: { $ref: '#/components/schemas/Product' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
   /products/filters:
     get:
       tags: [Produtos]
       summary: Opções de filtros de todo o catálogo público de produtores aprovados
       description: Valores únicos e ordenados alfabeticamente. Apenas produtores e localidades com produtos publicados são incluídos.
       responses:
-        "200":
+        '200':
           description: Opções independentes da pesquisa e paginação
           content:
             application/json:
@@ -259,21 +210,13 @@ paths:
                         id: { type: string }
                         nome: { type: string }
   /products/{id}:
-    parameters: [{ $ref: "#/components/parameters/id" }]
+    parameters: [{ $ref: '#/components/parameters/id' }]
     get:
       tags: [Produtos]
       summary: Obtém um produto publicado de produtor aprovado
       responses:
-        "200":
-          {
-            description: Produto público,
-            content:
-              {
-                application/json:
-                  { schema: { $ref: "#/components/schemas/Product" } },
-              },
-          }
-        "404": { $ref: "#/components/responses/NotFound" }
+        '200': { description: Produto público, content: { application/json: { schema: { $ref: '#/components/schemas/Product' } } } }
+        '404': { $ref: '#/components/responses/NotFound' }
     put:
       tags: [Produtos]
       security: [{ bearerAuth: [] }]
@@ -283,71 +226,55 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: "#/components/schemas/ProductInput" }
+            schema: { $ref: '#/components/schemas/ProductInput' }
       responses:
-        "200":
-          {
-            description: Produto atualizado,
-            content:
-              {
-                application/json:
-                  { schema: { $ref: "#/components/schemas/Product" } },
-              },
-          }
-        "400": { $ref: "#/components/responses/BadRequest" }
-        "401": { $ref: "#/components/responses/Unauthorized" }
-        "403": { $ref: "#/components/responses/Forbidden" }
-        "409": { $ref: "#/components/responses/Conflict" }
-        "404": { $ref: "#/components/responses/NotFound" }
+        '200': { description: Produto atualizado, content: { application/json: { schema: { $ref: '#/components/schemas/Product' } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '404': { $ref: '#/components/responses/NotFound' }
     delete:
       tags: [Produtos]
       security: [{ bearerAuth: [] }]
       summary: Apaga um produto pertencente ao produtor autenticado e aprovado
       description: Produtos com leilões associados, incluindo terminados, não podem ser apagados. A verificação e eliminação são transacionais e sincronizadas com a criação de leilões; requer MongoDB com suporte a transações (replica set).
       responses:
-        "204": { description: Produto apagado }
-        "409": { $ref: "#/components/responses/Conflict" }
-        "401": { $ref: "#/components/responses/Unauthorized" }
-        "403": { $ref: "#/components/responses/Forbidden" }
-        "404": { $ref: "#/components/responses/NotFound" }
+        '204': { description: Produto apagado }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
   /producers:
     get:
       tags: [Produtores]
       summary: Lista produtores aprovados sem expor morada privada
       responses:
-        "200":
+        '200':
           description: Produtores aprovados
           content:
             application/json:
-              schema:
-                {
-                  type: array,
-                  items: { $ref: "#/components/schemas/Producer" },
-                }
+              schema: { type: array, items: { $ref: '#/components/schemas/Producer' } }
   /producers/pendentes:
     get:
       tags: [Produtores]
       security: [{ bearerAuth: [] }]
       summary: Lista registos pendentes para análise por um administrador
       responses:
-        "200":
+        '200':
           description: Produtores pendentes, incluindo dados de contacto e da exploração
           content:
             application/json:
-              schema:
-                {
-                  type: array,
-                  items: { $ref: "#/components/schemas/PendingProducer" },
-                }
-        "401": { $ref: "#/components/responses/Unauthorized" }
-        "403": { $ref: "#/components/responses/Forbidden" }
+              schema: { type: array, items: { $ref: '#/components/schemas/PendingProducer' } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
   /producers/{id}/validacao:
-    parameters: [{ $ref: "#/components/parameters/id" }]
+    parameters: [{ $ref: '#/components/parameters/id' }]
     patch:
       tags: [Produtores]
       security: [{ bearerAuth: [] }]
-      summary: Aprova ou rejeita um produtor como administrador
-      description: A decisão é consultada na base de dados nas operações protegidas e consultas públicas seguintes; o produtor não precisa de um novo JWT. A rejeição oculta os produtos, o perfil e todos os leilões, incluindo terminados, sem eliminar documentos ou cancelar leilões. Voltar a aprovar repõe a visibilidade dos conteúdos que cumpram as restantes condições públicas.
+      summary: Aprova ou rejeita um produtor ainda pendente como administrador
+      description: A primeira decisão resolve o registo pendente. Repetições ou uma decisão anterior desatualizada devolvem 409. Motivo obrigatório ao rejeitar (1–500 caracteres). decisaoAnterior é a data ISO observada ou null se ainda não existir (também o valor por omissão). Não exige novo JWT do produtor.
       requestBody:
         required: true
         content:
@@ -357,24 +284,27 @@ paths:
               required: [validacao]
               properties:
                 validacao: { type: string, enum: [aceite, rejeitado] }
+                motivo: { type: string, maxLength: 500, description: Obrigatório e não vazio ao rejeitar }
+                decisaoAnterior: { type: string, format: date-time, nullable: true, default: null }
       responses:
-        "200":
+        '200':
           description: Validação atualizada
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/UserPublic" }
-        "400": { $ref: "#/components/responses/BadRequest" }
-        "401": { $ref: "#/components/responses/Unauthorized" }
-        "403": { $ref: "#/components/responses/Forbidden" }
-        "404": { $ref: "#/components/responses/NotFound" }
+              schema: { $ref: '#/components/schemas/UserPublic' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: Decisão já resolvida ou desatualizada }
   /producers/{id}:
-    parameters: [{ $ref: "#/components/parameters/id" }]
+    parameters: [{ $ref: '#/components/parameters/id' }]
     get:
       tags: [Produtores]
       summary: Obtém o perfil público, produtos e avaliações de um produtor aprovado
       responses:
-        "200": { description: Perfil público do produtor }
-        "404": { $ref: "#/components/responses/NotFound" }
+        '200': { description: Perfil público do produtor }
+        '404': { $ref: '#/components/responses/NotFound' }
   /orders:
     get:
       tags: [Encomendas]
@@ -412,23 +342,15 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
         '409': { $ref: '#/components/responses/Conflict' }
   /orders/{id}:
-    parameters: [{ $ref: "#/components/parameters/id" }]
+    parameters: [{ $ref: '#/components/parameters/id' }]
     get:
       tags: [Encomendas]
       security: [{ bearerAuth: [] }]
       summary: Obtém uma encomenda própria ou qualquer encomenda como administrador
       responses:
-        "200":
-          {
-            description: Encomenda,
-            content:
-              {
-                application/json:
-                  { schema: { $ref: "#/components/schemas/Order" } },
-              },
-          }
-        "401": { $ref: "#/components/responses/Unauthorized" }
-        "404": { $ref: "#/components/responses/NotFound" }
+        '200': { description: Encomenda, content: { application/json: { schema: { $ref: '#/components/schemas/Order' } } } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
   /orders/{id}/reviews:
     parameters: [{ $ref: '#/components/parameters/id' }]
     get:
@@ -448,7 +370,7 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
   /orders/{id}/estado:
-    parameters: [{ $ref: "#/components/parameters/id" }]
+    parameters: [{ $ref: '#/components/parameters/id' }]
     patch:
       tags: [Encomendas]
       security: [{ bearerAuth: [] }]
@@ -464,12 +386,12 @@ paths:
               properties:
                 estado: { type: string, enum: [confirmada, pronta, entregue] }
       responses:
-        "200": { description: Estado atualizado }
-        "400": { $ref: "#/components/responses/BadRequest" }
-        "401": { $ref: "#/components/responses/Unauthorized" }
-        "403": { $ref: "#/components/responses/Forbidden" }
-        "404": { $ref: "#/components/responses/NotFound" }
-        "409": { $ref: "#/components/responses/Conflict" }
+        '200': { description: Estado atualizado }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
   /reviews:
     post:
       tags: [Avaliações]
@@ -495,33 +417,34 @@ paths:
                 classificacao: { type: integer, minimum: 1, maximum: 5 }
                 comentario: { type: string }
       responses:
-        "201": { description: Avaliação criada }
-        "400": { $ref: "#/components/responses/BadRequest" }
-        "401": { $ref: "#/components/responses/Unauthorized" }
-        "403": { $ref: "#/components/responses/Forbidden" }
-        "409": { $ref: "#/components/responses/Conflict" }
+        '201': { description: Avaliação criada }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
   /reviews/products/{id}:
-    parameters: [{ $ref: "#/components/parameters/id" }]
+    parameters: [{ $ref: '#/components/parameters/id' }]
     get:
       tags: [Avaliações]
       summary: Lista avaliações públicas de um produto
       responses:
-        "200": { description: Avaliações e média }
-        "404": { $ref: "#/components/responses/NotFound" }
+        '200': { description: Avaliações e média }
+        '404': { $ref: '#/components/responses/NotFound' }
   /reviews/producers/{id}:
-    parameters: [{ $ref: "#/components/parameters/id" }]
+    parameters: [{ $ref: '#/components/parameters/id' }]
     get:
       tags: [Avaliações]
       summary: Lista avaliações públicas de um produtor
       responses:
-        "200": { description: Avaliações e média }
-        "404": { $ref: "#/components/responses/NotFound" }
+        '200': { description: Avaliações e média }
+        '404': { $ref: '#/components/responses/NotFound' }
   /reviews/{id}/moderacao:
-    parameters: [{ $ref: "#/components/parameters/id" }]
+    parameters: [{ $ref: '#/components/parameters/id' }]
     patch:
       tags: [Avaliações]
       security: [{ bearerAuth: [] }]
       summary: Publica ou oculta uma avaliação como administrador
+      description: Motivo obrigatório ao ocultar. A referência à última decisão é comparada atomicamente; uma decisão desatualizada devolve 409. Qualquer administrador pode republicar.
       requestBody:
         required: true
         content:
@@ -531,12 +454,136 @@ paths:
               required: [estado]
               properties:
                 estado: { type: string, enum: [publicada, oculta] }
+                motivo: { type: string, maxLength: 500, description: Obrigatório e não vazio ao ocultar }
+                decisaoAnterior: { type: string, format: date-time, nullable: true, default: null }
       responses:
-        "200": { description: Avaliação moderada }
-        "400": { $ref: "#/components/responses/BadRequest" }
-        "401": { $ref: "#/components/responses/Unauthorized" }
-        "403": { $ref: "#/components/responses/Forbidden" }
-        "404": { $ref: "#/components/responses/NotFound" }
+        '200': { description: Avaliação moderada }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: Decisão já resolvida ou desatualizada }
+  /admin/summary:
+    get:
+      tags: [Administração]
+      security: [{ bearerAuth: [] }]
+      summary: Contadores globais por papel, estado de encomenda, produtores pendentes e leilões ativos
+      responses:
+        '200':
+          description: Contadores globais, incluindo recursos ocultos; grupos sem registos podem estar ausentes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users: { type: object, additionalProperties: { type: integer } }
+                  orders: { type: object, additionalProperties: { type: integer } }
+                  pendingProducers: { type: integer }
+                  activeAuctions: { type: integer }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /admin/{resource}:
+    get:
+      tags: [Administração]
+      security: [{ bearerAuth: [] }]
+      summary: Lista administrativa paginada de utilizadores, produtos, avaliações, encomendas ou leilões
+      description: >-
+        Exige papel atual administrador. Inclui recursos ocultos e dados da última decisão
+        apenas nos recursos moderáveis. Nunca inclui hashes. Pesquisa literal por nomes;
+        users inclui email, products inclui nome do produtor, reviews inclui comentário,
+        autor e alvo, orders inclui referência e nomes das partes, auctions inclui lote e produtor.
+        Pendentes ordenados por registo ascendente; leilões por dataFim ascendente;
+        restantes por createdAt descendente, sempre com ID como desempate.
+        Filtros específicos por recurso estão documentados em docs/administracao.md.
+      parameters:
+        - { name: resource, in: path, required: true, schema: { type: string, enum: [users, products, reviews, orders, auctions] } }
+        - { name: q, in: query, schema: { type: string, maxLength: 100 } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 24 } }
+        - { name: papel, in: query, schema: { type: string, enum: [comprador, produtor, administrador] } }
+        - { name: validacao, in: query, schema: { type: string, enum: [pendente, aceite, rejeitado] } }
+        - { name: estado, in: query, schema: { type: string }, description: Estado válido para o recurso consultado }
+        - { name: alvo, in: query, schema: { type: string, enum: [produto, produtor] } }
+        - { name: categoria, in: query, schema: { type: string, maxLength: 100 } }
+        - { name: visibilidade, in: query, schema: { type: string, enum: [publica, despublicado, bloqueado, produtor-indisponivel] } }
+        - { name: origem, in: query, schema: { type: string, enum: [catalogo, leilao] } }
+        - { name: produtorId, in: query, schema: { type: string, pattern: '^[a-fA-F0-9]{24}$' } }
+        - { name: compradorId, in: query, schema: { type: string, pattern: '^[a-fA-F0-9]{24}$' } }
+      responses:
+        '200':
+          description: Resultados paginados com projeções administrativas explícitas
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, page, limit, total]
+                properties:
+                  items: { type: array, items: { type: object } }
+                  page: { type: integer }
+                  limit: { type: integer }
+                  total: { type: integer }
+                  categorias: { type: array, items: { type: string }, description: Apenas em products; opções independentes da pesquisa e paginação }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /admin/{resource}/{id}:
+    parameters:
+      - { name: resource, in: path, required: true, schema: { type: string, enum: [users, products, reviews, auctions] } }
+      - { $ref: '#/components/parameters/id' }
+    get:
+      tags: [Administração]
+      security: [{ bearerAuth: [] }]
+      summary: Detalhe administrativo de um recurso, incluindo recursos ocultos
+      description: >-
+        Users inclui perfil e contacto, sem hashes; products inclui leiloes associados;
+        reviews inclui autor, alvo e encomenda; auctions inclui produtos e as últimas
+        vinte licitacoes. Products e auctions incluem visivel com a disponibilidade
+        pública efetiva. Referências removidas podem ser null. Encomendas usam GET /orders/{id}.
+        ultimaDecisao, quando existe, contém administradorId (nome e ID, ou null), data e motivo.
+      responses:
+        '200': { description: Detalhe administrativo com referências resolvidas }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /admin/products/{id}/moderacao:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    patch:
+      tags: [Administração]
+      security: [{ bearerAuth: [] }]
+      summary: Oculta ou repõe um produto completo sem alterar publicação ou stock
+      description: >-
+        Apenas administradores. Motivo obrigatório ao bloquear; a última decisão
+        observada é comparada atomicamente. Repor não publica um produto despublicado
+        pelo produtor. Leilões associados deixam de ser públicos; os ativos preservam
+        lances e reservas e podem gerar encomenda ao fechar. Não cancela encomendas
+        nem devolve stock diretamente. O motivo fica restrito à administração.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [bloqueado]
+              properties:
+                bloqueado: { type: boolean }
+                motivo: { type: string, maxLength: 500, description: Obrigatório e não vazio ao bloquear }
+                decisaoAnterior: { type: string, format: date-time, nullable: true, default: null }
+      responses:
+        '200':
+          description: Bloqueio atualizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  _id: { type: string }
+                  bloqueado: { type: boolean }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: A decisão anterior foi entretanto alterada }
   /auctions:
     get:
       tags: [Leilões]
@@ -551,29 +598,10 @@ paths:
         Leilões indisponíveis são omitidos; os terminados continuam públicos se cumprirem estas condições.
         A consulta não altera os documentos guardados. Valores de estado repetidos ou desconhecidos devolvem 400.
       parameters:
-        - {
-            name: estado,
-            in: query,
-            schema:
-              { type: string, enum: [agendado, ativo, terminado, cancelado] },
-          }
+        - { name: estado, in: query, schema: { type: string, enum: [agendado, ativo, terminado, cancelado] } }
       responses:
-        "200":
-          {
-            description: Lista de leilões,
-            content:
-              {
-                application/json:
-                  {
-                    schema:
-                      {
-                        type: array,
-                        items: { $ref: "#/components/schemas/Auction" },
-                      },
-                  },
-              },
-          }
-        "400": { $ref: "#/components/responses/BadRequest" }
+        '200': { description: Lista de leilões, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/Auction' } } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
     post:
       tags: [Leilões]
       security: [{ bearerAuth: [] }]
@@ -585,8 +613,7 @@ paths:
           application/json:
             schema:
               type: object
-              required:
-                [produtos, lote, precoBase, incremento, dataInicio, dataFim]
+              required: [produtos, lote, precoBase, incremento, dataInicio, dataFim]
               properties:
                 produtos:
                   type: array
@@ -600,41 +627,24 @@ paths:
                       quantidade: { type: number, exclusiveMinimum: 0 }
                 lote: { type: string }
                 precoBase: { type: integer, minimum: 0, description: Cêntimos. }
-                incremento:
-                  { type: integer, minimum: 1, description: Cêntimos. }
+                incremento: { type: integer, minimum: 1, description: Cêntimos. }
                 dataInicio: { type: string, format: date-time }
                 dataFim: { type: string, format: date-time }
       responses:
-        "201":
-          {
-            description: Leilão criado,
-            content:
-              {
-                application/json:
-                  { schema: { $ref: "#/components/schemas/Auction" } },
-              },
-          }
-        "400": { $ref: "#/components/responses/BadRequest" }
-        "401": { $ref: "#/components/responses/Unauthorized" }
-        "403": { $ref: "#/components/responses/Forbidden" }
-        "404": { $ref: "#/components/responses/NotFound" }
+        '201': { description: Leilão criado, content: { application/json: { schema: { $ref: '#/components/schemas/Auction' } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
   /auctions/{id}:
-    parameters: [{ $ref: "#/components/parameters/id" }]
+    parameters: [{ $ref: '#/components/parameters/id' }]
     get:
       tags: [Leilões]
       summary: Obtém um leilão e os dados públicos do lote e produtor
       description: Devolve o estado efetivo com as mesmas regras da listagem. Um identificador inválido, leilão inexistente, produto apagado, despublicado ou de outro produtor, ou produtor removido ou não aprovado devolve 404. A consulta não altera o documento guardado.
       responses:
-        "200":
-          {
-            description: Leilão,
-            content:
-              {
-                application/json:
-                  { schema: { $ref: "#/components/schemas/Auction" } },
-              },
-          }
-        "404": { $ref: "#/components/responses/NotFound" }
+        '200': { description: Leilão, content: { application/json: { schema: { $ref: '#/components/schemas/Auction' } } } }
+        '404': { $ref: '#/components/responses/NotFound' }
 components:
   securitySchemes:
     bearerAuth:
@@ -652,49 +662,37 @@ components:
       description: Dados ou parâmetros inválidos, incluindo corpo ausente ou que não seja objeto JSON, JSON malformado e formatos de query inválidos.
       content:
         application/json:
-          schema: { $ref: "#/components/schemas/Error" }
+          schema: { $ref: '#/components/schemas/Error' }
     Unauthorized:
       description: Autenticação necessária ou inválida
       content:
         application/json:
-          schema: { $ref: "#/components/schemas/Error" }
+          schema: { $ref: '#/components/schemas/Error' }
     Forbidden:
       description: Papel ou propriedade sem permissão
       content:
         application/json:
-          schema: { $ref: "#/components/schemas/Error" }
+          schema: { $ref: '#/components/schemas/Error' }
     NotFound:
       description: Recurso não encontrado
       content:
         application/json:
-          schema: { $ref: "#/components/schemas/Error" }
+          schema: { $ref: '#/components/schemas/Error' }
     Conflict:
       description: Conflito de dados, estado ou stock
       content:
         application/json:
-          schema: { $ref: "#/components/schemas/Error" }
+          schema: { $ref: '#/components/schemas/Error' }
   schemas:
     Auction:
       type: object
-      required:
-        [
-          _id,
-          produtos,
-          lote,
-          precoBase,
-          incremento,
-          dataInicio,
-          dataFim,
-          estado,
-          reservaStock,
-          licitacaoAtual,
-        ]
+      required: [_id, produtos, lote, precoBase, incremento, dataInicio, dataFim, estado, reservaStock, licitacaoAtual]
       properties:
         _id: { type: string }
         produtorId:
           oneOf:
             - { type: string }
-            - { $ref: "#/components/schemas/Producer" }
+            - { $ref: '#/components/schemas/Producer' }
         produtos:
           type: array
           minItems: 1
@@ -712,27 +710,13 @@ components:
               quantidade: { type: number, exclusiveMinimum: 0 }
               unidade: { type: string, enum: [kg, g, l, unidade] }
         lote: { type: string }
-        precoBase:
-          {
-            type: integer,
-            minimum: 0,
-            description: Preço do lote completo em cêntimos.,
-          }
+        precoBase: { type: integer, minimum: 0, description: Preço do lote completo em cêntimos. }
         incremento: { type: integer, minimum: 1 }
         dataInicio: { type: string, format: date-time }
         dataFim: { type: string, format: date-time }
         estado: { type: string, enum: [agendado, ativo, terminado, cancelado] }
-        reservaStock:
-          {
-            type: string,
-            enum: [pendente, reservada, libertada, atribuida, sem-reserva],
-          }
-        motivoCancelamento:
-          {
-            type: string,
-            enum:
-              [stock-insuficiente, produto-indisponivel, produtor-indisponivel],
-          }
+        reservaStock: { type: string, enum: [pendente, reservada, libertada, atribuida, sem-reserva] }
+        motivoCancelamento: { type: string, enum: [stock-insuficiente, produto-indisponivel, produtor-indisponivel] }
         licitacaoAtual:
           type: object
           properties:
@@ -758,14 +742,7 @@ components:
       properties:
         nome: { type: string, minLength: 2, maxLength: 100 }
         email: { type: string, format: email }
-        password:
-          {
-            type: string,
-            format: password,
-            minLength: 8,
-            maxLength: 72,
-            description: Máximo de 72 bytes em UTF-8.,
-          }
+        password: { type: string, format: password, minLength: 8, maxLength: 72, description: Máximo de 72 bytes em UTF-8. }
         papel: { type: string, enum: [comprador, produtor], default: comprador }
         perfilProdutor:
           description: Obrigatório quando papel é produtor. Novas contas ficam pendentes; um estado enviado pelo cliente é ignorado.
@@ -790,7 +767,7 @@ components:
         email: { type: string, format: email }
         perfilProdutor:
           allOf:
-            - $ref: "#/components/schemas/RegisterInput/properties/perfilProdutor"
+            - $ref: '#/components/schemas/RegisterInput/properties/perfilProdutor'
             - type: object
               properties:
                 validacao: { type: string, enum: [pendente] }
@@ -823,11 +800,11 @@ components:
         publicado: { type: boolean }
     Product:
       allOf:
-        - { $ref: "#/components/schemas/ProductInput" }
+        - { $ref: '#/components/schemas/ProductInput' }
         - type: object
           properties:
             _id: { type: string }
-            produtorId: { $ref: "#/components/schemas/Producer" }
+            produtorId: { $ref: '#/components/schemas/Producer' }
             createdAt: { type: string, format: date-time }
             updatedAt: { type: string, format: date-time }
     Delivery:

@@ -389,16 +389,27 @@ test("Lista administrativa exige papel atual de administrador e não é a rota p
   );
 });
 
-test("Aprovação e rejeição alteram permissões do produtor com o mesmo JWT", async (t) => {
+test("Aprovação ou rejeição resolve um registo pendente uma vez e atualiza as permissões com o mesmo JWT", async (t) => {
   const producer = account(producerId, "produtor");
   const admin = account(adminId, "administrador");
   users(t, [producer, admin, account()]);
+  t.mock.method(User, "exists", async (filter) =>
+    filter._id === producerId ? { _id: producerId } : null,
+  );
   t.mock.method(User, "findOneAndUpdate", async (filter, update, options) => {
-    assert.deepEqual(Object.keys(update.$set), ["perfilProdutor.validacao"]);
+    assert.deepEqual(Object.keys(update.$set), [
+      "perfilProdutor.validacao",
+      "ultimaDecisao",
+    ]);
     assert.equal(filter.papel, "produtor");
     assert.equal(options.runValidators, true);
-    if (filter._id !== producerId) return null;
+    if (
+      filter._id !== producerId ||
+      producer.perfilProdutor.validacao !== filter["perfilProdutor.validacao"]
+    )
+      return null;
     producer.perfilProdutor.validacao = update.$set["perfilProdutor.validacao"];
+    producer.ultimaDecisao = update.$set.ultimaDecisao;
     return producer;
   });
   const productId = "dca000000000000000000065";
@@ -421,6 +432,7 @@ test("Aprovação e rejeição alteram permissões do produtor com o mesmo JWT",
         _id: productId,
         produtorId: producerId,
         publicado: true,
+        bloqueado: { $ne: true },
       });
       return { _id: productId, stock: 10, unidade: "kg" };
     },
@@ -500,7 +512,7 @@ test("Aprovação e rejeição alteram permissões do produtor com o mesmo JWT",
     call(`/producers/${id}/validacao`, {
       token,
       method: "PATCH",
-      body: { validacao },
+      body: { validacao, motivo: "Decisão de teste" },
     });
   await blocked("pendente");
   assert.equal((await decide("aceite", tokenFor())).status, 403);
@@ -515,18 +527,15 @@ test("Aprovação e rejeição alteram permissões do produtor com o mesmo JWT",
     (await call("/auth/eu", { token: producerToken })).body.validacao,
     "aceite",
   );
+  assert.equal((await decide("rejeitado")).status, 409);
+  assert.equal(
+    (await call("/auth/eu", { token: producerToken })).body.validacao,
+    "aceite",
+  );
+  // A separate pending registration can be rejected, but cannot be approved afterwards.
+  producer.perfilProdutor.validacao = "pendente";
+  producer.ultimaDecisao = undefined;
   assert.equal((await decide("rejeitado")).body.validacao, "rejeitado");
   await blocked("rejeitado");
-  assert.equal(
-    (
-      await call("/auth/login", {
-        method: "POST",
-        body: { email: producer.email, password: "PasswordTeste123!" },
-      })
-    ).status,
-    200,
-  );
-  assert.equal((await decide("aceite")).body.validacao, "aceite");
-  assert.equal((await product()).status, 201);
-  assert.equal((await auction()).status, 201);
+  assert.equal((await decide("aceite")).status, 409);
 });

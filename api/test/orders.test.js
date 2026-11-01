@@ -68,7 +68,8 @@ async function setup(
   t.mock.method(Product, "find", (filter) => ({
     session: async (supplied) => {
       assert.equal(supplied, session);
-      return products;
+      assert.deepEqual(filter.bloqueado, { $ne: true });
+      return products.filter((product) => !product.bloqueado);
     },
   }));
   t.mock.method(User, "findOne", (filter) => ({
@@ -89,7 +90,8 @@ async function setup(
       const product = products.find(
         (p) => String(p._id) === String(filter._id),
       );
-      if (product.stock < filter.stock.$gte) return null;
+      assert.deepEqual(filter.bloqueado, { $ne: true });
+      if (product.bloqueado || product.stock < filter.stock.$gte) return null;
       product.stock += update.$inc.stock;
       return product;
     },
@@ -185,6 +187,17 @@ test("Produtor indisponível impede reserva e encomenda", async (t) => {
   assert.equal(fixture.products[0].stock, 5);
   assert.equal(fixture.persisted, undefined);
   assert.ok(fixture.ended);
+});
+
+test("Produto bloqueado impede a compra sem reservar stock nem criar encomenda", async (t) => {
+  const fixture = await setup(t);
+  fixture.products[0].bloqueado = true;
+  const result = await fixture.invoke([
+    { produtoId: productId, quantidade: 1 },
+  ]);
+  assert.equal(result.error.status, 409);
+  assert.equal(fixture.products[0].stock, 5);
+  assert.equal(fixture.persisted, undefined);
 });
 
 test("Stock insuficiente na segunda linha aborta transação e não cria encomenda", async (t) => {

@@ -18,7 +18,8 @@ Os estilos específicos ficam junto do componente, em ficheiros `.scss`. Usa `@u
 ### Autenticação
 
 - `src/pages/auth/` — páginas do fluxo de autenticação: `LoginPage`, `RegisterPage` e `ResetPasswordPage`.
-- `src/pages/` — `AccountPage` e `ProducerApprovalPage`, que representam áreas protegidas da conta e administração.
+- `src/pages/` — páginas da conta, catálogo, encomendas e autenticação.
+- `src/features/admin/` — estrutura, navegação, listas e detalhes administrativos; ver [administração](../docs/administracao.md).
 - `src/features/auth/components/` — `AuthLayout` e navegação da sessão, com os respetivos estilos.
 - `src/features/auth/` — `AuthProvider`, contexto, hooks e `ProtectedRoute`; `authService.ts` contém os pedidos à API, `auth.ts` os tipos e auxiliares puros e `sessionStorage.ts` a persistência e expiração local da sessão.
 - `src/pages/auth/AuthForm.scss` e `src/features/auth/AuthPage.scss` — estilos partilhados, respetivamente, pelos formulários do fluxo e pelas páginas protegidas. Os estilos exclusivos da conta e da aprovação ficam junto das páginas.

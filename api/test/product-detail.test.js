@@ -39,7 +39,11 @@ test("Detalhe carrega só o produtor do produto e mantém a resposta pública", 
     throw new Error("Não deve listar produtores.");
   });
   t.mock.method(Product, "findOne", (filter) => {
-    assert.deepEqual(filter, { _id: id, publicado: true });
+    assert.deepEqual(filter, {
+      _id: id,
+      publicado: true,
+      bloqueado: { $ne: true },
+    });
     return {
       select(fields) {
         assert.equal(fields, "-imagens");

@@ -4,6 +4,7 @@ import Order from "../models/Order.js";
 import Review from "../models/Review.js";
 import { requireAuth } from "../middleware/auth.js";
 import { requireObjectBody } from "../middleware/requestBody.js";
+import { prepareDecision, decisionConflict } from "../services/moderation.js";
 
 const router = Router();
 
@@ -137,13 +138,25 @@ router.patch(
         return response
           .status(400)
           .json({ erro: "A moderação deve publicar ou ocultar a avaliação." });
-      const review = await Review.findByIdAndUpdate(
-        request.params.id,
-        { $set: { estado } },
+      if (!mongoose.isObjectIdOrHexString(request.params.id))
+        return response.status(404).json({ erro: "Avaliação não encontrada." });
+      const decision = prepareDecision(
+        request.body,
+        request.user.id,
+        estado === "oculta",
+      );
+      const review = await Review.findOneAndUpdate(
+        { _id: request.params.id, ...decision.filter },
+        { $set: { estado, ultimaDecisao: decision.value } },
         { new: true, runValidators: true },
       ).populate("autorId", "nome");
-      if (!review)
-        return response.status(404).json({ erro: "Avaliação não encontrada." });
+      if (!review) {
+        if (!(await Review.exists({ _id: request.params.id })))
+          return response
+            .status(404)
+            .json({ erro: "Avaliação não encontrada." });
+        return decisionConflict(response);
+      }
       response.json(review);
     } catch (error) {
       next(error);

@@ -1,0 +1,95 @@
+# Administração
+
+A área React começa em `/admin` e exige o papel atual `administrador` na API.
+Inclui resumo, aprovação de registos pendentes, moderação de produtos e avaliações,
+utilizadores, encomendas e todos os estados dos leilões. Laravel, denúncias públicas,
+gráficos e verificação dos serviços Cloud ficam fora desta implementação.
+
+## Consultas
+
+- `GET /api/admin/summary`: `{ users: { [papel]: total }, orders: { [estado]: total }, pendingProducers, activeAuctions }`.
+- `GET /api/admin/users`, `/products`, `/reviews`, `/orders`, `/auctions`:
+  `{ items, page, limit, total }`. Produtos incluem também `categorias`, independentemente da página e dos filtros.
+- `GET /api/admin/users/:id`, `/products/:id`, `/reviews/:id`, `/auctions/:id`:
+  detalhes, mesmo de recursos ocultos. Encomendas reutilizam `GET /api/orders/:id`.
+
+Listagens recebem `q` (até 100 caracteres, pesquisa literal), `page` (inteiro positivo)
+e `limit` (1–100; a interface usa 24). Filtros:
+
+| Recurso      | Filtros                                                               |
+| ------------ | --------------------------------------------------------------------- |
+| Utilizadores | `papel`, `validacao`                                                  |
+| Produtos     | `categoria`, `visibilidade`, `produtorId`                             |
+| Avaliações   | `estado`, `alvo` (`produto`/`produtor`), `produtorId`                 |
+| Encomendas   | `estado`, `origem` (`catalogo`/`leilao`), `produtorId`, `compradorId` |
+| Leilões      | `estado`, `produtorId`                                                |
+
+`visibilidade` admite `publica`, `despublicado`, `bloqueado` e `produtor-indisponivel`.
+Os filtros de indisponibilidade podem sobrepor-se: um produto pode estar
+despublicado e bloqueado em simultâneo. `visivel` representa a disponibilidade
+pública efetiva. Os detalhes de produtos incluem `leiloes` associados; os de
+leilões incluem `licitacoes` com os últimos vinte lances.
+
+Utilizadores expõem dados da conta e do perfil, sem hashes. Produtos expõem dados
+do catálogo, publicação e bloqueio separados. Avaliações incluem autor, alvo,
+encomenda, nota, comentário e estado. Encomendas incluem as partes e o snapshot
+da compra. Leilões incluem produtor, produtos, reserva, datas, valores e estado
+efetivo. Referências removidas são apresentadas como indisponíveis.
+
+## Decisões
+
+- `PATCH /api/producers/:id/validacao`: `{ validacao: 'aceite' | 'rejeitado', motivo?, decisaoAnterior? }`.
+- `PATCH /api/reviews/:id/moderacao`: `{ estado: 'publicada' | 'oculta', motivo?, decisaoAnterior? }`.
+- `PATCH /api/admin/products/:id/moderacao`: `{ bloqueado: boolean, motivo?, decisaoAnterior? }`.
+
+Motivo obrigatório ao rejeitar/ocultar, com 1–500 caracteres após remover espaços
+nas extremidades. `decisaoAnterior` é a data ISO da última decisão observada,
+ou `null` quando não existe (também o valor assumido para clientes antigos que
+omitam o campo). Cada atualização compara essa referência atomicamente; dados
+desatualizados devolvem `409` e exigem atualizar e confirmar novamente.
+Uma aprovação/rejeição só atua num registo ainda pendente. Qualquer administrador
+pode reverter a moderação de produtos e avaliações, sem validação de outros.
+
+Nos detalhes administrativos, `ultimaDecisao` contém
+`{ administradorId: { _id, nome } | null, data, motivo }`. Apenas a última decisão
+é conservada. Dados antigos sem decisão continuam válidos. O bloqueio e os dados
+da decisão são excluídos das consultas e serializações normais; as consultas
+administrativas pedem-nos explicitamente. O produtor não pode alterar estes campos.
+
+Bloquear não altera `publicado`, stock, preços, descrições ou encomendas. Repor
+remove apenas o bloqueio: o produto só fica público se também estiver publicado
+e o produtor estiver aprovado. Documentos antigos sem `bloqueado` são elegíveis.
+Não é necessária migração dos dados existentes.
+
+A elegibilidade é aplicada ao catálogo, filtros, contagens, perfil público,
+detalhes, compras, criação e início de leilões e licitações. Compras e reservas
+revalidam-na nas escritas transacionais. Licitações e ocultação coordenam-se por
+escritas no produto, tal como a criação de leilões, para impedir lances após uma
+ocultação confirmada.
+
+Leilões associados deixam de ser públicos e de aceitar novos lances. Os ativos
+preservam os lances e reservas: o fecho pode gerar uma encomenda para o vencedor
+ou devolver stock quando não houver vencedor. Os agendados podem cancelar no
+início por indisponibilidade. Ocultar/repor nunca cancela encomendas nem devolve
+stock diretamente. A confirmação mostra os leilões associados e estes efeitos.
+
+## Interface e verificação
+
+Pesquisa, filtros e página ficam na URL; os detalhes preservam o endereço de
+regresso. Resumo, encomendas e leilões consultam a API a cada cinco segundos,
+apenas enquanto visíveis e sem sobreposição de ciclos. As restantes páginas
+carregam ao entrar, após decisões ou ao selecionar Atualizar. Falhas temporárias
+mantêm os dados da mesma consulta com indicação de erro.
+
+O menu segue os filtros do catálogo: lateral a partir de 1024 px, acima do conteúdo
+nos restantes ecrãs, sem sobreposição. A escolha de abrir/fechar mantém-se durante
+a navegação. Tabelas no desktop, cartões no telemóvel, avaliações sempre em cartões.
+Botões, campos, pesquisa, imagens e navegação de sessão reutilizam os componentes
+existentes; as cores provêm dos tokens.
+
+Executar `npm test` em `api/` e `npm test`, `npm run lint`, `npm run build` em
+`frontend/`. Testes HTTP locais precisam de permissão de ligação a `127.0.0.1`.
+Os testes normais simulam persistência e não precisam de Atlas. O teste de
+concorrência MongoDB existente mantém-se optativo via `MONGODB_TEST_URI`,
+exclusivamente numa base de testes isolada. A coleção Bruno inclui consultas
+administrativas e a primeira decisão definitiva sobre registos pendentes.

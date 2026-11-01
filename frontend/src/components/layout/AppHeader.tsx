@@ -58,7 +58,7 @@ export default function AppHeader({
             <IconButton
               href={
                 utilizador.papel === "administrador"
-                  ? "/admin/produtores"
+                  ? "/admin"
                   : utilizador.papel === "produtor"
                     ? "/produtor/encomendas"
                     : "/conta"

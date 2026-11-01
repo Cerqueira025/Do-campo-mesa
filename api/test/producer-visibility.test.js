@@ -16,6 +16,8 @@ function matches(record, filter) {
     const actual = key
       .split(".")
       .reduce((value, part) => value?.[part], record);
+    if (expected && Object.hasOwn(expected, "$ne"))
+      return actual !== expected.$ne;
     return expected?.$in ? expected.$in.includes(actual) : actual === expected;
   });
 }
@@ -170,4 +172,17 @@ test("Produtos, filtros e perfil público acompanham a aprovação atual sem alt
     assert.deepEqual(product, original);
     assert.deepEqual(producer, before);
   }
+  present = true;
+  producer.papel = "produtor";
+  producer.perfilProdutor.validacao = "aceite";
+  product.bloqueado = true;
+  assert.equal((await invoke(products, "/")).body.total, 0);
+  assert.equal((await invoke(products, "/:id", productId)).code, 404);
+  assert.deepEqual((await invoke(products, "/filters")).body.categorias, []);
+  assert.equal(
+    (await invoke(producers, "/:id", producerId)).body.produtos.length,
+    0,
+  );
+  product.bloqueado = false;
+  assert.equal((await invoke(products, "/")).body.total, 1);
 });

@@ -1,8 +1,10 @@
 import mongoose from "mongoose";
 import { reference, text } from "./fields.js";
+import { decision, privateDecision } from "./decision.js";
 
 const reviewSchema = new mongoose.Schema(
   {
+    ultimaDecisao: decision,
     autorId: reference("User"),
     encomendaId: reference("Order"),
     produtoId: reference("Product", false),
@@ -22,7 +24,7 @@ const reviewSchema = new mongoose.Schema(
       enum: ["publicada", "denunciada", "oculta"],
     },
   },
-  { timestamps: true },
+  { timestamps: true, toJSON: { transform: privateDecision } },
 );
 
 reviewSchema.pre("validate", function () {

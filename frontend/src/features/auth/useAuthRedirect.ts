@@ -14,7 +14,7 @@ export function useAuthRedirect(regresso: string | null) {
           (utilizador.papel === "produtor"
             ? "/conta"
             : utilizador.papel === "administrador"
-              ? "/admin/produtores"
+              ? "/admin"
               : "/"),
         { replace: true },
       );

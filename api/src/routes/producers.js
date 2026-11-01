@@ -5,6 +5,7 @@ import Product from "../models/Product.js";
 import Review from "../models/Review.js";
 import { requireAuth } from "../middleware/auth.js";
 import { requireObjectBody } from "../middleware/requestBody.js";
+import { prepareDecision, decisionConflict } from "../services/moderation.js";
 
 const router = Router();
 const publicFields =
@@ -43,13 +44,33 @@ router.patch(
       }
       if (!mongoose.isValidObjectId(request.params.id))
         return response.status(404).json({ erro: "Produtor não encontrado." });
+      const decision = prepareDecision(
+        request.body,
+        request.user.id,
+        validacao === "rejeitado",
+      );
       const producer = await User.findOneAndUpdate(
-        { _id: request.params.id, papel: "produtor" },
-        { $set: { "perfilProdutor.validacao": validacao } },
+        {
+          _id: request.params.id,
+          papel: "produtor",
+          "perfilProdutor.validacao": "pendente",
+          ...decision.filter,
+        },
+        {
+          $set: {
+            "perfilProdutor.validacao": validacao,
+            ultimaDecisao: decision.value,
+          },
+        },
         { new: true, runValidators: true },
       );
-      if (!producer)
-        return response.status(404).json({ erro: "Produtor não encontrado." });
+      if (!producer) {
+        if (!(await User.exists({ _id: request.params.id, papel: "produtor" })))
+          return response
+            .status(404)
+            .json({ erro: "Produtor não encontrado." });
+        return decisionConflict(response);
+      }
       response.json(producer.publico());
     } catch (error) {
       next(error);
@@ -69,7 +90,13 @@ router.get("/", async (_request, response, next) => {
     const ids = producers.map((producer) => producer._id);
     const [products, ratings] = await Promise.all([
       Product.aggregate([
-        { $match: { produtorId: { $in: ids }, publicado: true } },
+        {
+          $match: {
+            produtorId: { $in: ids },
+            publicado: true,
+            bloqueado: { $ne: true },
+          },
+        },
         { $group: { _id: "$produtorId", total: { $sum: 1 } } },
       ]),
       Review.aggregate([
@@ -121,7 +148,11 @@ router.get("/:id", async (request, response, next) => {
     if (!producer)
       return response.status(404).json({ erro: "Produtor não encontrado." });
     const [products, reviews] = await Promise.all([
-      Product.find({ produtorId: producer._id, publicado: true })
+      Product.find({
+        produtorId: producer._id,
+        publicado: true,
+        bloqueado: { $ne: true },
+      })
         .select("-imagens")
         .sort({ nome: 1 }),
       Review.find({ produtorId: producer._id, estado: "publicada" })

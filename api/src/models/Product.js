@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { reference, money, text, unit } from "./fields.js";
+import { decision, privateDecision } from "./decision.js";
 
 const productSchema = new mongoose.Schema(
   {
@@ -14,9 +15,11 @@ const productSchema = new mongoose.Schema(
     biologico: { type: Boolean, default: false },
     dataValidade: Date,
     publicado: { type: Boolean, default: true },
+    bloqueado: { type: Boolean, default: false, select: false },
+    ultimaDecisao: decision,
     revisaoLeiloes: { type: Number, default: 0, select: false },
   },
-  { timestamps: true },
+  { timestamps: true, toJSON: { transform: privateDecision } },
 );
 
 productSchema.index({ produtorId: 1 });

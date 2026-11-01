@@ -245,6 +245,7 @@ test("Catálogo preserva defaults, filtros textuais vazios, parâmetros desconhe
     });
     assert.deepEqual(filter, {
       publicado: true,
+      bloqueado: { $ne: true },
       $and: [{ produtorId: { $in: [] } }],
     });
     assert.equal(skip, 0);

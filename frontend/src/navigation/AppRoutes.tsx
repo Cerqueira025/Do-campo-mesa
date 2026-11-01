@@ -20,7 +20,7 @@ import RegisterPage from "../pages/auth/RegisterPage";
 import ResetPasswordPage from "../pages/auth/ResetPasswordPage";
 import AccountPage from "../pages/AccountPage";
 import ProtectedRoute from "../features/auth/ProtectedRoute";
-import ProducerApprovalPage from "../pages/ProducerApprovalPage";
+import AdminPage from "../features/admin/AdminPage";
 
 function resolvePage(pathname: string, location: string) {
   switch (pathname) {
@@ -62,7 +62,7 @@ function resolvePage(pathname: string, location: string) {
   if (/^\/admin(?:\/|$)/.test(pathname))
     return (
       <ProtectedRoute roles={["administrador"]}>
-        <ProducerApprovalPage />
+        <AdminPage />
       </ProtectedRoute>
     );
   const orderId = orderIdFromPath(pathname);

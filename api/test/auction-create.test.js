@@ -94,6 +94,7 @@ test("Criação usa um único instante e a mesma regra temporal das leituras", a
         _id: productId,
         produtorId: producerId,
         publicado: true,
+        bloqueado: { $ne: true },
       });
       time = now + 60_000;
       return { _id: productId, unidade: "kg", stock: 10 };

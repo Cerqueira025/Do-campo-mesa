@@ -170,7 +170,12 @@ Só fica `ativo` após a reserva; falta de stock ou indisponibilidade cancela o 
 sem descontos parciais. `motivoCancelamento` indica `stock-insuficiente`,
 `produto-indisponivel` ou `produtor-indisponivel`.
 Ao terminar sem vencedor, o stock é devolvido uma única vez (`libertada`); com
-vencedor, mantém-se descontado (`atribuida`), sem criar ainda uma encomenda.
+vencedor, mantém-se descontado (`atribuida`) e nasce uma encomenda única por leilão.
+O total é o lance vencedor do lote; cada produto mantém nome, quantidade e unidade,
+sem um preço individual fictício. A encomenda fica pendente até o vencedor escolher
+levantamento ou entrega no detalhe; para entrega, indica a morada. Só então passa
+a `confirmada` e o produtor pode avançar o estado. Leilões já terminados não são
+convertidos retroativamente.
 Enquanto houver quantidades `reservada` ou `atribuida`, alterar stock ou unidade
 do produto devolve `409`. Os restantes dados continuam editáveis.
 
@@ -237,8 +242,8 @@ As páginas `LoginPage`, `RegisterPage` e `ResetPasswordPage` estão em
 e os campos genéricos `InputField` e `PasswordField`, em `frontend/src/components/ui/input/`.
 O `FormField` concentra o estilo, label e ícone dos inputs, selects e textareas;
 o `PasswordField` reutiliza o `InputField` e acrescenta o botão de mostrar/ocultar.
-`AccountPage` e `ProducerApprovalPage`
-também ficam em `pages/`, com os seus estilos específicos. Os pedidos ficam em
+`AccountPage` fica em `pages/`; a administração está em `features/admin/`,
+com a estrutura, listas e detalhes partilhados. Os pedidos ficam em
 `authService.ts`, os tipos e auxiliares puros em `auth.ts` e a persistência e
 expiração local em `sessionStorage.ts`; a sessão continua no `AuthProvider`.
 Estas três páginas usam apresentação própria;
@@ -271,11 +276,14 @@ novamente; respostas 401 ou a expiração terminam a sessão. O logout limpa a
 sessão do browser; um JWT já emitido mantém validade no servidor até expirar.
 
 `/conta` exige autenticação e mostra o estado de aprovação dos produtores.
-`/admin/produtores` exige o papel `administrador` e permite aprovar ou rejeitar
-registos através de `GET /api/producers/pendentes` e
+`/admin` exige o papel `administrador` e reúne resumo, utilizadores, encomendas,
+leilões e moderação de produtos e avaliações. `/admin/produtores` permite aprovar
+ou rejeitar registos ainda pendentes através de `GET /api/producers/pendentes` e
 `PATCH /api/producers/:id/validacao`. As permissões e a aprovação são consultadas
 na base de dados em cada pedido protegido. O produtor pode atualizar o estado
-na sua área de conta sem voltar a fazer login.
+na sua área de conta sem voltar a fazer login. Cada registo é decidido uma única vez.
+Consulta [o funcionamento da administração](docs/administracao.md) para filtros,
+privacidade, motivos e efeitos da ocultação sobre compras e leilões.
 
 Em desenvolvimento, o proxy do Vite encaminha `/api` para a API local. Em produção,
 configura HTTPS e o encaminhamento de `/api` para a API no mesmo domínio da SPA.

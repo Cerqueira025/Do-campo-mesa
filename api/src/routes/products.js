@@ -108,7 +108,7 @@ router.get("/", async (request, response, next) => {
         .status(400)
         .json({ erro: "O preço mínimo não pode exceder o máximo." });
     }
-    const filter = { publicado: true };
+    const filter = { publicado: true, bloqueado: { $ne: true } };
     const constraints = [];
     if (q) {
       const expression = { $regex: escapeRegex(q.trim()), $options: "i" };
@@ -191,6 +191,7 @@ router.get("/filters", async (_request, response, next) => {
       .lean();
     const filter = {
       publicado: true,
+      bloqueado: { $ne: true },
       produtorId: { $in: approved.map((producer) => producer._id) },
     };
     const [categories, producerIds] = await Promise.all([
@@ -229,6 +230,7 @@ router.get("/:id", async (request, response, next) => {
     const product = await Product.findOne({
       _id: request.params.id,
       publicado: true,
+      bloqueado: { $ne: true },
     })
       .select("-imagens")
       .populate({
