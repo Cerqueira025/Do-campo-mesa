@@ -50,7 +50,9 @@
     }
   }
 
-  &__title a span {
+  &__title span {
+    position: relative;
+    z-index: 2;
     display: inline-block;
     transform-origin: left center;
     transition: transform 250ms ease;

@@ -1,10 +1,9 @@
+import FormField from "../../components/ui/input/FormField";
 import { useState, type FormEvent } from "react";
 import { faEnvelope } from "@fortawesome/free-solid-svg-icons";
 import Button from "../../components/ui/Button";
 import InternalLink from "../../navigation/InternalLink";
 import AuthLayout from "../../features/auth/components/AuthLayout";
-import InputField from "../../components/ui/input/InputField";
-import PasswordField from "../../components/ui/input/PasswordField";
 import { useAuthRedirect } from "../../features/auth/useAuthRedirect";
 import { authHref, safeReturnPath } from "../../features/auth/auth";
 import "./AuthForm.scss";
@@ -56,7 +55,7 @@ export default function LoginPage() {
           disabled={pending || estado === "a-validar"}
         >
           <legend className="auth-form__legend">Dados de acesso</legend>
-          <InputField
+          <FormField
             id="login-email"
             label="Email"
             icon={faEnvelope}
@@ -68,7 +67,8 @@ export default function LoginPage() {
             value={email}
             onChange={(event) => setEmail(event.target.value)}
           />
-          <PasswordField
+          <FormField
+            type="password"
             id="login-password"
             name="password"
             label="Password"

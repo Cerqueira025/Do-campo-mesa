@@ -10,7 +10,7 @@ interface Props {
   loading?: ImgHTMLAttributes<HTMLImageElement>["loading"];
 }
 
-export default function ProductImage({
+export default function ImageWithFallback({
   image,
   srcSet,
   alt,

@@ -1,10 +1,9 @@
+import FormField from "../../components/ui/input/FormField";
 import { useState, type FormEvent } from "react";
 import { faEnvelope } from "@fortawesome/free-solid-svg-icons";
 import Button from "../../components/ui/Button";
 import InternalLink from "../../navigation/InternalLink";
 import AuthLayout from "../../features/auth/components/AuthLayout";
-import InputField from "../../components/ui/input/InputField";
-import PasswordField from "../../components/ui/input/PasswordField";
 import {
   authHref,
   passwordError,
@@ -78,7 +77,7 @@ export default function ResetPasswordPage() {
         <form className="auth-form" onSubmit={submit} aria-busy={pending}>
           <fieldset className="auth-form__fields" disabled={pending}>
             <legend className="auth-form__legend">Nova password</legend>
-            <InputField
+            <FormField
               id="reset-email"
               label="Email"
               icon={faEnvelope}
@@ -88,7 +87,8 @@ export default function ResetPasswordPage() {
               required
               defaultValue={params.get("email") || ""}
             />
-            <PasswordField
+            <FormField
+              type="password"
               id="reset-password"
               name="password"
               label="Nova password"
@@ -97,7 +97,8 @@ export default function ResetPasswordPage() {
               minLength={8}
               hint="Pelo menos 8 caracteres e até 72 bytes em UTF-8."
             />
-            <PasswordField
+            <FormField
+              type="password"
               id="reset-confirmation"
               name="confirmation"
               label="Confirmar nova password"

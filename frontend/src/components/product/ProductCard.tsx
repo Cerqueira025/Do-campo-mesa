@@ -1,9 +1,10 @@
 import InternalLink from "../../navigation/InternalLink";
 import IconButton from "../ui/IconButton";
-import ProductImage from "./ProductImage";
+import ImageWithFallback from "../ui/ImageWithFallback";
 import "./ProductCard.scss";
 
 export interface ProductCardProduct {
+  stock?: number;
   title: string;
   category: string;
   weight: string;
@@ -27,7 +28,7 @@ function ProductCard({ product, onAdd, href }: ProductCardProps) {
             <span>{product.title}</span>
           </InternalLink>
         ) : (
-          product.title
+          <span>{product.title}</span>
         )}
       </h3>
 
@@ -37,7 +38,7 @@ function ProductCard({ product, onAdd, href }: ProductCardProps) {
           <p className="product-card__weight">{product.weight}</p>
         </div>
 
-        <ProductImage
+        <ImageWithFallback
           className="product-card__image"
           image={product.image}
           srcSet={product.srcSet}
@@ -52,7 +53,7 @@ function ProductCard({ product, onAdd, href }: ProductCardProps) {
         variant="cream"
         aria-label={`Adicionar ${product.title} ao carrinho`}
         icon={<span aria-hidden="true">+</span>}
-        disabled={!onAdd}
+        disabled={!onAdd || product.stock === 0}
         onClick={() => onAdd?.(product)}
       />
     </article>

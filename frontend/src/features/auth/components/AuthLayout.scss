@@ -3,7 +3,7 @@
 .auth-layout {
   display: flex;
   flex-direction: column;
-  padding: 8px;
+  padding: 8px 24px;
   background: var(--color-green-950);
 
   &__header {
@@ -66,7 +66,7 @@
   }
 
   @include up(tablet) {
-    padding: 40px 24px;
+    padding-block: 40px;
     &__card {
       min-height: 720px;
     }

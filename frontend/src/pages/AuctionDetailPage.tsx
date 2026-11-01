@@ -10,7 +10,7 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Button from "../components/ui/Button";
 import IconButton from "../components/ui/IconButton";
-import ProductImage from "../components/product/ProductImage";
+import ImageWithFallback from "../components/ui/ImageWithFallback";
 import SessionNav from "../features/auth/components/SessionNav";
 import {
   catalogReturnUrl,
@@ -53,7 +53,7 @@ function AuctionContent({ auction }: { auction: Auction }) {
   return (
     <>
       <header className="auction-detail__hero">
-        <ProductImage
+        <ImageWithFallback
           {...productImages(auction.produtos[0].produtoId)}
           alt={auction.produtos[0].produtoId.nome}
           className="auction-detail__image"

@@ -8,9 +8,7 @@ import {
 import Button from "../../components/ui/Button";
 import InternalLink from "../../navigation/InternalLink";
 import AuthLayout from "../../features/auth/components/AuthLayout";
-import InputField from "../../components/ui/input/InputField";
 import FormField from "../../components/ui/input/FormField";
-import PasswordField from "../../components/ui/input/PasswordField";
 import { useAuthRedirect } from "../../features/auth/useAuthRedirect";
 import {
   authHref,
@@ -105,7 +103,7 @@ export default function RegisterPage() {
             disabled={pending || estado === "a-validar"}
           >
             <legend className="auth-form__legend">Dados de registo</legend>
-            <InputField
+            <FormField
               id="register-name"
               label="Nome"
               icon={faUser}
@@ -126,7 +124,7 @@ export default function RegisterPage() {
                 <option value="produtor">Produtor</option>
               </select>
             </FormField>
-            <InputField
+            <FormField
               id="register-email"
               label="Email"
               icon={faEnvelope}
@@ -136,7 +134,8 @@ export default function RegisterPage() {
               required
               defaultValue={params.get("email") || ""}
             />
-            <PasswordField
+            <FormField
+              type="password"
               id="register-password"
               name="password"
               label="Password"
@@ -145,7 +144,8 @@ export default function RegisterPage() {
               minLength={8}
               hint="Pelo menos 8 caracteres e até 72 bytes em UTF-8."
             />
-            <PasswordField
+            <FormField
+              type="password"
               id="register-confirmation"
               name="confirmation"
               label="Confirmar password"
@@ -168,7 +168,7 @@ export default function RegisterPage() {
                     rows={3}
                   />
                 </FormField>
-                <InputField
+                <FormField
                   id="register-locality"
                   label="Localidade"
                   icon={faLocationDot}
@@ -176,7 +176,7 @@ export default function RegisterPage() {
                   autoComplete="address-level2"
                   required
                 />
-                <InputField
+                <FormField
                   id="register-address"
                   label="Morada"
                   icon={faHouse}
@@ -185,7 +185,7 @@ export default function RegisterPage() {
                   required
                 />
                 <div className="auth-form__coordinates">
-                  <InputField
+                  <FormField
                     id="register-latitude"
                     label="Latitude"
                     name="latitude"
@@ -195,7 +195,7 @@ export default function RegisterPage() {
                     max={90}
                     required
                   />
-                  <InputField
+                  <FormField
                     id="register-longitude"
                     label="Longitude"
                     name="longitude"

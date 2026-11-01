@@ -6,12 +6,14 @@ interface SearchBarProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  label?: string;
 }
 
 function SearchBar({
   value,
   onChange,
   placeholder = "Pesquisar produtos",
+  label = "Pesquisar produtos",
 }: SearchBarProps) {
   return (
     <div className="search-bar">
@@ -23,7 +25,7 @@ function SearchBar({
       <input
         className="form-control search-bar__input"
         type="search"
-        aria-label="Pesquisar produtos"
+        aria-label={label}
         placeholder={placeholder}
         value={value}
         onChange={(event) => onChange(event.currentTarget.value)}

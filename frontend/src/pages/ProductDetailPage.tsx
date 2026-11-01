@@ -6,7 +6,7 @@ import { faArrowLeft } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Button from "../components/ui/Button";
 import IconButton from "../components/ui/IconButton";
-import ProductImage from "../components/product/ProductImage";
+import ImageWithFallback from "../components/ui/ImageWithFallback";
 import OriginMap from "../components/location/OriginMap";
 import RelatedProducts from "../features/products/RelatedProducts";
 import SessionNav from "../features/auth/components/SessionNav";
@@ -105,7 +105,7 @@ export default function ProductDetailPage({ id }: { id: string | null }) {
             <SessionNav className="product-detail__session" />
           </div>
           <div className="product-detail__visual">
-            <ProductImage
+            <ImageWithFallback
               {...productImages(product)}
               alt={product.nome}
               className="product-detail__image"

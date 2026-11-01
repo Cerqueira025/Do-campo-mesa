@@ -7,7 +7,7 @@ import {
   faUsers,
 } from "@fortawesome/free-solid-svg-icons";
 import Button from "../ui/Button";
-import ProductImage from "../product/ProductImage";
+import ImageWithFallback from "../ui/ImageWithFallback";
 import { priceFormatter } from "../../features/products/product";
 import { formatRemaining } from "../../features/auctions/auction";
 import { useAuctionCountdown } from "../../features/auctions/useAuctionCountdown";
@@ -52,7 +52,7 @@ function AuctionCard({
             fill="currentColor"
           />
         </svg>
-        <ProductImage
+        <ImageWithFallback
           className="auction-card__image"
           image={auction.image}
           srcSet={auction.srcSet}
