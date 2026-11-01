@@ -60,12 +60,12 @@ download de 200 000 bytes/s e upload de 100 000 bytes/s.
 O build de produção foi servido localmente com gzip para HTML, CSS e JavaScript.
 A API usada na comparação frontend foi a mesma nas duas versões; a otimização da API foi validada separadamente na porta 3107.
 
-| Ambiente e perfil | Abrir produto: antes → depois | Regresso: antes → depois |
-| --- | --- | --- |
-| Desenvolvimento, desktop | 444 → 287 ms | 421 → 151 ms |
-| Desenvolvimento, limitado | 24 598 → 822 ms | 2 594 → 903 ms |
-| Produção, desktop | 339 → 264 ms | 318 → 78 ms |
-| Produção, limitado | 23 684 → 597 ms | 1 571 → 375 ms |
+| Ambiente e perfil         | Abrir produto: antes → depois | Regresso: antes → depois |
+| ------------------------- | ----------------------------- | ------------------------ |
+| Desenvolvimento, desktop  | 444 → 287 ms                  | 421 → 151 ms             |
+| Desenvolvimento, limitado | 24 598 → 822 ms               | 2 594 → 903 ms           |
+| Produção, desktop         | 339 → 264 ms                  | 318 → 78 ms              |
+| Produção, limitado        | 23 684 → 597 ms               | 1 571 → 375 ms           |
 
 O percurso completo passou de três pedidos de documento (entrada, produto e regresso) para apenas um.
 A abertura inicial foi também comparada alternando as versões nas mesmas condições limitadas:

@@ -1,11 +1,13 @@
-@use '../../styles/abstracts/mixins' as *;
+@use "../../styles/abstracts/mixins" as *;
 
 .auth-page {
   max-width: 640px;
   margin-inline: auto;
   padding: 24px 16px 48px;
 
-  @include up(tablet) { padding: 48px 24px 64px; }
+  @include up(tablet) {
+    padding: 48px 24px 64px;
+  }
 }
 
 .auth-panel {
@@ -15,10 +17,21 @@
   border-radius: 16px;
   overflow-wrap: anywhere;
 
-  > .session-nav { margin-bottom: 24px; }
+  > .session-nav {
+    margin-bottom: 24px;
+  }
 
-  h1 { margin: 0 0 16px; font-size: var(--font-size-2xl); }
-  h2 { font-size: var(--font-size-xl); }
+  h1 {
+    margin: 0 0 16px;
+    font-size: var(--font-size-2xl);
+  }
+  h2 {
+    font-size: var(--font-size-xl);
+  }
 }
 
-.auth-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.auth-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}

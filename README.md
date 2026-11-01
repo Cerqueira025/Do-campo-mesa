@@ -17,6 +17,7 @@ Para acrescentar uma imagem, consulta [as instruções do frontend](frontend/REA
 ## Quick Start
 
 1. Clone do repositório:
+
 ```
 git clone https://github.com/Cerqueira025/Do-campo-mesa.git
 ```
@@ -42,6 +43,39 @@ npm run dev
 Antes de iniciar a API, configura `api/.env` a partir de `api/.env.example`.
 É necessário Node.js 22.14 ou superior. A API só aceita pedidos depois de se ligar ao MongoDB.
 
+## Lint
+
+Na raiz do projeto, instala as ferramentas de lint e as dependências do frontend:
+
+```powershell
+npm ci
+npm --prefix frontend ci
+composer --working-dir=backoffice/app install
+```
+
+É necessário Node.js 22.14 ou superior, além de PHP e Composer compatíveis com o
+backoffice. Não é necessário iniciar os servidores nem ligar à base de dados.
+
+Executa todas as verificações a partir da raiz:
+
+```powershell
+npm run lint
+```
+
+| Comando                 | Verificação                                                                                   |
+| ----------------------- | --------------------------------------------------------------------------------------------- |
+| `npm run lint:frontend` | ESLint existente do frontend React/TypeScript.                                                |
+| `npm run lint:js`       | ESLint da API (incluindo testes e scripts), JavaScript do backoffice e configurações de lint. |
+| `npm run lint:php`      | Laravel Pint em modo de verificação (`--test`).                                               |
+| `npm run lint:styles`   | Stylelint dos estilos CSS/SCSS do frontend e CSS do backoffice.                               |
+| `npm run lint:format`   | Prettier verifica a formatação de JS/TS, CSS/SCSS, JSON e Markdown.                           |
+
+Os comandos apenas verificam os ficheiros, sem aplicar correções. O comando global
+executa as verificações por esta ordem e para na primeira falha, com código de saída
+diferente de zero. Usa os comandos individuais para consultar os restantes resultados.
+Dependências e ficheiros gerados ficam fora da análise. Problemas já existentes
+também são reportados; a configuração não implica uma limpeza geral do código.
+
 ## Base de dados MongoDB
 
 Configuração local (não colocar credenciais no Git):
@@ -65,14 +99,14 @@ identificados por `_id` fixo. Repetir o seed não duplica nem atualiza exemplos;
 alterar `SEED_PASSWORD` também não altera passwords de contas já criadas.
 Usar o seed apenas na base de desenvolvimento/demonstração.
 
-| Coleção | Organização |
-| --- | --- |
-| `users` | Conta, papel e perfil do produtor embebido; email único e password com hash bcrypt. |
-| `products` | Produtor referenciado, preço, unidade e stock. |
-| `orders` | Comprador e produtor referenciados; linhas embebidas com nome, preço e unidade no momento da compra. |
-| `auctions` | Produtor referenciado, lista obrigatória de produtos com quantidade/unidade por linha, lote, início/fim e licitação atual embebida. |
-| `bids` | Histórico separado de licitações, referenciado por leilão e comprador. |
-| `reviews` | Autor e encomenda referenciados; um único alvo, produto ou produtor, e estado de moderação. Índice único por autor, encomenda e alvo. |
+| Coleção    | Organização                                                                                                                           |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `users`    | Conta, papel e perfil do produtor embebido; email único e password com hash bcrypt.                                                   |
+| `products` | Produtor referenciado, preço, unidade e stock.                                                                                        |
+| `orders`   | Comprador e produtor referenciados; linhas embebidas com nome, preço e unidade no momento da compra.                                  |
+| `auctions` | Produtor referenciado, lista obrigatória de produtos com quantidade/unidade por linha, lote, início/fim e licitação atual embebida.   |
+| `bids`     | Histórico separado de licitações, referenciado por leilão e comprador.                                                                |
+| `reviews`  | Autor e encomenda referenciados; um único alvo, produto ou produtor, e estado de moderação. Índice único por autor, encomenda e alvo. |
 
 Valores monetários (`preco`, `precoUnitario`, `total`, `precoBase`, `incremento`
 e `valor`) são inteiros em cêntimos: `150` representa 1,50 €.
@@ -195,7 +229,6 @@ exemplos e a repetição do seed com escrita simulada, além das regras de cria�
 de encomendas. Não precisa de Atlas.
 A verificação do índice único de email e da ligação real exige a base acessível.
 
-
 ## Autenticação
 
 As páginas `LoginPage`, `RegisterPage` e `ResetPasswordPage` estão em
@@ -269,7 +302,6 @@ Os detalhes continuam a confirmar disponibilidade na API. A cache é apenas em m
 Consulta [a implementação e as medições de fluidez](docs/fluidez.md).
 Depois de alterar código da API, reinicia-a se a estiveres a executar com `npm start`;
 `npm run dev` acompanha as alterações automaticamente.
-
 
 ## Testes de concorrência dos leilões
 

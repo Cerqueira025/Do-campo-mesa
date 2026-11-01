@@ -11,7 +11,13 @@
     background: var(--color-brown-100);
   }
 
-  &__preview { height: 240px; }
-  &__line { height: 24px; }
-  &__line--short { width: 60%; }
+  &__preview {
+    height: 240px;
+  }
+  &__line {
+    height: 24px;
+  }
+  &__line--short {
+    width: 60%;
+  }
 }

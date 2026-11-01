@@ -1,4 +1,4 @@
-@use '../styles/abstracts/mixins' as *;
+@use "../styles/abstracts/mixins" as *;
 
 .auction-detail {
   position: relative;
@@ -81,7 +81,9 @@
     color: var(--color-stone-50);
   }
 
-  &__badge, &__timer, &__participants {
+  &__badge,
+  &__timer,
+  &__participants {
     margin: 0;
     padding: 8px 12px;
     border-radius: 14px;
@@ -127,7 +129,12 @@
     position: relative;
     width: 100%;
     padding: 110px 20px 44px;
-    background: linear-gradient(180deg, transparent, var(--color-green-50) 35%, var(--color-green-950));
+    background: linear-gradient(
+      180deg,
+      transparent,
+      var(--color-green-50) 35%,
+      var(--color-green-950)
+    );
     color: var(--color-stone-50);
     overflow-wrap: anywhere;
   }
@@ -206,9 +213,17 @@
     margin-bottom: 24px;
     overflow-wrap: anywhere;
 
-    h2 { margin: 0 0 12px; font-size: var(--font-size-lg); }
-    ul { margin: 0; padding-left: 20px; }
-    li + li { margin-top: 6px; }
+    h2 {
+      margin: 0 0 12px;
+      font-size: var(--font-size-lg);
+    }
+    ul {
+      margin: 0;
+      padding-left: 20px;
+    }
+    li + li {
+      margin-top: 6px;
+    }
   }
 
   &__increment {
@@ -281,7 +296,8 @@
     overflow-wrap: anywhere;
   }
 
-  &__hint, &__error {
+  &__hint,
+  &__error {
     margin: 10px 0;
     font-size: var(--font-size-xs);
   }
@@ -343,7 +359,8 @@
       right: auto;
     }
 
-    &--loaded &__back, &__indicators {
+    &--loaded &__back,
+    &__indicators {
       top: 88px;
     }
 

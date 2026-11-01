@@ -1,10 +1,10 @@
-@use 'sass:map';
-@use './tokens' as tokens;
+@use "sass:map";
+@use "./tokens" as tokens;
 
 @mixin up($breakpoint) {
   $value: map.get(tokens.$breakpoints, $breakpoint);
 
-  @if $value == null {
+  @if not map.has-key(tokens.$breakpoints, $breakpoint) {
     @error 'Unknown breakpoint: #{$breakpoint}';
   }
 

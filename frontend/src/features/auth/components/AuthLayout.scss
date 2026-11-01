@@ -1,4 +1,4 @@
-@use '../../../styles/abstracts/mixins' as *;
+@use "../../../styles/abstracts/mixins" as *;
 
 .auth-layout {
   display: flex;
@@ -6,7 +6,10 @@
   padding: 8px;
   background: var(--color-green-950);
 
-  &__header { padding: 28px 24px 64px; color: var(--color-white); }
+  &__header {
+    padding: 28px 24px 64px;
+    color: var(--color-white);
+  }
   &__brand {
     display: inline-flex;
     flex-direction: column;
@@ -17,9 +20,20 @@
     font-weight: 700;
     text-decoration: none;
   }
-  &__brand:hover { color: var(--color-white); }
-  &__title { margin: 36px 0 0; font-size: var(--font-size-3xl); font-weight: 700; line-height: 1.12; letter-spacing: -0.025em; }
-  &__accent { color: var(--color-green-300); font-weight: 400; }
+  &__brand:hover {
+    color: var(--color-white);
+  }
+  &__title {
+    margin: 36px 0 0;
+    font-size: var(--font-size-3xl);
+    font-weight: 700;
+    line-height: 1.12;
+    letter-spacing: -0.025em;
+  }
+  &__accent {
+    color: var(--color-green-300);
+    font-weight: 400;
+  }
   &__body {
     position: relative;
     flex: 1;
@@ -31,17 +45,39 @@
     background: var(--color-white);
     overflow-wrap: anywhere;
   }
-  &__body a:not(.button) { color: var(--color-green-950); }
-  &__error { color: var(--color-error-700); margin: 0 0 24px; }
-  &__error:empty { display: none; }
-  &__back { margin-top: 32px; text-align: center; font-size: var(--font-size-xs); }
-  a:focus-visible { outline: 3px solid var(--color-green-300); outline-offset: 4px; }
+  &__body a:not(.button) {
+    color: var(--color-green-950);
+  }
+  &__error {
+    color: var(--color-error-700);
+    margin: 0 0 24px;
+  }
+  &__error:empty {
+    display: none;
+  }
+  &__back {
+    margin-top: 32px;
+    text-align: center;
+    font-size: var(--font-size-xs);
+  }
+  a:focus-visible {
+    outline: 3px solid var(--color-green-300);
+    outline-offset: 4px;
+  }
 
   @include up(tablet) {
     padding: 40px 24px;
-    &__card { min-height: 720px; }
-    &__header { padding: 36px 48px 72px; }
-    &__title { font-size: var(--font-size-4xl); }
-    &__body { padding: 40px 48px; }
+    &__card {
+      min-height: 720px;
+    }
+    &__header {
+      padding: 36px 48px 72px;
+    }
+    &__title {
+      font-size: var(--font-size-4xl);
+    }
+    &__body {
+      padding: 40px 48px;
+    }
   }
 }

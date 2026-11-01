@@ -1,4 +1,4 @@
-@use '../styles/abstracts/mixins' as *;
+@use "../styles/abstracts/mixins" as *;
 
 .home-page {
   &__auction {
@@ -51,7 +51,7 @@
     height: 48px;
     font-size: 20px;
 
-    &[aria-expanded='true'] {
+    &[aria-expanded="true"] {
       background: var(--color-green-20);
     }
   }
@@ -97,7 +97,10 @@
     margin-top: 24px;
   }
 
-  &__results:focus-visible { outline: 2px solid var(--color-green-900); outline-offset: 4px; }
+  &__results:focus-visible {
+    outline: 2px solid var(--color-green-900);
+    outline-offset: 4px;
+  }
 
   @include up(desktop) {
     &__catalog--filters-open {

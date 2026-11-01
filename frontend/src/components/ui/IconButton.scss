@@ -15,7 +15,10 @@
   background: var(--icon-button-background);
   color: var(--icon-button-color);
   cursor: pointer;
-  transition: background-color 150ms ease, color 150ms ease, transform 150ms ease;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease,
+    transform 150ms ease;
 
   span {
     display: flex;

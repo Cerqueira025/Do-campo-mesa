@@ -10,29 +10,29 @@ Não há garantia de inserção atómica do conjunto: uma falha de rede pode dei
 Os exemplos antigos e as suas contas permanecem disponíveis. Novas contas usam a mesma password inicial
 `SEED_PASSWORD` (por defeito `CampoMesaDemo123!`), com bcrypt; alterações posteriores da variável não mudam contas existentes.
 
-| Contas | Papel e estado | IDs numéricos |
-| --- | --- | --- |
-| `comprador1@example.test` a `comprador6@example.test` | Compradores | 1001–1006 |
-| `quinta1@example.test` | Produtor aceite, Viana do Castelo | 1101 |
-| `quinta2@example.test` | Produtor aceite, Braga | 1102 |
-| `quinta3@example.test` | Produtor aceite, Ponte de Lima | 1103 |
-| `quinta4@example.test` | Produtor aceite sem produtos, Viana do Castelo | 1104 |
-| `quinta5@example.test` | Produtor pendente, Braga | 1105 |
-| `quinta6@example.test` | Produtor rejeitado, Ponte de Lima | 1106 |
+| Contas                                                | Papel e estado                                 | IDs numéricos |
+| ----------------------------------------------------- | ---------------------------------------------- | ------------- |
+| `comprador1@example.test` a `comprador6@example.test` | Compradores                                    | 1001–1006     |
+| `quinta1@example.test`                                | Produtor aceite, Viana do Castelo              | 1101          |
+| `quinta2@example.test`                                | Produtor aceite, Braga                         | 1102          |
+| `quinta3@example.test`                                | Produtor aceite, Ponte de Lima                 | 1103          |
+| `quinta4@example.test`                                | Produtor aceite sem produtos, Viana do Castelo | 1104          |
+| `quinta5@example.test`                                | Produtor pendente, Braga                       | 1105          |
+| `quinta6@example.test`                                | Produtor rejeitado, Ponte de Lima              | 1106          |
 
 Converter cada ID numérico com `seedId(n)` de `api/src/scripts/seed-data.js`:
 `dca000000000` + número hexadecimal com 12 posições. Por exemplo, 2001 corresponde a `dca0000000000000000007d1`.
 
-| Intervalo adicional | Conteúdo |
-| --- | --- |
-| 2001–2010 / 2011–2020 / 2021–2030 | Dez produtos públicos de cada uma das quintas 1, 2 e 3 |
-| 2031–2032 | Produtos não publicados da quinta 1 |
-| 2033–2034 / 2035–2036 | Produtos dos produtores pendente e rejeitado |
-| 3001–3012 | Encomendas entregues com duas linhas e avaliações elegíveis |
-| 3013–3016 / 3017–3020 / 3021–3024 | Encomendas pendentes, confirmadas e prontas |
+| Intervalo adicional               | Conteúdo                                                             |
+| --------------------------------- | -------------------------------------------------------------------- |
+| 2001–2010 / 2011–2020 / 2021–2030 | Dez produtos públicos de cada uma das quintas 1, 2 e 3               |
+| 2031–2032                         | Produtos não publicados da quinta 1                                  |
+| 2033–2034 / 2035–2036             | Produtos dos produtores pendente e rejeitado                         |
+| 3001–3012                         | Encomendas entregues com duas linhas e avaliações elegíveis          |
+| 3013–3016 / 3017–3020 / 3021–3024 | Encomendas pendentes, confirmadas e prontas                          |
 | 4001–4003 / 4004–4006 / 4007–4009 | Leilões de início futuro, início já atingido e históricos terminados |
-| 5001–5024 | Seis licitações por cada leilão 4004, 4005, 4007 e 4008 |
-| 6001–6036 | Três avaliações por encomenda entregue: dois produtos e um produtor |
+| 5001–5024                         | Seis licitações por cada leilão 4004, 4005, 4007 e 4008              |
+| 6001–6036                         | Três avaliações por encomenda entregue: dois produtos e um produtor  |
 
 O stock dos produtos representa a disponibilidade remanescente; não é deduzido novamente ao inserir encomendas históricas.
 As linhas guardam preços históricos diferentes dos atuais. Valores monetários são cêntimos inteiros;

@@ -3,7 +3,11 @@
   min-width: 0;
   gap: 10px;
 
-  &__label { color: var(--color-green-900); font-size: var(--font-size-md); font-weight: 700; }
+  &__label {
+    color: var(--color-green-900);
+    font-size: var(--font-size-md);
+    font-weight: 700;
+  }
   &__control {
     display: flex;
     align-items: center;
@@ -14,8 +18,13 @@
     border-radius: 20px;
     background: var(--color-stone-50);
   }
-  &__control:focus-within { outline: 2px solid var(--color-green-900); outline-offset: 3px; }
-  &__control > input, &__control > select, &__control > textarea {
+  &__control:focus-within {
+    outline: 2px solid var(--color-green-900);
+    outline-offset: 3px;
+  }
+  &__control > input,
+  &__control > select,
+  &__control > textarea {
     width: 100%;
     min-width: 0;
     padding: 16px 10px;
@@ -26,7 +35,18 @@
     font: inherit;
     outline: none;
   }
-  &__control > textarea { resize: vertical; }
-  &__icon { flex: 0 0 auto; width: 22px; height: 22px; margin-left: 10px; color: var(--color-green-900); }
-  small { font-size: var(--font-size-xs); line-height: 1.5; }
+  &__control > textarea {
+    resize: vertical;
+  }
+  &__icon {
+    flex: 0 0 auto;
+    width: 22px;
+    height: 22px;
+    margin-left: 10px;
+    color: var(--color-green-900);
+  }
+  small {
+    font-size: var(--font-size-xs);
+    line-height: 1.5;
+  }
 }

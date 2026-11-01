@@ -1,28 +1,34 @@
-import InternalLink from '../../navigation/InternalLink'
-import IconButton from '../ui/IconButton'
-import ProductImage from './ProductImage'
-import './ProductCard.scss'
+import InternalLink from "../../navigation/InternalLink";
+import IconButton from "../ui/IconButton";
+import ProductImage from "./ProductImage";
+import "./ProductCard.scss";
 
 export interface ProductCardProduct {
-  title: string
-  category: string
-  weight: string
-  image?: string
-  srcSet?: string
-  imageAlt?: string
+  title: string;
+  category: string;
+  weight: string;
+  image?: string;
+  srcSet?: string;
+  imageAlt?: string;
 }
 
 interface ProductCardProps {
-  product: ProductCardProduct
-  onAdd?: (product: ProductCardProduct) => void
-  href?: string
+  product: ProductCardProduct;
+  onAdd?: (product: ProductCardProduct) => void;
+  href?: string;
 }
 
 function ProductCard({ product, onAdd, href }: ProductCardProps) {
   return (
     <article className="card product-card">
       <h3 className="product-card__title">
-        {href ? <InternalLink href={href}><span>{product.title}</span></InternalLink> : product.title}
+        {href ? (
+          <InternalLink href={href}>
+            <span>{product.title}</span>
+          </InternalLink>
+        ) : (
+          product.title
+        )}
       </h3>
 
       <div className="product-card__body">
@@ -50,7 +56,7 @@ function ProductCard({ product, onAdd, href }: ProductCardProps) {
         onClick={() => onAdd?.(product)}
       />
     </article>
-  )
+  );
 }
 
-export default ProductCard
+export default ProductCard;

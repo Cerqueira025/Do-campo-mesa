@@ -1,121 +1,205 @@
-import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { faRotateRight, faSliders } from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import Button from '../components/ui/Button'
-import LoadingPlaceholder from '../components/ui/LoadingPlaceholder'
-import IconButton from '../components/ui/IconButton'
-import FeaturedAuction from '../features/auctions/FeaturedAuction'
-import ProductCard from '../components/product/ProductCard'
-import SearchBar from '../components/ui/input/SearchBar'
-import WelcomeHero from '../features/home/components/WelcomeHero'
-import ProductFilters from '../features/home/components/ProductFilters'
-import { emptyFilters, readCatalogUrl, writeCatalogUrl, type FilterOptions } from '../features/home/catalogFilters'
-import { mapProduct, productHref } from '../features/products/product'
-import { useLocation } from '../navigation/useLocation'
-import { locationSnapshot, restoreNavigation } from '../navigation/navigation'
-import { catalogPageSize, catalogQuery, readCatalogCache, writeCatalogCache, readFilterCache, writeFilterCache, readFiltersOpen, writeFiltersOpen, type CatalogResponse } from '../features/home/catalogCache'
-import './HomePage.scss'
+import {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { faRotateRight, faSliders } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import Button from "../components/ui/Button";
+import LoadingPlaceholder from "../components/ui/LoadingPlaceholder";
+import IconButton from "../components/ui/IconButton";
+import FeaturedAuction from "../features/auctions/FeaturedAuction";
+import ProductCard from "../components/product/ProductCard";
+import SearchBar from "../components/ui/input/SearchBar";
+import WelcomeHero from "../features/home/components/WelcomeHero";
+import ProductFilters from "../features/home/components/ProductFilters";
+import {
+  emptyFilters,
+  readCatalogUrl,
+  writeCatalogUrl,
+  type FilterOptions,
+} from "../features/home/catalogFilters";
+import { mapProduct, productHref } from "../features/products/product";
+import { useLocation } from "../navigation/useLocation";
+import { locationSnapshot, restoreNavigation } from "../navigation/navigation";
+import {
+  catalogPageSize,
+  catalogQuery,
+  readCatalogCache,
+  writeCatalogCache,
+  readFilterCache,
+  writeFilterCache,
+  readFiltersOpen,
+  writeFiltersOpen,
+  type CatalogResponse,
+} from "../features/home/catalogCache";
+import "./HomePage.scss";
 
 function HomePage() {
-  const location = useLocation()
-  const filtersId = useId()
-  const [isFiltersOpen, setIsFiltersOpen] = useState(readFiltersOpen)
-  const { search, filters, page } = useMemo(() => readCatalogUrl(new URL(location, window.location.origin).search), [location])
-  const [draft, setDraft] = useState(() => ({ location, value: search }))
-  const query = search.trim()
-  const requestKey = catalogQuery(search, filters, page)
-  const pageNavigation = useRef<string | null>(null)
-  const cached = useMemo(() => readCatalogCache(requestKey), [requestKey])
-  const [result, setResult] = useState<{ key: string; data?: CatalogResponse; loading: boolean; error: boolean }>(
-    () => ({ key: requestKey, data: cached, loading: true, error: false }))
-  const data = result.key === requestKey ? result.data : cached
-  const loading = result.key !== requestKey || result.loading
-  const error = result.key === requestKey && result.error
-  const products = data?.items.map(mapProduct) ?? []
-  const total = data?.total ?? 0
-  const pages = Math.max(1, Math.ceil(total / catalogPageSize))
-  const [options, setOptions] = useState<FilterOptions | null>(readFilterCache)
-  const [optionsError, setOptionsError] = useState(false)
-  const [optionsRetry, setOptionsRetry] = useState(0)
-  const [retry, setRetry] = useState(0)
-  const requestedQuery = useRef(query)
-  const hasFilters = Object.values(filters).some(Boolean)
+  const location = useLocation();
+  const filtersId = useId();
+  const [isFiltersOpen, setIsFiltersOpen] = useState(readFiltersOpen);
+  const { search, filters, page } = useMemo(
+    () => readCatalogUrl(new URL(location, window.location.origin).search),
+    [location],
+  );
+  const [draft, setDraft] = useState(() => ({ location, value: search }));
+  const query = search.trim();
+  const requestKey = catalogQuery(search, filters, page);
+  const pageNavigation = useRef<string | null>(null);
+  const cached = useMemo(() => readCatalogCache(requestKey), [requestKey]);
+  const [result, setResult] = useState<{
+    key: string;
+    data?: CatalogResponse;
+    loading: boolean;
+    error: boolean;
+  }>(() => ({ key: requestKey, data: cached, loading: true, error: false }));
+  const data = result.key === requestKey ? result.data : cached;
+  const loading = result.key !== requestKey || result.loading;
+  const error = result.key === requestKey && result.error;
+  const products = data?.items.map(mapProduct) ?? [];
+  const total = data?.total ?? 0;
+  const pages = Math.max(1, Math.ceil(total / catalogPageSize));
+  const [options, setOptions] = useState<FilterOptions | null>(readFilterCache);
+  const [optionsError, setOptionsError] = useState(false);
+  const [optionsRetry, setOptionsRetry] = useState(0);
+  const [retry, setRetry] = useState(0);
+  const requestedQuery = useRef(query);
+  const hasFilters = Object.values(filters).some(Boolean);
 
   function toggleFilters(open: boolean) {
-    writeFiltersOpen(open)
-    setIsFiltersOpen(open)
+    writeFiltersOpen(open);
+    setIsFiltersOpen(open);
   }
 
   function closeFilters() {
-    toggleFilters(false)
-    document.getElementById(`${filtersId}-toggle`)?.focus()
+    toggleFilters(false);
+    document.getElementById(`${filtersId}-toggle`)?.focus();
   }
 
   useLayoutEffect(() => {
-    restoreNavigation(Boolean(data) || !loading)
-    if (pageNavigation.current && pageNavigation.current !== requestKey) pageNavigation.current = null
+    restoreNavigation(Boolean(data) || !loading);
+    if (pageNavigation.current && pageNavigation.current !== requestKey)
+      pageNavigation.current = null;
     if (pageNavigation.current === requestKey && !loading) {
-      pageNavigation.current = null
-      const results = document.getElementById('products-results')
-      results?.focus({ preventScroll: true })
-      results?.scrollIntoView({ block: 'start' })
+      pageNavigation.current = null;
+      const results = document.getElementById("products-results");
+      results?.focus({ preventScroll: true });
+      results?.scrollIntoView({ block: "start" });
     }
-  }, [data, loading, location, requestKey])
+  }, [data, loading, location, requestKey]);
 
   function changePage(next: number) {
-    pageNavigation.current = catalogQuery(search, filters, next)
-    writeCatalogUrl(search, filters, false, next)
+    pageNavigation.current = catalogQuery(search, filters, next);
+    writeCatalogUrl(search, filters, false, next);
   }
 
   useEffect(() => {
-    const controller = new AbortController()
+    const controller = new AbortController();
     async function loadOptions() {
       try {
-        const response = await fetch('/api/products/filters', { signal: controller.signal })
-        if (!response.ok) throw new Error('Falha ao carregar opções.')
-        const data = await response.json() as FilterOptions
-        if (!Array.isArray(data.categorias) || !Array.isArray(data.produtores) || !Array.isArray(data.localidades)) throw new Error('Opções inválidas.')
-        if (!controller.signal.aborted) { writeFilterCache(data); setOptions(data); setOptionsError(false) }
-      } catch {
-        if (!controller.signal.aborted) setOptionsError(true)
-      }
-    }
-    void loadOptions()
-    return () => controller.abort()
-  }, [optionsRetry])
-
-  useEffect(() => {
-    const controller = new AbortController()
-    const timeout = window.setTimeout(async () => {
-      requestedQuery.current = query
-      setResult(previous => ({ key: requestKey, data: previous.key === requestKey ? previous.data : readCatalogCache(requestKey), loading: true, error: false }))
-      try {
-        const response = await fetch(`/api/products?${requestKey}`, { signal: controller.signal })
-        if (!response.ok) throw new Error('Falha ao carregar os produtos.')
-        const data = await response.json() as CatalogResponse
-        if (!Array.isArray(data.items) || !Number.isInteger(data.total) || data.total < 0) throw new Error('Resposta de produtos inválida.')
+        const response = await fetch("/api/products/filters", {
+          signal: controller.signal,
+        });
+        if (!response.ok) throw new Error("Falha ao carregar opções.");
+        const data = (await response.json()) as FilterOptions;
+        if (
+          !Array.isArray(data.categorias) ||
+          !Array.isArray(data.produtores) ||
+          !Array.isArray(data.localidades)
+        )
+          throw new Error("Opções inválidas.");
         if (!controller.signal.aborted) {
-          const lastPage = Math.max(1, Math.ceil(data.total / catalogPageSize))
-          if (page > lastPage) {
-            if (pageNavigation.current) pageNavigation.current = catalogQuery(search, filters, lastPage)
-            writeCatalogUrl(search, filters, true, lastPage)
-            return
-          }
-          // Canonicaliza page=1 e valores inválidos sem criar entradas no histórico.
-          const rawPage = new URLSearchParams(window.location.search).get('page')
-          if (rawPage !== null && rawPage !== (page > 1 ? String(page) : null)) writeCatalogUrl(search, filters, true, page)
-          writeCatalogCache(requestKey, data)
-          setResult({ key: requestKey, data, loading: false, error: false })
+          writeFilterCache(data);
+          setOptions(data);
+          setOptionsError(false);
         }
       } catch {
-        if (!controller.signal.aborted) setResult(previous => ({ ...previous, loading: false, error: true }))
+        if (!controller.signal.aborted) setOptionsError(true);
       }
-    }, query !== requestedQuery.current ? 250 : 0)
-    return () => { window.clearTimeout(timeout); controller.abort() }
-  }, [query, requestKey, retry, page, search, filters])
+    }
+    void loadOptions();
+    return () => controller.abort();
+  }, [optionsRetry]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const timeout = window.setTimeout(
+      async () => {
+        requestedQuery.current = query;
+        setResult((previous) => ({
+          key: requestKey,
+          data:
+            previous.key === requestKey
+              ? previous.data
+              : readCatalogCache(requestKey),
+          loading: true,
+          error: false,
+        }));
+        try {
+          const response = await fetch(`/api/products?${requestKey}`, {
+            signal: controller.signal,
+          });
+          if (!response.ok) throw new Error("Falha ao carregar os produtos.");
+          const data = (await response.json()) as CatalogResponse;
+          if (
+            !Array.isArray(data.items) ||
+            !Number.isInteger(data.total) ||
+            data.total < 0
+          )
+            throw new Error("Resposta de produtos inválida.");
+          if (!controller.signal.aborted) {
+            const lastPage = Math.max(
+              1,
+              Math.ceil(data.total / catalogPageSize),
+            );
+            if (page > lastPage) {
+              if (pageNavigation.current)
+                pageNavigation.current = catalogQuery(
+                  search,
+                  filters,
+                  lastPage,
+                );
+              writeCatalogUrl(search, filters, true, lastPage);
+              return;
+            }
+            // Canonicaliza page=1 e valores inválidos sem criar entradas no histórico.
+            const rawPage = new URLSearchParams(window.location.search).get(
+              "page",
+            );
+            if (
+              rawPage !== null &&
+              rawPage !== (page > 1 ? String(page) : null)
+            )
+              writeCatalogUrl(search, filters, true, page);
+            writeCatalogCache(requestKey, data);
+            setResult({ key: requestKey, data, loading: false, error: false });
+          }
+        } catch {
+          if (!controller.signal.aborted)
+            setResult((previous) => ({
+              ...previous,
+              loading: false,
+              error: true,
+            }));
+        }
+      },
+      query !== requestedQuery.current ? 250 : 0,
+    );
+    return () => {
+      window.clearTimeout(timeout);
+      controller.abort();
+    };
+  }, [query, requestKey, retry, page, search, filters]);
 
   return (
-    <main className="home-page" data-navigation-ready={Boolean(data) || !loading}>
+    <main
+      className="home-page"
+      data-navigation-ready={Boolean(data) || !loading}
+    >
       <WelcomeHero />
 
       <section className="home-page__auction" aria-label="Leilão em destaque">
@@ -131,58 +215,149 @@ function HomePage() {
           </h2>
 
           <div className="home-page__search">
-            <IconButton id={`${filtersId}-toggle`} className="home-page__filters-toggle" variant="primary"
-              aria-label={isFiltersOpen ? 'Colapsar filtros' : 'Mostrar filtros'}
-              aria-expanded={isFiltersOpen} aria-controls={filtersId}
+            <IconButton
+              id={`${filtersId}-toggle`}
+              className="home-page__filters-toggle"
+              variant="primary"
+              aria-label={
+                isFiltersOpen ? "Colapsar filtros" : "Mostrar filtros"
+              }
+              aria-expanded={isFiltersOpen}
+              aria-controls={filtersId}
               icon={<FontAwesomeIcon icon={faSliders} aria-hidden="true" />}
-              onClick={() => toggleFilters(!isFiltersOpen)} />
-            <SearchBar value={draft.location === location ? draft.value : search} onChange={value => {
-              const next = value.slice(0, 100)
-              writeCatalogUrl(next, filters, true)
-              setDraft({ location: locationSnapshot(), value: next })
-            }} />
+              onClick={() => toggleFilters(!isFiltersOpen)}
+            />
+            <SearchBar
+              value={draft.location === location ? draft.value : search}
+              onChange={(value) => {
+                const next = value.slice(0, 100);
+                writeCatalogUrl(next, filters, true);
+                setDraft({ location: locationSnapshot(), value: next });
+              }}
+            />
           </div>
-          <div className={`home-page__catalog${isFiltersOpen ? ' home-page__catalog--filters-open' : ''}`}>
-            <ProductFilters id={filtersId} isOpen={isFiltersOpen} onClose={closeFilters}
-              value={filters} options={options} optionsError={optionsError}
-              onChange={value => writeCatalogUrl(search, value, false)} onClear={() => writeCatalogUrl(search, { ...emptyFilters }, false)}
-              onViewResults={() => document.getElementById('products-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+          <div
+            className={`home-page__catalog${isFiltersOpen ? " home-page__catalog--filters-open" : ""}`}
+          >
+            <ProductFilters
+              id={filtersId}
+              isOpen={isFiltersOpen}
+              onClose={closeFilters}
+              value={filters}
+              options={options}
+              optionsError={optionsError}
+              onChange={(value) => writeCatalogUrl(search, value, false)}
+              onClear={() =>
+                writeCatalogUrl(search, { ...emptyFilters }, false)
+              }
+              onViewResults={() =>
+                document
+                  .getElementById("products-results")
+                  ?.scrollIntoView({ behavior: "smooth", block: "start" })
+              }
               onRetry={() => {
-                setOptionsError(false)
-                setOptionsRetry((value) => value + 1)
-              }} />
-            <div className="home-page__results" id="products-results" tabIndex={-1} aria-label="Resultados do catálogo" aria-busy={loading}>
+                setOptionsError(false);
+                setOptionsRetry((value) => value + 1);
+              }}
+            />
+            <div
+              className="home-page__results"
+              id="products-results"
+              tabIndex={-1}
+              aria-label="Resultados do catálogo"
+              aria-busy={loading}
+            >
               {!data && loading ? (
                 <LoadingPlaceholder label="A carregar produtos…" />
               ) : !data && error ? (
                 <div className="home-page__error" role="alert">
                   <p>Não foi possível carregar os produtos.</p>
-                  <Button icon={faRotateRight} onClick={() => setRetry(value => value + 1)}>Tentar novamente</Button>
+                  <Button
+                    icon={faRotateRight}
+                    onClick={() => setRetry((value) => value + 1)}
+                  >
+                    Tentar novamente
+                  </Button>
                 </div>
               ) : (
                 <>
-                  <p className="home-page__message" role="status" aria-live="polite">
-                    {error ? <>Não foi possível atualizar os produtos. A mostrar os resultados anteriores. <Button variant="cream" onClick={() => setRetry(value => value + 1)}>Tentar novamente</Button></>
-                      : <>A mostrar {products.length ? `${(page - 1) * catalogPageSize + 1}–${(page - 1) * catalogPageSize + products.length}` : '0'} de {total} produtos.{loading && ' A atualizar…'}</>}
+                  <p
+                    className="home-page__message"
+                    role="status"
+                    aria-live="polite"
+                  >
+                    {error ? (
+                      <>
+                        Não foi possível atualizar os produtos. A mostrar os
+                        resultados anteriores.{" "}
+                        <Button
+                          variant="cream"
+                          onClick={() => setRetry((value) => value + 1)}
+                        >
+                          Tentar novamente
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        A mostrar{" "}
+                        {products.length
+                          ? `${(page - 1) * catalogPageSize + 1}–${(page - 1) * catalogPageSize + products.length}`
+                          : "0"}{" "}
+                        de {total} produtos.{loading && " A atualizar…"}
+                      </>
+                    )}
                   </p>
                   {products.length > 0 ? (
-                    <ul className={`row row-cols-1 row-cols-md-2 ${isFiltersOpen ? 'row-cols-lg-1 row-cols-xl-2' : 'row-cols-lg-3'} home-page__product-grid`}>
-                      {products.map(product => (
+                    <ul
+                      className={`row row-cols-1 row-cols-md-2 ${isFiltersOpen ? "row-cols-lg-1 row-cols-xl-2" : "row-cols-lg-3"} home-page__product-grid`}
+                    >
+                      {products.map((product) => (
                         <li className="col" key={product.id}>
-                          <ProductCard product={product} href={productHref(product.id, `/${window.location.search}${window.location.hash}`)} />
+                          <ProductCard
+                            product={product}
+                            href={productHref(
+                              product.id,
+                              `/${window.location.search}${window.location.hash}`,
+                            )}
+                          />
                         </li>
                       ))}
                     </ul>
                   ) : (
-                    <p className="home-page__empty" role="status" aria-live="polite">
-                      {query || hasFilters ? 'Não foram encontrados produtos para a pesquisa e os filtros selecionados.' : 'Ainda não existem produtos disponíveis.'}
+                    <p
+                      className="home-page__empty"
+                      role="status"
+                      aria-live="polite"
+                    >
+                      {query || hasFilters
+                        ? "Não foram encontrados produtos para a pesquisa e os filtros selecionados."
+                        : "Ainda não existem produtos disponíveis."}
                     </p>
                   )}
-                  {total > 0 && <nav className="home-page__pagination" aria-label="Paginação do catálogo">
-                    <Button variant="cream" disabled={page <= 1 || loading} onClick={() => changePage(page - 1)}>Anterior</Button>
-                    <span aria-live="polite">Página {page} de {pages}</span>
-                    <Button variant="cream" disabled={page >= pages || loading} onClick={() => changePage(page + 1)}>Seguinte</Button>
-                  </nav>}
+                  {total > 0 && (
+                    <nav
+                      className="home-page__pagination"
+                      aria-label="Paginação do catálogo"
+                    >
+                      <Button
+                        variant="cream"
+                        disabled={page <= 1 || loading}
+                        onClick={() => changePage(page - 1)}
+                      >
+                        Anterior
+                      </Button>
+                      <span aria-live="polite">
+                        Página {page} de {pages}
+                      </span>
+                      <Button
+                        variant="cream"
+                        disabled={page >= pages || loading}
+                        onClick={() => changePage(page + 1)}
+                      >
+                        Seguinte
+                      </Button>
+                    </nav>
+                  )}
                 </>
               )}
             </div>
@@ -190,7 +365,7 @@ function HomePage() {
         </div>
       </section>
     </main>
-  )
+  );
 }
 
-export default HomePage
+export default HomePage;

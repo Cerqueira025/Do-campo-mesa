@@ -41,7 +41,9 @@
     --bs-btn-active-bg: var(--color-green-900);
     --bs-btn-disabled-bg: var(--color-green-950);
 
-    &:focus-visible { outline-color: var(--color-green-900); }
+    &:focus-visible {
+      outline-color: var(--color-green-900);
+    }
   }
 
   &--cream {

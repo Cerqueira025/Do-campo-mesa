@@ -1,4 +1,4 @@
-@use '../styles/abstracts/mixins' as *;
+@use "../styles/abstracts/mixins" as *;
 
 .product-detail {
   padding: 24px 0 48px;
@@ -85,7 +85,12 @@
     position: relative;
     width: 100%;
     padding: 112px max(24px, calc((100% - var(--content-max)) / 2 + 24px)) 28px;
-    background: linear-gradient(180deg, transparent, var(--color-brown-50), var(--color-brown-90));
+    background: linear-gradient(
+      180deg,
+      transparent,
+      var(--color-brown-50),
+      var(--color-brown-90)
+    );
     color: var(--color-white);
   }
 
@@ -142,7 +147,8 @@
     overflow-wrap: anywhere;
   }
 
-  &__summary, &__facts {
+  &__summary,
+  &__facts {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 20px;
@@ -259,7 +265,6 @@
     font-size: var(--font-size-xs);
   }
 
-
   @include up(desktop) {
     &__hero {
       min-height: 460px;
@@ -277,6 +282,5 @@
       border: 0;
       border-radius: 24px;
     }
-
   }
 }

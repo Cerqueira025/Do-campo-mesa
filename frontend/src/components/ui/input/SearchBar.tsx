@@ -1,17 +1,17 @@
-import { faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import './SearchBar.scss'
+import { faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import "./SearchBar.scss";
 
 interface SearchBarProps {
-  value: string
-  onChange: (value: string) => void
-  placeholder?: string
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
 }
 
 function SearchBar({
   value,
   onChange,
-  placeholder = 'Pesquisar produtos',
+  placeholder = "Pesquisar produtos",
 }: SearchBarProps) {
   return (
     <div className="search-bar">
@@ -29,7 +29,7 @@ function SearchBar({
         onChange={(event) => onChange(event.currentTarget.value)}
       />
     </div>
-  )
+  );
 }
 
-export default SearchBar
+export default SearchBar;
