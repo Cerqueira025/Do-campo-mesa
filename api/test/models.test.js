@@ -152,6 +152,36 @@ test("Exige perfil de produtor, morada de entrega e um único alvo na avaliaçã
   );
 });
 
+test("Encomenda de leilão guarda o preço do lote e aguarda modalidade apenas enquanto pendente", async () => {
+  const regular = documentData(Order);
+  const auction = new Order({
+    ...regular,
+    _id: undefined,
+    leilaoId: fixtures.find(([model]) => model === Auction)[1][0]._id,
+    estado: "pendente",
+    entrega: undefined,
+    total: 500,
+    linhas: regular.linhas.map(({ produtoId, nome, quantidade, unidade }) => ({
+      produtoId,
+      nome,
+      quantidade,
+      unidade,
+    })),
+  });
+  await auction.validate();
+  await assert.rejects(
+    new Order({ ...auction.toObject(), estado: "confirmada" }).validate(),
+  );
+  await assert.rejects(
+    new Order({ ...regular, entrega: undefined }).validate(),
+  );
+  assert.ok(
+    Order.schema
+      .indexes()
+      .some(([fields, options]) => fields.leilaoId === 1 && options.unique),
+  );
+});
+
 test("IDs do seed permanecem estáveis mesmo quando as datas mudam", () => {
   const other = seedData(passwordHash, new Date(0));
   assert.deepEqual(

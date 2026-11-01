@@ -348,7 +348,8 @@ reverte o conjunto completo. Este contrato substitui a antiga resposta de um obj
 O comprador acompanha `/encomendas`; o produtor consulta `/produtor/encomendas`.
 O detalhe `/encomendas/:id` mostra os dados históricos e permite ao produtor avançar
 um estado de cada vez. Listas e detalhe atualizam a cada cinco segundos enquanto
-visíveis, sem pedidos sobrepostos.
+visíveis, sem pedidos sobrepostos. Os eventos Socket.IO antecipam essas consultas;
+ao reconectar, as páginas consultam novamente a API para recuperar eventos perdidos.
 Falhas de rede numa compra não repetem o POST automaticamente: consulte primeiro
 as encomendas, pois o servidor pode ter concluído a operação.
 
@@ -359,3 +360,29 @@ incluindo ocultas e denunciadas, para impedir repetição na interface após F5.
 A restrição definitiva continua no índice `review_author_order_target_unique`.
 O fluxo não requer migração de documentos; confirme o índice com a inicialização
 já documentada antes de disponibilizar a funcionalidade.
+
+## Tempo real
+
+A API REST e Socket.IO partilham o mesmo servidor HTTP. O frontend liga-se a
+`/socket.io` pelo proxy de desenvolvimento; em produção, `/api` e `/socket.io`
+devem chegar à mesma instância da API através de HTTPS/WSS. A conexão aceita
+visitantes nas salas públicas `leilao:<id>`. Com JWT válido, entra também na sala
+privada `user:<id>`. Só compradores podem licitar; o servidor valida cada lance e
+guarda a licitação atual e o histórico na mesma transação antes de emitir eventos.
+
+| Direção                                  | Evento                                                  | Dados principais                                                                                  |
+| ---------------------------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Cliente → servidor                       | `entrar` / `sair`                                       | ID do leilão; `entrar` responde por ack.                                                          |
+| Cliente → servidor                       | `licitar`                                               | `{ leilaoId, valor }` em cêntimos; ack `{ ok, valor }` ou `{ ok: false, erro }`.                  |
+| Servidor → participante / sala do leilão | `estado` / `presenca`                                   | Ao entrar, leilão, hora do servidor, 20 lances recentes e último lance próprio; presença na sala. |
+| Servidor → sala do leilão                | `nova-licitacao` / `aberto` / `terminado` / `cancelado` | Lance confirmado ou mudança persistida do ciclo.                                                  |
+| Servidor → sala privada                  | `nova-encomenda` / `encomenda-atualizada`               | Referência, total ou novo estado.                                                                 |
+| Servidor → sala privada                  | `leilao-ganho` / `leilao-terminado`                     | Leilão e referência da encomenda do vencedor.                                                     |
+
+Os avisos são temporários. As listas e detalhes continuam a consultar a API a cada
+cinco segundos enquanto visíveis, pois eventos Socket.IO perdidos durante uma quebra
+de ligação não são reproduzidos. O processamento de stock e fecho do leilão também
+corre periodicamente; só um commit confirmado gera eventos. Executa `npm run db:init`
+na API para instalar o índice único parcial de `orders.leilaoId` antes de iniciar
+leilões com licitações. A distribuição por várias instâncias exige um adaptador de
+salas partilhado, fora desta fase.

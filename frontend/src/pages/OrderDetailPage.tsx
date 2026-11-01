@@ -1,6 +1,8 @@
-import { useRef, useState } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import Button from "../components/ui/Button";
 import LoadingPlaceholder from "../components/ui/LoadingPlaceholder";
+import FormField from "../components/ui/input/FormField";
+import { ApiError } from "../api/client";
 import { useAuth } from "../features/auth/useAuth";
 import OrderLayout from "../features/orders/OrderLayout";
 import OrderReviews from "../features/orders/OrderReviews";
@@ -40,10 +42,17 @@ function OrderDetail({ id, backUrl }: { id: string; backUrl?: string }) {
   const [mutationError, setMutationError] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const [deliveryType, setDeliveryType] = useState<"levantamento" | "entrega">(
+    "levantamento",
+  );
+  const [address, setAddress] = useState("");
   const pending = useRef(false);
   const producer =
     utilizador?.papel === "produtor" &&
     order?.produtorId?._id === utilizador.id;
+  const buyer =
+    utilizador?.papel === "comprador" &&
+    order?.compradorId?._id === utilizador.id;
   const admin = utilizador?.papel === "administrador";
   const next = order
     ? orderStates[orderStates.indexOf(order.estado) + 1]
@@ -66,6 +75,41 @@ function OrderDetail({ id, backUrl }: { id: string; backUrl?: string }) {
           ? failure.message
           : "Não foi possível atualizar o estado.",
       );
+    } finally {
+      pending.current = false;
+      setBusy(false);
+      refresh();
+    }
+  }
+  async function chooseDelivery(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (pending.current || !buyer || !order?.leilaoId || order.entrega) return;
+    if (deliveryType === "entrega" && !address.trim()) {
+      setMutationError("Indique a morada de entrega.");
+      return;
+    }
+    pending.current = true;
+    setBusy(true);
+    setMutationError("");
+    setMessage("");
+    try {
+      await request(`/orders/${id}/entrega`, {
+        method: "PATCH",
+        body: {
+          entrega: {
+            tipo: deliveryType,
+            ...(deliveryType === "entrega" ? { morada: address.trim() } : {}),
+          },
+        },
+      });
+      setMessage("Modalidade confirmada. O produtor já pode preparar o lote.");
+    } catch (failure) {
+      setMutationError(
+        failure instanceof Error
+          ? failure.message
+          : "Não foi possível guardar a modalidade.",
+      );
+      if (failure instanceof ApiError && failure.status === 409) refresh();
     } finally {
       pending.current = false;
       setBusy(false);
@@ -213,6 +257,47 @@ function OrderDetail({ id, backUrl }: { id: string; backUrl?: string }) {
                   ? order.entrega.morada
                   : "Levantamento junto do produtor."}
               </p>
+            </section>
+          ) : order.leilaoId && buyer ? (
+            <section className="order-page__panel">
+              <h2>Escolher como receber o lote</h2>
+              <form
+                className="order-page__form"
+                onSubmit={(event) => void chooseDelivery(event)}
+              >
+                <FormField id="auction-delivery-type" label="Modalidade">
+                  <select
+                    id="auction-delivery-type"
+                    value={deliveryType}
+                    disabled={busy}
+                    onChange={(event) =>
+                      setDeliveryType(event.target.value as typeof deliveryType)
+                    }
+                  >
+                    <option value="levantamento">
+                      Levantamento junto do produtor
+                    </option>
+                    <option value="entrega">Entrega na morada indicada</option>
+                  </select>
+                </FormField>
+                {deliveryType === "entrega" && (
+                  <FormField
+                    id="auction-delivery-address"
+                    label="Morada de entrega"
+                  >
+                    <textarea
+                      id="auction-delivery-address"
+                      required
+                      value={address}
+                      disabled={busy}
+                      onChange={(event) => setAddress(event.target.value)}
+                    />
+                  </FormField>
+                )}
+                <Button type="submit" disabled={busy}>
+                  {busy ? "A confirmar…" : "Confirmar modalidade"}
+                </Button>
+              </form>
             </section>
           ) : null}
           {order.estado === "entregue" &&

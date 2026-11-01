@@ -369,13 +369,36 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
+  /orders/{id}/entrega:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    patch:
+      tags: [Encomendas]
+      security: [{ bearerAuth: [] }]
+      summary: O vencedor de um leilão escolhe como receber o lote
+      description: Apenas o comprador da encomenda de leilão ainda pendente e sem modalidade pode escolher. Grava a modalidade e avança atomicamente para confirmada. Um segundo pedido recebe 409.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [entrega]
+              properties:
+                entrega: { $ref: '#/components/schemas/Delivery' }
+      responses:
+        '200': { description: Modalidade confirmada, content: { application/json: { schema: { $ref: '#/components/schemas/Order' } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
   /orders/{id}/estado:
     parameters: [{ $ref: '#/components/parameters/id' }]
     patch:
       tags: [Encomendas]
       security: [{ bearerAuth: [] }]
       summary: Avança a encomenda própria para o estado seguinte
-      description: A atualização é atómica e condicionada ao estado anterior. Um pedido ultrapassado por outro recebe 409 sem alterar a encomenda. A transição para entregue grava dataEntrega na mesma operação; estados não podem recuar nem saltar etapas.
+      description: A atualização é atómica e condicionada ao estado anterior. Um pedido ultrapassado por outro recebe 409 sem alterar a encomenda. A transição para entregue grava dataEntrega na mesma operação; estados não podem recuar nem saltar etapas. Uma encomenda de leilão sem modalidade aguarda a escolha do comprador e não pode ser avançada pelo produtor.
       requestBody:
         required: true
         content:
@@ -842,6 +865,7 @@ components:
         total: { type: integer, description: Cêntimos. }
         entrega:
           allOf: [{ $ref: '#/components/schemas/Delivery' }]
+          description: Ausente enquanto o vencedor do leilão não escolhe a modalidade.
         leilaoId: { type: string, nullable: true }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
@@ -853,7 +877,7 @@ components:
             properties:
               produtoId: { type: string }
               nome: { type: string }
-              precoUnitario: { type: integer, description: Cêntimos. }
+              precoUnitario: { type: integer, description: Cêntimos. Ausente nas linhas de leilão; o total é o preço do lote. }
               quantidade: { type: number, exclusiveMinimum: 0 }
               unidade: { type: string, enum: [kg, g, l, unidade] }
     OrderParticipant:

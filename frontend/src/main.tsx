@@ -4,13 +4,16 @@ import "./styles/main.scss";
 import App from "./App.tsx";
 import CartProvider from "./features/cart/CartProvider";
 import AuthProvider from "./features/auth/AuthProvider";
+import SocketProvider from "./features/realtime/SocketProvider";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <AuthProvider>
-      <CartProvider>
-        <App />
-      </CartProvider>
+      <SocketProvider>
+        <CartProvider>
+          <App />
+        </CartProvider>
+      </SocketProvider>
     </AuthProvider>
   </StrictMode>,
 );

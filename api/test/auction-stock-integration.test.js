@@ -2,8 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import mongoose from "mongoose";
+import jwt from "jsonwebtoken";
 import {
   Auction,
+  Bid,
   Product,
   User,
   Order,
@@ -14,6 +16,7 @@ import { processAuctionStock } from "../src/services/auctionStock.js";
 import orders from "../src/routes/orders.js";
 import auctions from "../src/routes/auctions.js";
 import products from "../src/routes/products.js";
+import { registerSockets } from "../src/sockets/index.js";
 
 test(
   "Concorrência real MongoDB: leilões, encomendas e repetição",
@@ -305,6 +308,282 @@ test(
             [200, 409],
           );
           assert.ok((await Order.findById(order.id)).dataEntrega);
+        },
+      );
+
+      await t.test(
+        "Fecho concorrente cria uma única encomenda pelo valor do lote",
+        async () => {
+          const item = await freshProduct();
+          const auction = await Auction.create({
+            ...lot(),
+            produtos: [
+              { produtoId: item._id, quantidade: 6, unidade: item.unidade },
+            ],
+          });
+          await processAuctionStock(auction.id, now);
+          await Auction.updateOne(
+            { _id: auction._id },
+            {
+              $set: {
+                licitacaoAtual: { valor: 350, compradorId: users[1]._id },
+              },
+            },
+          );
+          const events = [];
+          await Promise.all([
+            processAuctionStock(auction.id, now + 60000, (event) =>
+              events.push(event),
+            ),
+            processAuctionStock(auction.id, now + 60000, (event) =>
+              events.push(event),
+            ),
+          ]);
+          const saved = await Order.find({ leilaoId: auction._id });
+          assert.equal(saved.length, 1);
+          assert.equal(saved[0].total, 350);
+          assert.equal(saved[0].linhas.length, 1);
+          assert.equal(saved[0].linhas[0].nome, item.nome);
+          assert.equal(saved[0].linhas[0].quantidade, 6);
+          assert.equal(saved[0].linhas[0].precoUnitario, undefined);
+          assert.equal(saved[0].entrega, undefined);
+          assert.equal((await Product.findById(item.id)).stock, 4);
+          assert.equal(
+            (await Auction.findById(auction.id)).reservaStock,
+            "atribuida",
+          );
+          assert.equal(events.length, 1);
+          assert.equal(events[0].orderId, String(saved[0]._id));
+          await processAuctionStock(auction.id, now + 60000, (event) =>
+            events.push(event),
+          );
+          assert.equal(events.length, 1);
+
+          const delivery = orders.stack
+            .find((layer) => layer.route?.path === "/:id/entrega")
+            .route.stack.at(-1).handle;
+          async function choose(entrega) {
+            const response = {
+              code: 200,
+              status(code) {
+                this.code = code;
+                return this;
+              },
+              json(body) {
+                this.body = body;
+              },
+            };
+            await delivery(
+              {
+                params: { id: saved[0].id },
+                user: { id: String(users[1]._id) },
+                body: { entrega },
+              },
+              response,
+              (error) => {
+                throw error;
+              },
+            );
+            return response;
+          }
+          const choices = await Promise.all([
+            choose({ tipo: "levantamento" }),
+            choose({ tipo: "entrega", morada: "Rua da Feira, 1" }),
+          ]);
+          assert.deepEqual(
+            choices.map((choice) => choice.code).sort(),
+            [200, 409],
+          );
+          const finalOrder = await Order.findById(saved[0].id);
+          assert.equal(finalOrder.estado, "confirmada");
+          assert.ok(
+            ["levantamento", "entrega"].includes(finalOrder.entrega.tipo),
+          );
+        },
+      );
+
+      await t.test(
+        "Falha ao criar a encomenda reverte o fecho e não emite evento",
+        async (t) => {
+          const item = await freshProduct();
+          const auction = await Auction.create({
+            ...lot(),
+            produtos: [
+              { produtoId: item._id, quantidade: 6, unidade: item.unidade },
+            ],
+          });
+          await processAuctionStock(auction.id, now);
+          await Auction.updateOne(
+            { _id: auction._id },
+            {
+              $set: {
+                licitacaoAtual: { valor: 350, compradorId: users[1]._id },
+              },
+            },
+          );
+          const events = [];
+          const mockedCreate = t.mock.method(Order, "create", async () => {
+            throw new Error("Falha simulada na escrita");
+          });
+          await assert.rejects(
+            processAuctionStock(auction.id, now + 60000, (event) =>
+              events.push(event),
+            ),
+            /Falha simulada/,
+          );
+          assert.equal(
+            (await Auction.findById(auction.id)).reservaStock,
+            "reservada",
+          );
+          assert.equal((await Product.findById(item.id)).stock, 4);
+          assert.equal(
+            await Order.countDocuments({ leilaoId: auction._id }),
+            0,
+          );
+          assert.equal(events.length, 0);
+          mockedCreate.mock.restore();
+          await processAuctionStock(auction.id, now + 60000, (event) =>
+            events.push(event),
+          );
+          assert.equal(
+            await Order.countDocuments({ leilaoId: auction._id }),
+            1,
+          );
+          assert.equal(events.length, 1);
+        },
+      );
+
+      await t.test(
+        "Lances simultâneos mantêm um único vencedor e rollback sem broadcast",
+        async (t) => {
+          const item = await freshProduct();
+          const auction = await Auction.create({
+            ...lot(),
+            produtos: [
+              { produtoId: item._id, quantidade: 1, unidade: item.unidade },
+            ],
+            dataFim: new Date(Date.now() + 300000),
+          });
+          await processAuctionStock(auction.id, now);
+          const rooms = new Map();
+          const broadcasts = [];
+          const io = {
+            sockets: { adapter: { rooms } },
+            use(handler) {
+              this.middleware = handler;
+            },
+            on(_name, handler) {
+              this.connection = handler;
+            },
+            to(name) {
+              return {
+                emit(event, payload) {
+                  broadcasts.push({ name, event, payload });
+                },
+              };
+            },
+          };
+          registerSockets(io);
+          async function connect(user) {
+            const handlers = new Map();
+            const socket = {
+              data: {},
+              handshake: {
+                auth: {
+                  token: jwt.sign(
+                    { id: String(user._id) },
+                    process.env.JWT_SECRET,
+                    { expiresIn: "1h" },
+                  ),
+                },
+              },
+              on(name, handler) {
+                handlers.set(name, handler);
+              },
+              emit() {},
+              join(name) {
+                if (!rooms.has(name)) rooms.set(name, new Set());
+                rooms.get(name).add(this);
+              },
+              leave(name) {
+                rooms.get(name)?.delete(this);
+              },
+              disconnect() {
+                handlers.get("disconnecting")?.();
+                for (const name of rooms.keys()) this.leave(name);
+                handlers.get("disconnect")?.();
+              },
+              trigger(name, ...args) {
+                return handlers.get(name)?.(...args);
+              },
+            };
+            const error = await new Promise((resolve) =>
+              io.middleware(socket, resolve),
+            );
+            assert.equal(error, undefined);
+            io.connection(socket);
+            t.after(() => socket.disconnect());
+            await socket.trigger("entrar", auction.id, (answer) =>
+              assert.equal(answer.ok, true),
+            );
+            return socket;
+          }
+          const [first, second] = await Promise.all([
+            connect(users[1]),
+            connect(users[2]),
+          ]);
+          const answers = await Promise.all([
+            new Promise((resolve) =>
+              first.trigger(
+                "licitar",
+                { leilaoId: auction.id, valor: 110 },
+                resolve,
+              ),
+            ),
+            new Promise((resolve) =>
+              second.trigger(
+                "licitar",
+                { leilaoId: auction.id, valor: 110 },
+                resolve,
+              ),
+            ),
+          ]);
+          assert.deepEqual(answers.map((answer) => answer.ok).sort(), [
+            false,
+            true,
+          ]);
+          assert.equal(await Bid.countDocuments({ leilaoId: auction._id }), 1);
+          assert.equal(
+            (await Auction.findById(auction.id)).licitacaoAtual.valor,
+            110,
+          );
+          assert.equal(
+            broadcasts.filter((event) => event.event === "nova-licitacao")
+              .length,
+            1,
+          );
+          const mockedCreate = t.mock.method(Bid, "create", async () => {
+            throw new Error("Falha simulada no histórico");
+          });
+          const failure = await new Promise((resolve) =>
+            first.trigger(
+              "licitar",
+              { leilaoId: auction.id, valor: 120 },
+              resolve,
+            ),
+          );
+          assert.equal(failure.ok, false);
+          assert.equal(await Bid.countDocuments({ leilaoId: auction._id }), 1);
+          assert.equal(
+            (await Auction.findById(auction.id)).licitacaoAtual.valor,
+            110,
+          );
+          assert.equal(
+            broadcasts.filter((event) => event.event === "nova-licitacao")
+              .length,
+            1,
+          );
+          mockedCreate.mock.restore();
         },
       );
     } finally {

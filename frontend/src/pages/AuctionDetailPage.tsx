@@ -1,17 +1,23 @@
+import {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from "react";
+import { faArrowRight, faUsers } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import InternalLink from "../navigation/InternalLink";
 import { restoreNavigation, returnToCatalog } from "../navigation/navigation";
 import LoadingPlaceholder from "../components/ui/LoadingPlaceholder";
-import { useEffect, useId, useLayoutEffect, useState } from "react";
-import {
-  faArrowLeft,
-  faArrowRight,
-  faUsers,
-} from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Button from "../components/ui/Button";
-import IconButton from "../components/ui/IconButton";
 import ImageWithFallback from "../components/ui/ImageWithFallback";
 import AppHeader from "../components/layout/AppHeader";
+import { useAuth } from "../features/auth/useAuth";
+import { authHref } from "../features/auth/auth";
+import { useSocket } from "../features/realtime/socketContext";
 import {
   catalogReturnUrl,
   priceFormatter,
@@ -26,21 +32,57 @@ import {
   parseBid,
   remainingSeconds,
   type Auction,
+  type AuctionBid,
 } from "../features/auctions/auction";
 import { useAuctionCountdown } from "../features/auctions/useAuctionCountdown";
 import "./AuctionDetailPage.scss";
 
-function AuctionContent({ auction }: { auction: Auction }) {
+interface LiveProps {
+  navigation: ReactNode;
+  auction: Auction;
+  bids: AuctionBid[];
+  ownBid: AuctionBid | null;
+  participants: number | null;
+  connected: boolean;
+  offset: number;
+  error: string;
+  busy: boolean;
+  onBid: (value: number) => void;
+}
+
+function AuctionContent({
+  navigation,
+  auction,
+  bids,
+  ownBid,
+  participants,
+  connected,
+  offset,
+  error,
+  busy,
+  onBid,
+}: LiveProps) {
   const id = useId();
-  const { now, remaining } = useAuctionCountdown(Date.parse(auction.dataFim));
+  const { utilizador } = useAuth();
+  const { now, remaining } = useAuctionCountdown(
+    Date.parse(auction.dataFim),
+    offset,
+  );
   const state = auctionState(auction, now);
   const active = state === "ativo";
   const closed = state === "terminado" || state === "cancelado";
   const waiting = state === "agendado" && now >= Date.parse(auction.dataInicio);
   const minimum = auction.licitacaoAtual.valor + auction.incremento;
-  const [amount, setAmount] = useState(() => bidInputValue(minimum));
+  const [draft, setDraft] = useState<{
+    minimum: number;
+    amount: string;
+  } | null>(null);
+  const amount =
+    draft?.minimum === minimum ? draft.amount : bidInputValue(minimum);
+  const setAmount = (value: string) => setDraft({ minimum, amount: value });
   const bid = parseBid(amount);
   const invalid = bid === null || bid < minimum;
+  const canBid = utilizador?.papel === "comprador" && connected && active;
   const stateLabel =
     state === "ativo"
       ? "EM DIRETO"
@@ -50,9 +92,15 @@ function AuctionContent({ auction }: { auction: Auction }) {
           ? "CANCELADO"
           : "TERMINADO";
 
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (canBid && !invalid && !busy && bid !== null) onBid(bid);
+  }
+
   return (
     <>
-      <header className="auction-detail__hero">
+      <section className="auction-detail__hero">
+        {navigation}
         <ImageWithFallback
           {...productImages(auction.produtos[0].produtoId)}
           alt={auction.produtos[0].produtoId.nome}
@@ -90,11 +138,11 @@ function AuctionContent({ auction }: { auction: Auction }) {
             </strong>
           </div>
           <p className="auction-detail__participants">
-            <FontAwesomeIcon icon={faUsers} aria-hidden="true" /> Participantes:
-            indisponível
+            <FontAwesomeIcon icon={faUsers} aria-hidden="true" /> A assistir:{" "}
+            {participants ?? "—"}
           </p>
         </div>
-        <div className="auction-detail__summary">
+        <div className="auction-detail__summary page-content">
           <h1>{auction.lote}</h1>
           <dl className="auction-detail__metrics">
             <div className="auction-detail__current">
@@ -105,16 +153,24 @@ function AuctionContent({ auction }: { auction: Auction }) {
             </div>
             <div className="auction-detail__last">
               <dt>A sua última licitação</dt>
-              <dd>— €</dd>
-              <span>Indisponível</span>
+              <dd>
+                {ownBid ? priceFormatter.format(ownBid.valor / 100) : "—"}
+              </dd>
+              <span>
+                {ownBid
+                  ? ownBid.valor === auction.licitacaoAtual.valor
+                    ? "É o lance mais alto"
+                    : "Ultrapassada"
+                  : "Ainda não licitou"}
+              </span>
             </div>
           </dl>
         </div>
-      </header>
+      </section>
       <form
-        className="auction-detail__form"
-        aria-label="Preparar licitação"
-        onSubmit={(event) => event.preventDefault()}
+        className="auction-detail__form page-content"
+        aria-label="Licitar no leilão"
+        onSubmit={submit}
       >
         {state === "cancelado" && (
           <p role="status">
@@ -154,7 +210,8 @@ function AuctionContent({ auction }: { auction: Auction }) {
               variant="cream"
               className="auction-detail__increment"
               disabled={
-                !active ||
+                !canBid ||
+                busy ||
                 increment < auction.incremento ||
                 !Number.isSafeInteger(auction.licitacaoAtual.valor + increment)
               }
@@ -176,42 +233,80 @@ function AuctionContent({ auction }: { auction: Auction }) {
             inputMode="decimal"
             autoComplete="off"
             value={amount}
-            disabled={!active}
+            disabled={!canBid || busy}
             onChange={(event) => setAmount(event.target.value)}
-            aria-invalid={active && invalid}
-            aria-describedby={`${id}-minimum ${id}-availability${active && invalid ? ` ${id}-error` : ""}`}
+            aria-invalid={canBid && invalid}
+            aria-describedby={`${id}-minimum ${id}-availability${canBid && invalid ? ` ${id}-error` : ""}`}
           />
           <span aria-hidden="true">€</span>
         </div>
         <p id={`${id}-minimum`} className="auction-detail__hint">
           Lance mínimo: {priceFormatter.format(minimum / 100)}
         </p>
-        {active && invalid && (
+        {canBid && invalid && (
           <p id={`${id}-error`} className="auction-detail__error" role="alert">
             Introduza um valor com até duas casas decimais, igual ou superior ao
             lance mínimo.
           </p>
         )}
+        {error && (
+          <p className="auction-detail__error" role="alert">
+            {error}
+          </p>
+        )}
         <Button
+          type="submit"
           className="auction-detail__submit"
           icon={faArrowRight}
           iconPosition="end"
-          disabled
+          disabled={!canBid || invalid || busy}
           aria-describedby={`${id}-availability`}
         >
-          {state === "cancelado"
-            ? "Leilão cancelado"
-            : state === "terminado"
-              ? "Leilão terminado"
-              : state === "agendado"
-                ? "Leilão agendado"
-                : bid !== null && !invalid
-                  ? `Licitar ${priceFormatter.format(bid / 100)}`
-                  : "Licitar"}
+          {busy
+            ? "A confirmar lance…"
+            : state === "cancelado"
+              ? "Leilão cancelado"
+              : state === "terminado"
+                ? "Leilão terminado"
+                : state === "agendado"
+                  ? "Leilão agendado"
+                  : bid !== null && !invalid
+                    ? `Licitar ${priceFormatter.format(bid / 100)}`
+                    : "Licitar"}
         </Button>
         <p id={`${id}-availability`} className="auction-detail__hint">
-          As licitações ainda não estão disponíveis.
+          {!connected ? (
+            "Ligação em tempo real indisponível. Os dados serão atualizados automaticamente."
+          ) : !utilizador ? (
+            <InternalLink
+              href={authHref("/login", {
+                regresso: window.location.pathname + window.location.search,
+              })}
+            >
+              Inicie sessão para licitar.
+            </InternalLink>
+          ) : utilizador.papel !== "comprador" ? (
+            "Apenas compradores podem licitar."
+          ) : active ? (
+            "Lances confirmados pelo servidor."
+          ) : (
+            "As licitações não estão disponíveis neste momento."
+          )}
         </p>
+        <section className="auction-detail__history">
+          <h2>Últimas licitações</h2>
+          {bids.length ? (
+            <ol>
+              {bids.map((item) => (
+                <li key={item._id}>
+                  {item.nome}: {priceFormatter.format(item.valor / 100)}
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p>Ainda não há licitações.</p>
+          )}
+        </section>
         <span className="auction-detail__announcement" role="status">
           {state === "cancelado"
             ? "O leilão foi cancelado."
@@ -225,7 +320,17 @@ function AuctionContent({ auction }: { auction: Auction }) {
 }
 
 export default function AuctionDetailPage({ id }: { id: string | null }) {
+  const socket = useSocket();
+  const { utilizador } = useAuth();
   const [auction, setAuction] = useState<Auction | null>(null);
+  const [bids, setBids] = useState<AuctionBid[]>([]);
+  const [ownBid, setOwnBid] = useState<AuctionBid | null>(null);
+  const [participants, setParticipants] = useState<number | null>(null);
+  const [connected, setConnected] = useState(false);
+  const [offset, setOffset] = useState(0);
+  const [bidError, setBidError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const pending = useRef(false);
   const [status, setStatus] = useState<
     "loading" | "success" | "missing" | "error"
   >(id ? "loading" : "missing");
@@ -253,11 +358,19 @@ export default function AuctionDetailPage({ id }: { id: string | null }) {
         if (!isAuction(data) || data._id.toLowerCase() !== id!.toLowerCase())
           throw new Error("Resposta inválida");
         if (!controller.signal.aborted) {
-          setAuction(data);
+          setAuction((previous) =>
+            previous &&
+            previous.licitacaoAtual.valor > data.licitacaoAtual.valor
+              ? previous
+              : data,
+          );
           setStatus("success");
         }
       } catch {
-        if (!controller.signal.aborted) setStatus("error");
+        if (!controller.signal.aborted)
+          setStatus((previous) =>
+            previous === "success" ? previous : "error",
+          );
       } finally {
         if (!controller.signal.aborted) timer = window.setTimeout(load, 5000);
       }
@@ -270,6 +383,104 @@ export default function AuctionDetailPage({ id }: { id: string | null }) {
   }, [id, retry]);
 
   useEffect(() => {
+    if (!id || !socket) return;
+    const enter = () => {
+      setConnected(true);
+      socket.emit("entrar", id, (answer: { ok: boolean; erro?: string }) => {
+        if (!answer.ok)
+          setBidError(answer.erro ?? "Não foi possível entrar no leilão.");
+      });
+    };
+    const disconnect = () => {
+      setConnected(false);
+      setParticipants(null);
+    };
+    const state = ({
+      agora,
+      leilao,
+      licitacoes,
+      ultimaLicitacaoPropria,
+    }: {
+      agora: string;
+      leilao: unknown;
+      licitacoes: AuctionBid[];
+      ultimaLicitacaoPropria?: AuctionBid | null;
+    }) => {
+      if (!isAuction(leilao) || leilao._id.toLowerCase() !== id.toLowerCase())
+        return;
+      setOffset(Date.parse(agora) - Date.now());
+      setAuction((previous) =>
+        previous && previous.licitacaoAtual.valor > leilao.licitacaoAtual.valor
+          ? previous
+          : leilao,
+      );
+      setBids((previous) =>
+        [...licitacoes, ...previous]
+          .filter(
+            (item, index, all) =>
+              all.findIndex((candidate) => candidate._id === item._id) ===
+              index,
+          )
+          .sort((a, b) => b.valor - a.valor)
+          .slice(0, 20),
+      );
+      setOwnBid((previous) => {
+        const current =
+          previous?.compradorId === utilizador?.id ? previous : null;
+        return !ultimaLicitacaoPropria ||
+          (current && current.valor > ultimaLicitacaoPropria.valor)
+          ? current
+          : ultimaLicitacaoPropria;
+      });
+      setStatus("success");
+      setBidError("");
+    };
+    const newBid = (bid: AuctionBid) => {
+      setAuction((previous) =>
+        previous && bid.valor > previous.licitacaoAtual.valor
+          ? {
+              ...previous,
+              licitacaoAtual: {
+                valor: bid.valor,
+                compradorId: bid.compradorId,
+              },
+            }
+          : previous,
+      );
+      setBids((previous) =>
+        [bid, ...previous.filter((item) => item._id !== bid._id)]
+          .sort((a, b) => b.valor - a.valor)
+          .slice(0, 20),
+      );
+      if (bid.compradorId === utilizador?.id)
+        setOwnBid((previous) =>
+          previous && previous.valor > bid.valor ? previous : bid,
+        );
+    };
+    const changed = () => setRetry((value) => value + 1);
+    socket.on("connect", enter);
+    socket.on("disconnect", disconnect);
+    socket.on("estado", state);
+    socket.on("nova-licitacao", newBid);
+    socket.on("presenca", setParticipants);
+    socket.on("aberto", changed);
+    socket.on("terminado", changed);
+    socket.on("cancelado", changed);
+    if (socket.connected) enter();
+    return () => {
+      socket.emit("sair", id);
+      socket.off("connect", enter);
+      socket.off("disconnect", disconnect);
+      socket.off("estado", state);
+      socket.off("nova-licitacao", newBid);
+      socket.off("presenca", setParticipants);
+      socket.off("aberto", changed);
+      socket.off("terminado", changed);
+      socket.off("cancelado", changed);
+    };
+  }, [id, socket, utilizador?.id]);
+
+  useEffect(() => {
     const previousTitle = document.title;
     document.title = auction
       ? `${auction.lote} · Leilão · Do campo à mesa`
@@ -279,29 +490,55 @@ export default function AuctionDetailPage({ id }: { id: string | null }) {
     };
   }, [auction]);
 
+  function placeBid(value: number) {
+    if (!socket?.connected || !id || pending.current) return;
+    pending.current = true;
+    setBusy(true);
+    setBidError("");
+    socket
+      .timeout(7000)
+      .emit(
+        "licitar",
+        { leilaoId: id, valor: value },
+        (failure: Error | null, answer?: { ok: boolean; erro?: string }) => {
+          pending.current = false;
+          setBusy(false);
+          if (failure || !answer?.ok) {
+            setBidError(
+              answer?.erro ??
+                "Resultado incerto. Consulte o histórico antes de tentar novamente.",
+            );
+            setRetry((current) => current + 1);
+          }
+        },
+      );
+  }
+
+  const navigation = (
+    <div className="auction-detail__top-row">
+      <AppHeader
+        variant={status === "success" ? "overlay" : "default"}
+        onBack={() => returnToCatalog(returnUrl)}
+      />
+    </div>
+  );
+
   return (
     <main
       data-navigation-ready={status !== "loading"}
       className={`auction-detail${status === "success" ? " auction-detail--loaded" : ""}`}
     >
-      <AppHeader />
-      <nav className="auction-detail__back" aria-label="Regresso ao catálogo">
-        <IconButton
-          aria-label="Voltar ao catálogo"
-          icon={<FontAwesomeIcon icon={faArrowLeft} aria-hidden="true" />}
-          onClick={() => returnToCatalog(returnUrl)}
-        />
-      </nav>
+      {status !== "success" && navigation}
       {status === "loading" ? (
         <LoadingPlaceholder label="A carregar leilão…" />
       ) : status === "missing" ? (
-        <section className="auction-detail__message">
+        <section className="auction-detail__message page-content">
           <h1>Leilão não encontrado</h1>
           <p>Este leilão não existe ou já não está disponível.</p>
           <InternalLink href={returnUrl}>Explorar produtos</InternalLink>
         </section>
       ) : status === "error" ? (
-        <section className="auction-detail__message" role="alert">
+        <section className="auction-detail__message page-content" role="alert">
           <h1>Não foi possível carregar o leilão</h1>
           <p>Tenta novamente dentro de instantes.</p>
           <Button
@@ -314,7 +551,20 @@ export default function AuctionDetailPage({ id }: { id: string | null }) {
           </Button>
         </section>
       ) : (
-        auction && <AuctionContent key={auction._id} auction={auction} />
+        auction && (
+          <AuctionContent
+            navigation={navigation}
+            auction={auction}
+            bids={bids}
+            ownBid={ownBid?.compradorId === utilizador?.id ? ownBid : null}
+            participants={participants}
+            connected={connected}
+            offset={offset}
+            error={bidError}
+            busy={busy}
+            onBid={placeBid}
+          />
+        )
       )}
     </main>
   );

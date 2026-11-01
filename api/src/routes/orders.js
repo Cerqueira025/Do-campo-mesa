@@ -159,6 +159,14 @@ router.post(
 
         orders = await Order.create(documents, { session, ordered: true });
       });
+      for (const order of orders)
+        request.app
+          ?.get("io")
+          ?.to(`user:${order.produtorId}`)
+          .emit("nova-encomenda", {
+            id: String(order._id),
+            total: order.total,
+          });
       response.status(201).location("/api/orders").json(orders);
     } catch (error) {
       next(error);
@@ -236,6 +244,74 @@ router.get(
 );
 
 router.patch(
+  "/:id/entrega",
+  requireAuth("comprador"),
+  requireObjectBody,
+  async (request, response, next) => {
+    try {
+      if (!mongoose.isObjectIdOrHexString(request.params.id))
+        return response.status(404).json({ erro: "Encomenda não encontrada." });
+      const { entrega } = request.body;
+      if (
+        !entrega ||
+        !["levantamento", "entrega"].includes(entrega.tipo) ||
+        (entrega.tipo === "entrega" &&
+          (typeof entrega.morada !== "string" || !entrega.morada.trim()))
+      ) {
+        return response
+          .status(400)
+          .json({ erro: "Dados de entrega ou levantamento inválidos." });
+      }
+      const order = await Order.findOne({
+        _id: request.params.id,
+        compradorId: request.user.id,
+      });
+      if (!order)
+        return response.status(404).json({ erro: "Encomenda não encontrada." });
+      if (!order.leilaoId || order.estado !== "pendente" || order.entrega)
+        return response.status(409).json({
+          erro: "Esta encomenda já não aguarda a escolha da modalidade.",
+        });
+      const updated = await Order.findOneAndUpdate(
+        {
+          _id: order._id,
+          compradorId: request.user.id,
+          leilaoId: order.leilaoId,
+          estado: "pendente",
+          entrega: null,
+        },
+        {
+          $set: {
+            entrega: {
+              tipo: entrega.tipo,
+              ...(entrega.tipo === "entrega"
+                ? { morada: entrega.morada.trim() }
+                : {}),
+            },
+            estado: "confirmada",
+          },
+        },
+        { new: true, runValidators: true },
+      );
+      if (!updated)
+        return response.status(409).json({
+          erro: "A encomenda foi alterada por outro pedido. Atualize os dados e tente novamente.",
+        });
+      request.app
+        ?.get("io")
+        ?.to(`user:${updated.produtorId}`)
+        .emit("encomenda-atualizada", {
+          id: String(updated._id),
+          estado: updated.estado,
+        });
+      response.json(updated);
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+router.patch(
   "/:id/estado",
   requireAuth("produtor"),
   requireObjectBody,
@@ -254,6 +330,10 @@ router.patch(
       });
       if (!order)
         return response.status(404).json({ erro: "Encomenda não encontrada." });
+      if (order.leilaoId && !order.entrega)
+        return response.status(409).json({
+          erro: "O comprador ainda não escolheu a modalidade da encomenda.",
+        });
       if (states.indexOf(estado) !== states.indexOf(order.estado) + 1) {
         return response.status(409).json({
           erro: "A encomenda só pode avançar para o estado seguinte.",
@@ -279,6 +359,14 @@ router.patch(
       if (!updated)
         return response.status(409).json({
           erro: "A encomenda foi alterada por outro pedido. Atualize os dados e tente novamente.",
+        });
+      request.app
+        ?.get("io")
+        ?.to(`user:${updated.compradorId}`)
+        .emit("encomenda-atualizada", {
+          id: String(updated._id),
+          estado: updated.estado,
+          produtor: request.user.nome,
         });
       response.json(updated);
     } catch (error) {

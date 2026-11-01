@@ -2,7 +2,6 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   auctionHref,
-  auctionIdFromPath,
   auctionState,
   bidInputValue,
   featuredAuction,
@@ -12,6 +11,7 @@ import {
   remainingSeconds,
   type Auction,
 } from "../src/features/auctions/auction.ts";
+import { auctionIdFromPath } from "../src/navigation/routePaths.ts";
 import { catalogReturnUrl } from "../src/features/products/product.ts";
 
 const id = "dca000000000000000004001";

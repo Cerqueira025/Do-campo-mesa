@@ -13,7 +13,15 @@ export interface Auction {
   reservaStock:
     "pendente" | "reservada" | "libertada" | "atribuida" | "sem-reserva";
   motivoCancelamento?: keyof typeof cancellationMessages;
-  licitacaoAtual: { valor: number };
+  licitacaoAtual: { valor: number; compradorId?: string | null };
+}
+
+export interface AuctionBid {
+  _id: string;
+  valor: number;
+  compradorId: string;
+  nome: string;
+  createdAt: string;
 }
 
 export const cancellationMessages = {
@@ -57,10 +65,6 @@ export function isAuction(value: unknown): value is Auction {
     Number.isFinite(Date.parse(auction.dataFim)) &&
     Date.parse(auction.dataInicio) < Date.parse(auction.dataFim)
   );
-}
-
-export function auctionIdFromPath(path: string) {
-  return /^\/leiloes\/([a-f\d]{24})\/?$/i.exec(path)?.[1] ?? null;
 }
 
 export function auctionHref(id: string, catalogUrl = "/") {

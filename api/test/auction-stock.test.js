@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import mongoose from "mongoose";
-import { Auction, Product, User, Bid } from "../src/models/index.js";
+import { Auction, Product, User, Bid, Order } from "../src/models/index.js";
 import {
   processAuctionStock,
   processAuctionsStock,
@@ -46,9 +46,11 @@ function matches(record, filter) {
 function fixture(t, auctions = [lot()]) {
   const db = {
     auctions: structuredClone(auctions),
+    orders: [],
     products: [
       {
         _id: "p1",
+        nome: "Batata",
         produtorId: producerId,
         publicado: true,
         unidade: "kg",
@@ -56,6 +58,7 @@ function fixture(t, auctions = [lot()]) {
       },
       {
         _id: "p2",
+        nome: "Leite",
         produtorId: producerId,
         publicado: true,
         unidade: "l",
@@ -147,6 +150,16 @@ function fixture(t, auctions = [lot()]) {
     return { modifiedCount: 1, matchedCount: 1 };
   });
   t.mock.method(Bid, "deleteMany", async () => {});
+  t.mock.method(Order, "create", async (documents, options) => {
+    assert.ok(options.session);
+    assert.equal(options.ordered, true);
+    const created = documents.map((document, index) => ({
+      ...document,
+      _id: `order-${db.orders.length + index}`,
+    }));
+    db.orders.push(...created);
+    return created;
+  });
   return db;
 }
 
@@ -260,6 +273,36 @@ test("Fim com vencedor mantém quantidades atribuídas sem segundo desconto", as
     [4, 1],
   );
   assert.equal(db.auctions[0].reservaStock, "atribuida");
+  assert.equal(db.orders.length, 1);
+  assert.equal(db.orders[0].total, 100);
+  assert.equal(db.orders[0].entrega, undefined);
+  assert.deepEqual(
+    db.orders[0].linhas.map((line) => line.nome),
+    ["Batata", "Leite"],
+  );
+});
+
+test("Falha ao criar a encomenda reverte o fecho e permite repetir sem duplicados", async (t) => {
+  const db = fixture(t);
+  await processAuctionStock("a", now);
+  db.auctions[0].licitacaoAtual.compradorId = "buyer";
+  const create = Order.create;
+  t.mock.method(Order, "create", async () => {
+    throw new Error("Escrita interrompida");
+  });
+  const events = [];
+  await assert.rejects(
+    processAuctionStock("a", now + 1000, (event) => events.push(event)),
+    /Escrita interrompida/,
+  );
+  assert.equal(db.auctions[0].estado, "ativo");
+  assert.equal(db.orders.length, 0);
+  assert.deepEqual(events, []);
+  t.mock.method(Order, "create", create);
+  await processAuctionStock("a", now + 1000, (event) => events.push(event));
+  await processAuctionStock("a", now + 1000, (event) => events.push(event));
+  assert.equal(db.orders.length, 1);
+  assert.equal(events.length, 1);
 });
 
 test("Reinício antes do início ou depois de perder todo o intervalo não desconta stock", async (t) => {

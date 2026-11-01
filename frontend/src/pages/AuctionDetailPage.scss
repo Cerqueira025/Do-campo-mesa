@@ -1,4 +1,5 @@
 @use "../styles/abstracts/mixins" as *;
+@use "../styles/abstracts/tokens" as tokens;
 
 .auction-detail {
   position: relative;
@@ -11,43 +12,19 @@
     background: var(--color-green-950);
   }
 
-  &__session {
-    padding: 20px;
-  }
-
-  &--loaded &__session {
-    position: absolute;
+  &__top-row {
+    position: relative;
     z-index: 3;
-    top: 0;
-    left: 0;
-    right: 0;
-  }
-
-  &__back {
-    margin: 0 20px 20px;
-  }
-
-  &--loaded &__back {
-    position: absolute;
-    z-index: 2;
-    top: 160px;
-    left: 20px;
-    margin: 0;
-  }
-
-  &__back .icon-button {
-    width: 44px;
-    --icon-button-background: var(--color-green-950);
-    --icon-button-hover-background: var(--color-green-900);
+    width: 100%;
+    padding: 20px 24px;
   }
 
   &__hero {
     position: relative;
     display: flex;
-    align-items: flex-end;
+    flex-direction: column;
     min-width: 0;
     min-height: clamp(620px, 120vw, 720px);
-    padding-top: 340px;
     overflow: hidden;
     background: var(--color-brown-100);
   }
@@ -70,10 +47,10 @@
   }
 
   &__indicators {
-    position: absolute;
+    position: relative;
+    align-self: flex-end;
+    margin-inline: tokens.$page-padding-inline;
     z-index: 1;
-    top: 160px;
-    right: 20px;
     display: grid;
     gap: 5px;
     max-width: calc(100% - 100px);
@@ -126,9 +103,10 @@
   }
 
   &__summary {
+    margin-top: auto;
     position: relative;
     width: 100%;
-    padding: 110px 20px 44px;
+    padding-block: 110px 44px;
     background: linear-gradient(
       180deg,
       transparent,
@@ -197,7 +175,7 @@
     z-index: 1;
     min-width: 0;
     margin-top: -20px;
-    padding: 24px 20px calc(24px + env(safe-area-inset-bottom));
+    padding-block: 24px calc(24px + env(safe-area-inset-bottom));
     border-radius: 32px 32px 0 0;
     background: var(--color-stone-50);
   }
@@ -308,7 +286,7 @@
 
   &__message {
     margin: 0;
-    padding: 24px 24px 32px;
+    padding-block: 24px 32px;
   }
 
   &__message h1 {
@@ -319,6 +297,26 @@
     color: var(--color-green-950);
   }
 
+  &__history {
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--color-green-20);
+  }
+
+  &__history h2 {
+    font-size: var(--font-size-lg);
+  }
+  &__history ol {
+    padding-left: 1.5rem;
+  }
+  &__history li + li {
+    margin-top: 0.5rem;
+  }
+
+  &__hint a {
+    color: var(--color-green-950);
+  }
+
   &__announcement {
     position: absolute;
     width: 1px;
@@ -326,16 +324,6 @@
     overflow: hidden;
     clip-path: inset(50%);
     white-space: nowrap;
-  }
-
-  @include up(tablet) {
-    &__form {
-      padding-inline: 32px;
-    }
-
-    &__summary {
-      padding-inline: 32px;
-    }
   }
 
   @include up(desktop) {
@@ -352,16 +340,6 @@
     &__hero {
       min-height: 720px;
       height: 100%;
-    }
-
-    &--loaded &__session {
-      width: 60%;
-      right: auto;
-    }
-
-    &--loaded &__back,
-    &__indicators {
-      top: 88px;
     }
 
     &__form {

@@ -272,6 +272,15 @@ test("Uma finalização cria uma encomenda por produtor e desconta todo o stock"
     fixture.products.map((p) => p.stock),
     [4.5, 4.5],
   );
+  assert.deepEqual(fixture.notifications.map((item) => item.room).sort(), [
+    "user:dca000000000000000000004",
+    "user:dca000000000000000000005",
+  ]);
+  assert.ok(
+    fixture.notifications.every(
+      (item) => item.event === "nova-encomenda" && item.payload.total === 76,
+    ),
+  );
 });
 
 for (const scenario of [
