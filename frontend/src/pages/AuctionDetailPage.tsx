@@ -11,7 +11,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Button from "../components/ui/Button";
 import IconButton from "../components/ui/IconButton";
 import ImageWithFallback from "../components/ui/ImageWithFallback";
-import SessionNav from "../features/auth/components/SessionNav";
+import AppHeader from "../components/layout/AppHeader";
 import {
   catalogReturnUrl,
   priceFormatter,
@@ -284,7 +284,7 @@ export default function AuctionDetailPage({ id }: { id: string | null }) {
       data-navigation-ready={status !== "loading"}
       className={`auction-detail${status === "success" ? " auction-detail--loaded" : ""}`}
     >
-      <SessionNav className="auction-detail__session" />
+      <AppHeader />
       <nav className="auction-detail__back" aria-label="Regresso ao catálogo">
         <IconButton
           aria-label="Voltar ao catálogo"

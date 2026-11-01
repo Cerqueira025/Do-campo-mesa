@@ -5,9 +5,9 @@ import {
   mapProduct,
   originMapUrl,
   productHref,
-  productIdFromPath,
   productImages,
 } from "../src/features/products/product.ts";
+import { productIdFromPath } from "../src/navigation/routePaths.ts";
 
 const id = "dca000000000000000000101";
 const product = {

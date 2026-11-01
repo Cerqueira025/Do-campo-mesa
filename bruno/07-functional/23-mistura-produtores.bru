@@ -1,5 +1,5 @@
 meta {
-  name: Rejeita mistura de produtores
+  name: Cria encomendas de vários produtores
   type: http
   seq: 23
 }
@@ -33,7 +33,9 @@ body:json {
 }
 
 tests {
-  test("Rejeita mistura de produtores", function() {
-    expect(res.getStatus()).to.equal(400);
+  test("Cria encomendas de vários produtores", function() {
+    expect(res.getStatus()).to.equal(201);
+    expect(res.getBody()).to.have.length(2);
+    expect(new Set(res.getBody().map(order => order.produtorId)).size).to.equal(2);
   });
 }

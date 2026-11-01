@@ -157,8 +157,3 @@ export function originMapUrl(coordinates?: {
     return null;
   return `https://www.google.com/maps/search/?api=1&query=${latitude}%2C${longitude}`;
 }
-
-export function productIdFromPath(path: string) {
-  const match = /^\/produtos\/([a-f\d]{24})\/?$/i.exec(path);
-  return match?.[1] ?? null;
-}

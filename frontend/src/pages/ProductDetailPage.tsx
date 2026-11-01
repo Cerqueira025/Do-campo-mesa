@@ -1,15 +1,15 @@
+import FormField from "../components/ui/input/FormField";
+import QuantityInput from "../components/ui/input/QuantityInput";
+import { useCart } from "../features/cart/cartContext";
 import InternalLink from "../navigation/InternalLink";
 import { restoreNavigation, returnToCatalog } from "../navigation/navigation";
 import LoadingPlaceholder from "../components/ui/LoadingPlaceholder";
-import { useEffect, useLayoutEffect, useMemo, useState } from "react";
-import { faArrowLeft } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Button from "../components/ui/Button";
-import IconButton from "../components/ui/IconButton";
 import ImageWithFallback from "../components/ui/ImageWithFallback";
 import OriginMap from "../components/location/OriginMap";
 import RelatedProducts from "../features/products/RelatedProducts";
-import SessionNav from "../features/auth/components/SessionNav";
+import AppHeader from "../components/layout/AppHeader";
 import {
   catalogReturnUrl,
   originMapUrl,
@@ -19,9 +19,17 @@ import {
 } from "../features/products/product";
 import { seasons } from "../features/home/catalogFilters";
 import { readCatalogProduct } from "../features/home/catalogCache";
+import {
+  initialPurchaseQuantity,
+  validPurchaseQuantity,
+} from "../features/products/purchaseQuantity";
 import "./ProductDetailPage.scss";
 
 export default function ProductDetailPage({ id }: { id: string | null }) {
+  const { adicionar, canBuy, message } = useCart();
+  const [editedQuantity, setQuantity] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
+  const orderRef = useRef<HTMLElement>(null);
   const cachedProduct = useMemo(
     () => (id ? readCatalogProduct(id) : undefined),
     [id],
@@ -29,6 +37,11 @@ export default function ProductDetailPage({ id }: { id: string | null }) {
   const [product, setProduct] = useState<ProductDetail | null>(
     cachedProduct ?? null,
   );
+  const quantity =
+    editedQuantity ??
+    String(
+      product ? initialPurchaseQuantity(product.unidade, product.stock) : 0,
+    );
   const [status, setStatus] = useState<
     "loading" | "success" | "missing" | "error"
   >(cachedProduct ? "success" : id ? "loading" : "missing");
@@ -37,6 +50,21 @@ export default function ProductDetailPage({ id }: { id: string | null }) {
   useLayoutEffect(() => {
     restoreNavigation(status !== "loading");
   }, [status]);
+
+  useLayoutEffect(() => {
+    const order = orderRef.current;
+    if (!order) return;
+    const observer = new ResizeObserver(() => {
+      order
+        .closest("main")
+        ?.style.setProperty(
+          "--product-order-height",
+          `${order.getBoundingClientRect().height}px`,
+        );
+    });
+    observer.observe(order);
+    return () => observer.disconnect();
+  }, [status, product?._id]);
 
   useEffect(() => {
     if (!id || cachedProduct) return;
@@ -88,17 +116,6 @@ export default function ProductDetailPage({ id }: { id: string | null }) {
   const seasonNames = seasons
     .filter((season) => product?.epoca?.includes(season.value))
     .map((season) => season.label);
-  const backNavigation = (
-    <nav className="product-detail__back" aria-label="Regresso ao catálogo">
-      <IconButton
-        variant="cream"
-        aria-label="Voltar ao catálogo"
-        icon={<FontAwesomeIcon icon={faArrowLeft} aria-hidden="true" />}
-        onClick={() => returnToCatalog(returnUrl)}
-      />
-      {status !== "success" && <span>Voltar ao catálogo</span>}
-    </nav>
-  );
 
   return (
     <main
@@ -106,10 +123,12 @@ export default function ProductDetailPage({ id }: { id: string | null }) {
       className={`product-detail${status === "success" ? " product-detail--loaded" : ""}`}
     >
       {status === "success" && product && (
-        <header className="product-detail__hero">
+        <section className="product-detail__hero">
           <div className="product-detail__top-row">
-            {backNavigation}
-            <SessionNav className="product-detail__session" />
+            <AppHeader
+              variant="overlay"
+              onBack={() => returnToCatalog(returnUrl)}
+            />
           </div>
           <div className="product-detail__visual">
             <ImageWithFallback
@@ -130,13 +149,16 @@ export default function ProductDetailPage({ id }: { id: string | null }) {
               <span>/ {product.unidade}</span>
             </p>
           </div>
-        </header>
+        </section>
       )}
-      <div className="product-detail__inner">
-        {status !== "success" && (
-          <SessionNav className="product-detail__session" />
-        )}
-        {status !== "success" && backNavigation}
+      {status !== "success" && (
+        <div className="product-detail__header">
+          <AppHeader onBack={() => returnToCatalog(returnUrl)} />
+        </div>
+      )}
+      <div
+        className={`product-detail__inner${status !== "success" ? " page-content" : ""}`}
+      >
         {status === "loading" ? (
           <LoadingPlaceholder label="A carregar produto…" />
         ) : status === "missing" ? (
@@ -162,94 +184,156 @@ export default function ProductDetailPage({ id }: { id: string | null }) {
           product && (
             <>
               <div className="product-detail__information">
-                <dl className="product-detail__summary product-detail__panel">
-                  <div>
-                    <dt>Disponibilidade</dt>
-                    <dd>{product.stock > 0 ? "Disponível" : "Esgotado"}</dd>
-                  </div>
-                  <div>
-                    <dt>Origem</dt>
-                    <dd>{profile?.localidade || "Não indicada"}</dd>
-                  </div>
-                </dl>
-                <section
-                  className="product-detail__description"
-                  aria-labelledby="description-title"
-                >
-                  {product.biologico && (
-                    <span className="product-detail__badge">Biológico</span>
-                  )}
-                  <h2 id="description-title">Sobre este produto</h2>
-                  <p>{product.descricao || "Descrição não disponível."}</p>
-                </section>
-                <dl className="product-detail__facts product-detail__panel">
-                  <div>
-                    <dt>Categoria</dt>
-                    <dd>{product.categoria}</dd>
-                  </div>
-                  <div>
-                    <dt>Venda</dt>
-                    <dd>Por {product.unidade}</dd>
-                  </div>
-                  {seasonNames.length > 0 && (
+                <div className="product-detail__content page-content">
+                  <dl className="product-detail__summary product-detail__panel">
                     <div>
-                      <dt>Épocas de produção</dt>
-                      <dd>{seasonNames.join(" · ")}</dd>
+                      <dt>Disponibilidade</dt>
+                      <dd>{product.stock > 0 ? "Disponível" : "Esgotado"}</dd>
                     </div>
-                  )}
-                </dl>
-                <section
-                  className="product-detail__panel"
-                  aria-labelledby="producer-title"
-                >
-                  <div className="product-detail__producer">
-                    <span className="product-detail__avatar" aria-hidden="true">
-                      {product.produtorId.nome
-                        .trim()
-                        .split(/\s+/)
-                        .slice(0, 2)
-                        .map((part) => part[0])
-                        .join("")
-                        .toUpperCase()}
-                    </span>
                     <div>
-                      <h2 id="producer-title">{product.produtorId.nome}</h2>
-                      {profile?.localidade && <p>{profile.localidade}</p>}
+                      <dt>Origem</dt>
+                      <dd>{profile?.localidade || "Não indicada"}</dd>
                     </div>
-                  </div>
-                  {profile?.descricao && (
-                    <p className="product-detail__producer-description">
-                      {profile.descricao}
-                    </p>
-                  )}
-                </section>
-                <OriginMap locality={profile?.localidade} mapUrl={mapUrl} />
-                <aside
-                  className="product-detail__order"
-                  aria-label="Encomendar produto"
-                >
-                  <div className="product-detail__order-row">
+                  </dl>
+                  <section
+                    className="product-detail__description"
+                    aria-labelledby="description-title"
+                  >
+                    {product.biologico && (
+                      <span className="product-detail__badge">Biológico</span>
+                    )}
+                    <h2 id="description-title">Sobre este produto</h2>
+                    <p>{product.descricao || "Descrição não disponível."}</p>
+                  </section>
+                  <dl className="product-detail__facts product-detail__panel">
                     <div>
-                      <span>Preço por {product.unidade}</span>
-                      <strong>
-                        {priceFormatter.format(product.preco / 100)}
-                      </strong>
+                      <dt>Categoria</dt>
+                      <dd>{product.categoria}</dd>
                     </div>
-                    <Button disabled aria-describedby="order-note">
-                      {product.stock > 0 ? "Encomendar agora" : "Esgotado"}
-                    </Button>
-                  </div>
-                  <p id="order-note">
-                    As encomendas ainda não estão disponíveis.
-                  </p>
-                </aside>
+                    <div>
+                      <dt>Venda</dt>
+                      <dd>Por {product.unidade}</dd>
+                    </div>
+                    {seasonNames.length > 0 && (
+                      <div>
+                        <dt>Épocas de produção</dt>
+                        <dd>{seasonNames.join(" · ")}</dd>
+                      </div>
+                    )}
+                  </dl>
+                  <section
+                    className="product-detail__panel"
+                    aria-labelledby="producer-title"
+                  >
+                    <div className="product-detail__producer">
+                      <span
+                        className="product-detail__avatar"
+                        aria-hidden="true"
+                      >
+                        {product.produtorId.nome
+                          .trim()
+                          .split(/\s+/)
+                          .slice(0, 2)
+                          .map((part) => part[0])
+                          .join("")
+                          .toUpperCase()}
+                      </span>
+                      <div>
+                        <h2 id="producer-title">{product.produtorId.nome}</h2>
+                        {profile?.localidade && <p>{profile.localidade}</p>}
+                      </div>
+                    </div>
+                    {profile?.descricao && (
+                      <p className="product-detail__producer-description">
+                        {profile.descricao}
+                      </p>
+                    )}
+                  </section>
+                  <OriginMap locality={profile?.localidade} mapUrl={mapUrl} />
+                </div>
+                <div className="product-detail__purchase">
+                  <aside
+                    ref={orderRef}
+                    className="product-detail__order"
+                    aria-label="Encomendar produto"
+                  >
+                    <div className="product-detail__order-row">
+                      <div className="product-detail__order-price">
+                        <span>Preço por {product.unidade}</span>
+                        <strong>
+                          {priceFormatter.format(product.preco / 100)}
+                        </strong>
+                      </div>
+                      <div className="product-detail__order-quantity">
+                        <FormField
+                          unframed
+                          labelPosition="beside"
+                          id="product-quantity"
+                          label={`Quantidade (${product.unidade})`}
+                        >
+                          <QuantityInput
+                            id="product-quantity"
+                            unit={product.unidade}
+                            max={product.stock}
+                            value={quantity}
+                            onValueChange={setQuantity}
+                            disabled={adding || product.stock <= 0}
+                          />
+                        </FormField>
+                      </div>
+                      <div className="product-detail__order-actions">
+                        <Button
+                          disabled={
+                            adding ||
+                            !canBuy ||
+                            !validPurchaseQuantity(
+                              Number(quantity),
+                              product.unidade,
+                              product.stock,
+                            )
+                          }
+                          onClick={async () => {
+                            setAdding(true);
+                            try {
+                              if (
+                                validPurchaseQuantity(
+                                  Number(quantity),
+                                  product.unidade,
+                                  product.stock,
+                                )
+                              ) {
+                                await adicionar(product._id, Number(quantity));
+                              }
+                            } finally {
+                              setAdding(false);
+                            }
+                          }}
+                        >
+                          {product.stock > 0
+                            ? adding
+                              ? "A adicionar…"
+                              : "Adicionar ao carrinho"
+                            : "Esgotado"}
+                        </Button>
+                      </div>
+                    </div>
+                    {!canBuy && (
+                      <p id="order-note">
+                        As compras estão disponíveis para contas de comprador.
+                      </p>
+                    )}
+                    {message && <p role="status">{message}</p>}
+                  </aside>
+                </div>
               </div>
-              <RelatedProducts
-                key={product._id}
-                id={product._id}
-                category={product.categoria}
-                returnUrl={returnUrl}
-              />
+              <div className="page-content">
+                <RelatedProducts
+                  key={product._id}
+                  id={product._id}
+                  category={product.categoria}
+                  returnUrl={returnUrl}
+                />
+              </div>
             </>
           )
         )}

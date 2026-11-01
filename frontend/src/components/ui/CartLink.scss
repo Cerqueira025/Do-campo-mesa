@@ -1,0 +1,20 @@
+.cart-link {
+  position: relative;
+
+  &__count {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    display: grid;
+    min-width: 18px;
+    height: 18px;
+    place-items: center;
+    padding-inline: 4px;
+    border-radius: 999px;
+    background: var(--color-brown-400);
+    color: var(--color-white);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+}

@@ -321,3 +321,33 @@ configura `MONGODB_TEST_URI` no ambiente para um MongoDB de testes com suporte a
 transações (replica set), depois executa `npm test`. Não reutilizes o URI da base
 de demonstração ou produção. O teste cria e remove exclusivamente uma base com
 nome aleatório `codex_stock_test_*`; sem esta variável, é marcado como ignorado.
+
+## Fluxo de encomendas
+
+Visitantes e compradores podem adicionar artigos pelo catálogo, produtos relacionados
+ou detalhe. `/carrinho` agrupa-os por produtor e mantém os artigos no browser após F5.
+O login preserva o carrinho visitante; o logout explícito ou a troca de conta limpa-o.
+A morada só fica no formulário e na encomenda, nunca no armazenamento do carrinho.
+
+`/finalizar-encomenda` exige conta de comprador e confirma preços e disponibilidade.
+A modalidade de levantamento ou entrega (com morada obrigatória) aplica-se a todos
+os produtores da compra. O servidor calcula os preços e totais em cêntimos.
+`POST /api/orders` recebe `{ linhas, entrega }` e devolve sempre uma lista de encomendas
+com `201` e `Location: /api/orders`, incluindo compras com um único produtor.
+Uma transação cria uma encomenda por produtor e reserva todo o stock; uma falha
+reverte o conjunto completo. Este contrato substitui a antiga resposta de um objeto.
+
+O comprador acompanha `/encomendas`; o produtor consulta `/produtor/encomendas`.
+O detalhe `/encomendas/:id` mostra os dados históricos e permite ao produtor avançar
+um estado de cada vez. Listas e detalhe atualizam a cada cinco segundos enquanto
+visíveis, sem pedidos sobrepostos.
+Falhas de rede numa compra não repetem o POST automaticamente: consulte primeiro
+as encomendas, pois o servidor pode ter concluído a operação.
+
+Após a entrega, o comprador avalia separadamente cada produto e o produtor,
+com classificação de 1 a 5 e comentário obrigatório. O endpoint autenticado
+`GET /api/orders/:id/reviews` devolve apenas as avaliações do comprador dessa encomenda,
+incluindo ocultas e denunciadas, para impedir repetição na interface após F5.
+A restrição definitiva continua no índice `review_author_order_target_unique`.
+O fluxo não requer migração de documentos; confirme o índice com a inicialização
+já documentada antes de disponibilizar a funcionalidade.

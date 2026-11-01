@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import Button from "../components/ui/Button";
 import LoadingPlaceholder from "../components/ui/LoadingPlaceholder";
 import { useAuth } from "../features/auth/useAuth";
-import SessionNav from "../features/auth/components/SessionNav";
+import AppHeader from "../components/layout/AppHeader";
 import type { AuthUser } from "../features/auth/auth";
 import "../features/auth/AuthPage.scss";
 import "./ProducerApprovalPage.scss";
@@ -89,7 +89,7 @@ export default function ProducerApprovalPage() {
   return (
     <main className="auth-page auth-page--wide">
       <section className="auth-panel">
-        <SessionNav />
+        <AppHeader />
         <h1>Validar produtores</h1>
         <p>
           Analise os registos pendentes antes de permitir a publicação de

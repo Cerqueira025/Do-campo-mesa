@@ -32,7 +32,10 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
     storeSession(null);
     setState(anonymous);
   }, []);
-  const sair = useCallback(() => clearSession(), [clearSession]);
+  const sair = useCallback(() => {
+    window.dispatchEvent(new Event("campo-mesa-logout"));
+    clearSession();
+  }, [clearSession]);
 
   useEffect(() => {
     if (!token) return;

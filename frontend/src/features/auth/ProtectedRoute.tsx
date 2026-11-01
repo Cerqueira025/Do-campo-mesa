@@ -5,7 +5,7 @@ import { useLocation } from "../../navigation/useLocation";
 import { navigate } from "../../navigation/navigation";
 import { useAuth } from "./useAuth";
 import type { Role } from "./auth";
-import SessionNav from "./components/SessionNav";
+import AppHeader from "../../components/layout/AppHeader";
 import "./AuthPage.scss";
 
 export default function ProtectedRoute({
@@ -27,37 +27,43 @@ export default function ProtectedRoute({
   if (estado === "a-validar" || estado === "anonimo")
     return (
       <main className="auth-page">
-        <section className="auth-panel">
-          <SessionNav />
-          <LoadingPlaceholder label="A validar sessão…" />
-        </section>
+        <AppHeader />
+        <div className="page-content">
+          <section className="auth-panel">
+            <LoadingPlaceholder label="A validar sessão…" />
+          </section>
+        </div>
       </main>
     );
   if (estado === "erro")
     return (
       <main className="auth-page">
-        <section className="auth-panel" role="alert">
-          <SessionNav />
-          <h1>Sessão indisponível</h1>
-          <p>{erro}</p>
-          <div className="auth-actions">
-            <Button onClick={atualizar}>Tentar novamente</Button>
-            <Button variant="cream" onClick={sair}>
-              Terminar sessão
-            </Button>
-          </div>
-        </section>
+        <AppHeader />
+        <div className="page-content">
+          <section className="auth-panel" role="alert">
+            <h1>Sessão indisponível</h1>
+            <p>{erro}</p>
+            <div className="auth-actions">
+              <Button onClick={atualizar}>Tentar novamente</Button>
+              <Button variant="cream" onClick={sair}>
+                Terminar sessão
+              </Button>
+            </div>
+          </section>
+        </div>
       </main>
     );
   if (roles.length && (!utilizador || !roles.includes(utilizador.papel)))
     return (
       <main className="auth-page">
-        <section className="auth-panel">
-          <SessionNav />
-          <h1>Sem permissão</h1>
-          <p>A sua conta não tem acesso a esta página.</p>
-          <Button href="/">Voltar ao catálogo</Button>
-        </section>
+        <AppHeader />
+        <div className="page-content">
+          <section className="auth-panel">
+            <h1>Sem permissão</h1>
+            <p>A sua conta não tem acesso a esta página.</p>
+            <Button href="/">Voltar ao catálogo</Button>
+          </section>
+        </div>
       </main>
     );
   return children;

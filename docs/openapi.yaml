@@ -381,27 +381,13 @@ paths:
       security: [{ bearerAuth: [] }]
       summary: Lista as encomendas próprias; o administrador pode consultar todas
       responses:
-        "200":
-          {
-            description: Lista de encomendas,
-            content:
-              {
-                application/json:
-                  {
-                    schema:
-                      {
-                        type: array,
-                        items: { $ref: "#/components/schemas/Order" },
-                      },
-                  },
-              },
-          }
-        "401": { $ref: "#/components/responses/Unauthorized" }
+        '200': { description: Lista de encomendas, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/Order' } } } } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
     post:
       tags: [Encomendas]
       security: [{ bearerAuth: [] }]
-      summary: Cria uma encomenda de produtos de um único produtor e reserva stock
-      description: Exige um produtor aceite. Consolida linhas repetidas e guarda nome, preço e unidade calculados pelo servidor; campos de preço enviados pelo cliente são ignorados. Produtos ou produtor indisponíveis e stock insuficiente devolvem 409, sem reserva parcial.
+      summary: Cria uma encomenda por produtor e reserva todo o stock numa transação
+      description: Aceita vários produtores, todos aceites. Cria todas as encomendas e reserva todo o stock numa única transação; uma falha reverte a operação completa. A resposta é sempre uma lista, mesmo para um único produtor, com Location /api/orders. Consolida linhas repetidas e guarda nome, preço e unidade calculados pelo servidor; campos de preço enviados pelo cliente são ignorados. Produtos ou produtor indisponíveis e stock insuficiente devolvem 409, sem reserva parcial.
       requestBody:
         required: true
         content:
@@ -419,20 +405,12 @@ paths:
                     properties:
                       produtoId: { type: string }
                       quantidade: { type: number, exclusiveMinimum: 0 }
-                entrega: { $ref: "#/components/schemas/Delivery" }
+                entrega: { $ref: '#/components/schemas/Delivery' }
       responses:
-        "201":
-          {
-            description: Encomenda criada,
-            content:
-              {
-                application/json:
-                  { schema: { $ref: "#/components/schemas/Order" } },
-              },
-          }
-        "400": { $ref: "#/components/responses/BadRequest" }
-        "401": { $ref: "#/components/responses/Unauthorized" }
-        "409": { $ref: "#/components/responses/Conflict" }
+        '201': { description: Encomendas criadas, headers: { Location: { schema: { type: string }, description: /api/orders } }, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/Order' } } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '409': { $ref: '#/components/responses/Conflict' }
   /orders/{id}:
     parameters: [{ $ref: "#/components/parameters/id" }]
     get:
@@ -451,6 +429,24 @@ paths:
           }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "404": { $ref: "#/components/responses/NotFound" }
+  /orders/{id}/reviews:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    get:
+      tags: [Avaliações]
+      security: [{ bearerAuth: [] }]
+      summary: Consulta as avaliações do comprador numa encomenda própria
+      description: Exclusivo do comprador da encomenda. Inclui avaliações publicadas, ocultas e denunciadas, para reconhecer alvos já avaliados.
+      responses:
+        '200':
+          description: Avaliações do comprador nesta encomenda
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Review' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
   /orders/{id}/estado:
     parameters: [{ $ref: "#/components/parameters/id" }]
     patch:
@@ -841,12 +837,51 @@ components:
         tipo: { type: string, enum: [levantamento, entrega] }
         morada: { type: string }
         dataPrevista: { type: string, format: date-time }
+    Review:
+      type: object
+      properties:
+        _id: { type: string }
+        autorId: { type: string }
+        encomendaId: { type: string }
+        produtoId: { type: string }
+        produtorId: { type: string }
+        classificacao: { type: integer, minimum: 1, maximum: 5 }
+        comentario: { type: string }
+        estado: { type: string, enum: [publicada, oculta, denunciada] }
+        createdAt: { type: string, format: date-time }
     Order:
       type: object
       properties:
         _id: { type: string }
-        compradorId: { type: string }
-        produtorId: { type: string }
+        compradorId:
+          oneOf:
+            - { type: string }
+            - { $ref: '#/components/schemas/OrderParticipant' }
+        produtorId:
+          oneOf:
+            - { type: string }
+            - { $ref: '#/components/schemas/OrderParticipant' }
         estado: { type: string, enum: [pendente, confirmada, pronta, entregue] }
         total: { type: integer, description: Cêntimos. }
-        linhas: { type: array, items: { type: object } }
+        entrega:
+          allOf: [{ $ref: '#/components/schemas/Delivery' }]
+        leilaoId: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        dataEntrega: { type: string, format: date-time }
+        linhas:
+          type: array
+          items:
+            type: object
+            properties:
+              produtoId: { type: string }
+              nome: { type: string }
+              precoUnitario: { type: integer, description: Cêntimos. }
+              quantidade: { type: number, exclusiveMinimum: 0 }
+              unidade: { type: string, enum: [kg, g, l, unidade] }
+    OrderParticipant:
+      type: object
+      nullable: true
+      properties:
+        _id: { type: string }
+        nome: { type: string }

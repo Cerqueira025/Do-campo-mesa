@@ -38,7 +38,8 @@ body:json {
 tests {
   test("Consolida linhas e ignora preços manipulados", function() {
     expect(res.getStatus()).to.equal(201);
-    const order = res.getBody();
+    expect(res.getBody()).to.have.length(1);
+    const order = res.getBody()[0];
     expect(order.linhas).to.have.length(1);
     expect(order.linhas[0].quantidade).to.equal(1.25);
     expect(order.linhas[0].precoUnitario).to.equal(151);
@@ -48,5 +49,5 @@ tests {
 }
 
 script:post-response {
-  bru.setVar("functionalOrder", res.getBody()._id);
+  bru.setVar("functionalOrder", res.getBody()[0]._id);
 }

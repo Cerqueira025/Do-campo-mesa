@@ -3,8 +3,13 @@ import mongoose from "mongoose";
 import Order from "../models/Order.js";
 import Product from "../models/Product.js";
 import User from "../models/User.js";
+import Review from "../models/Review.js";
 import { requireAuth } from "../middleware/auth.js";
 import { requireObjectBody } from "../middleware/requestBody.js";
+import {
+  validPurchaseQuantity,
+  quantityRestriction,
+} from "../domain/purchaseQuantity.js";
 
 const router = Router();
 const states = ["pendente", "confirmada", "pronta", "entregue"];
@@ -46,9 +51,10 @@ router.post(
       const id = new mongoose.Types.ObjectId(line.produtoId).toString();
       quantities.set(id, (quantities.get(id) || 0) + line.quantidade);
     }
-    const session = await mongoose.startSession();
+    let session;
     try {
-      let order;
+      session = await mongoose.startSession();
+      let orders;
       await session.withTransaction(async () => {
         const products = await Product.find({
           _id: { $in: [...quantities.keys()] },
@@ -59,38 +65,78 @@ router.post(
             new Error("Um ou mais produtos estão indisponíveis."),
             { status: 409 },
           );
-        const producerId = String(products[0].produtorId);
-        if (
-          products.some((product) => String(product.produtorId) !== producerId)
-        ) {
-          throw Object.assign(new Error("Cria uma encomenda por produtor."), {
-            status: 400,
+        const groups = new Map();
+        for (const product of products) {
+          const productLines = linhas.filter(
+            (line) =>
+              new mongoose.Types.ObjectId(line.produtoId).toString() ===
+              String(product._id),
+          );
+          if (
+            productLines.some(
+              (line) =>
+                !validPurchaseQuantity(line.quantidade, product.unidade),
+            ) ||
+            !validPurchaseQuantity(
+              quantities.get(String(product._id)),
+              product.unidade,
+            )
+          ) {
+            throw Object.assign(
+              new Error(
+                `${product.nome}: ${quantityRestriction(product.unidade)}`,
+              ),
+              { status: 400 },
+            );
+          }
+          const producerId = String(product.produtorId);
+          if (!groups.has(producerId)) groups.set(producerId, []);
+          groups.get(producerId).push({
+            produtoId: product.id,
+            nome: product.nome,
+            precoUnitario: product.preco,
+            quantidade: quantities.get(String(product._id)),
+            unidade: product.unidade,
           });
         }
-        const producer = await User.findOne({
-          _id: producerId,
-          papel: "produtor",
-          "perfilProdutor.validacao": "aceite",
-        }).session(session);
-        if (!producer)
-          throw Object.assign(new Error("O produtor está indisponível."), {
-            status: 409,
+        const documents = [];
+        for (const [producerId, lines] of groups) {
+          const producer = await User.findOne({
+            _id: producerId,
+            papel: "produtor",
+            "perfilProdutor.validacao": "aceite",
+          }).session(session);
+          if (!producer)
+            throw Object.assign(new Error("O produtor está indisponível."), {
+              status: 409,
+            });
+          const total = lines.reduce(
+            (sum, line) =>
+              sum + Math.round(line.precoUnitario * line.quantidade),
+            0,
+          );
+          if (!Number.isSafeInteger(total))
+            throw Object.assign(
+              new Error("O total excede o limite permitido."),
+              { status: 400 },
+            );
+          documents.push({
+            compradorId: request.user.id,
+            produtorId: producerId,
+            linhas: lines,
+            total,
+            estado: "pendente",
+            entrega: {
+              tipo: entrega.tipo,
+              ...(entrega.tipo === "entrega"
+                ? { morada: entrega.morada.trim() }
+                : {}),
+              ...(entrega.dataPrevista !== undefined
+                ? { dataPrevista: entrega.dataPrevista }
+                : {}),
+            },
           });
-        const lines = products.map((product) => ({
-          produtoId: product.id,
-          nome: product.nome,
-          precoUnitario: product.preco,
-          quantidade: quantities.get(String(product._id)),
-          unidade: product.unidade,
-        }));
-        const total = lines.reduce(
-          (sum, line) => sum + Math.round(line.precoUnitario * line.quantidade),
-          0,
-        );
-        if (!Number.isSafeInteger(total))
-          throw Object.assign(new Error("O total excede o limite permitido."), {
-            status: 400,
-          });
+        }
 
         for (const product of products) {
           const updated = await Product.findOneAndUpdate(
@@ -109,26 +155,13 @@ router.post(
             );
         }
 
-        [order] = await Order.create(
-          [
-            {
-              compradorId: request.user.id,
-              produtorId: producerId,
-              linhas: lines,
-              total,
-              estado: "pendente",
-              entrega,
-            },
-          ],
-          { session },
-        );
+        orders = await Order.create(documents, { session, ordered: true });
       });
-      await order.populate("produtorId", "nome");
-      response.status(201).location(`/api/orders/${order.id}`).json(order);
+      response.status(201).location("/api/orders").json(orders);
     } catch (error) {
       next(error);
     } finally {
-      await session.endSession();
+      await session?.endSession();
     }
   },
 );
@@ -156,6 +189,8 @@ router.get("/", requireAuth(), async (request, response, next) => {
 
 router.get("/:id", requireAuth(), async (request, response, next) => {
   try {
+    if (!mongoose.isObjectIdOrHexString(request.params.id))
+      return response.status(404).json({ erro: "Encomenda não encontrada." });
     const filter = { _id: request.params.id };
     if (request.user.papel !== "administrador") {
       filter.$or = [
@@ -174,12 +209,38 @@ router.get("/:id", requireAuth(), async (request, response, next) => {
   }
 });
 
+router.get(
+  "/:id/reviews",
+  requireAuth("comprador"),
+  async (request, response, next) => {
+    try {
+      if (!mongoose.isObjectIdOrHexString(request.params.id))
+        return response.status(404).json({ erro: "Encomenda não encontrada." });
+      const order = await Order.findOne({
+        _id: request.params.id,
+        compradorId: request.user.id,
+      });
+      if (!order)
+        return response.status(404).json({ erro: "Encomenda não encontrada." });
+      const reviews = await Review.find({
+        encomendaId: order._id,
+        autorId: request.user.id,
+      }).sort({ createdAt: 1 });
+      response.json(reviews);
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
 router.patch(
   "/:id/estado",
   requireAuth("produtor"),
   requireObjectBody,
   async (request, response, next) => {
     try {
+      if (!mongoose.isObjectIdOrHexString(request.params.id))
+        return response.status(404).json({ erro: "Encomenda não encontrada." });
       const { estado } = request.body;
       if (!states.includes(estado))
         return response

@@ -1,7 +1,9 @@
+import { useCart } from "../cart/cartContext";
 import { useEffect, useState } from "react";
 import Button from "../../components/ui/Button";
 import ProductCard from "../../components/product/ProductCard";
 import { mapProduct, productHref, type ApiProduct } from "./product";
+import { initialPurchaseQuantity } from "./purchaseQuantity";
 import "./RelatedProducts.scss";
 
 export default function RelatedProducts({
@@ -13,6 +15,7 @@ export default function RelatedProducts({
   category: string;
   returnUrl: string;
 }) {
+  const { adicionar, canBuy } = useCart();
   const [products, setProducts] = useState<ApiProduct[]>([]);
   const [status, setStatus] = useState<"loading" | "success" | "error">(
     "loading",
@@ -68,6 +71,13 @@ export default function RelatedProducts({
             <li key={product._id}>
               <ProductCard
                 product={mapProduct(product)}
+                onAdd={
+                  canBuy &&
+                  initialPurchaseQuantity(product.unidade, product.stock ?? 0) >
+                    0
+                    ? () => void adicionar(product._id)
+                    : undefined
+                }
                 href={productHref(product._id, returnUrl)}
               />
             </li>

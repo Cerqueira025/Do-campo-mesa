@@ -1,7 +1,8 @@
 import { useEffect } from "react";
 import Button from "../components/ui/Button";
+import CartLink from "../components/ui/CartLink";
 import { useAuth } from "../features/auth/useAuth";
-import SessionNav from "../features/auth/components/SessionNav";
+import AppHeader from "../components/layout/AppHeader";
 import "../features/auth/AuthPage.scss";
 import "./AccountPage.scss";
 
@@ -25,36 +26,47 @@ export default function AccountPage() {
   if (!utilizador) return null;
   return (
     <main className="auth-page">
-      <section className="auth-panel">
-        <SessionNav />
-        <h1>A minha conta</h1>
-        <dl className="auth-details">
-          <div>
-            <dt>Nome</dt>
-            <dd>{utilizador.nome}</dd>
-          </div>
-          <div>
-            <dt>Email</dt>
-            <dd>{utilizador.email}</dd>
-          </div>
-          <div>
-            <dt>Tipo de conta</dt>
-            <dd>{utilizador.papel}</dd>
-          </div>
-        </dl>
-        {utilizador.papel === "produtor" && (
-          <section aria-labelledby="approval-title">
-            <h2 id="approval-title">Validação do produtor</h2>
-            <p role="status">
-              {approvalText[utilizador.validacao || "pendente"]}
-            </p>
-            <Button onClick={atualizar}>Atualizar estado</Button>
-          </section>
-        )}
-        {utilizador.papel === "administrador" && (
-          <Button href="/admin/produtores">Validar produtores</Button>
-        )}
-      </section>
+      <AppHeader />
+      <div className="page-content">
+        <section className="auth-panel">
+          <h1>A minha conta</h1>
+          <dl className="auth-details">
+            <div>
+              <dt>Nome</dt>
+              <dd>{utilizador.nome}</dd>
+            </div>
+            <div>
+              <dt>Email</dt>
+              <dd>{utilizador.email}</dd>
+            </div>
+            <div>
+              <dt>Tipo de conta</dt>
+              <dd>{utilizador.papel}</dd>
+            </div>
+          </dl>
+          {utilizador.papel === "produtor" && (
+            <section aria-labelledby="approval-title">
+              <h2 id="approval-title">Validação do produtor</h2>
+              <p role="status">
+                {approvalText[utilizador.validacao || "pendente"]}
+              </p>
+              <Button onClick={atualizar}>Atualizar estado</Button>
+            </section>
+          )}
+          {utilizador.papel === "comprador" && (
+            <div className="auth-actions">
+              <CartLink />
+              <Button href="/encomendas">As minhas encomendas</Button>
+            </div>
+          )}
+          {utilizador.papel === "produtor" && (
+            <Button href="/produtor/encomendas">Encomendas recebidas</Button>
+          )}
+          {utilizador.papel === "administrador" && (
+            <Button href="/admin">Administração</Button>
+          )}
+        </section>
+      </div>
     </main>
   );
 }
