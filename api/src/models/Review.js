@@ -5,6 +5,20 @@ import { decision, privateDecision } from "./decision.js";
 const reviewSchema = new mongoose.Schema(
   {
     ultimaDecisao: decision,
+    denuncias: {
+      type: [
+        new mongoose.Schema(
+          {
+            autorId: reference("User"),
+            motivo: { ...text, maxlength: 500 },
+            data: { type: Date, required: true },
+          },
+          { _id: false },
+        ),
+      ],
+      default: [],
+      select: false,
+    },
     autorId: reference("User"),
     encomendaId: reference("Order"),
     produtoId: reference("Product", false),
@@ -24,7 +38,15 @@ const reviewSchema = new mongoose.Schema(
       enum: ["publicada", "denunciada", "oculta"],
     },
   },
-  { timestamps: true, toJSON: { transform: privateDecision } },
+  {
+    timestamps: true,
+    toJSON: {
+      transform(document, value) {
+        delete value.denuncias;
+        return privateDecision(document, value);
+      },
+    },
+  },
 );
 
 reviewSchema.pre("validate", function () {

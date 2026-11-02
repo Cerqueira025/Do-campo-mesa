@@ -1,0 +1,23 @@
+meta {
+  name: Produtor denuncia avaliação
+  type: http
+  seq: 12
+}
+
+post {
+  url: {{baseUrl}}/reviews/{{testReviewId}}/denuncias
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{producerToken}}
+}
+
+body:json {
+  {"motivo": "Conteúdo inadequado no cenário Bruno"}
+}
+
+tests {
+  test("devolve 201", function() { expect(res.getStatus()).to.equal(201); });
+}

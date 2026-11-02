@@ -303,7 +303,7 @@ paths:
       tags: [Produtores]
       summary: Obtém o perfil público, produtos e avaliações de um produtor aprovado
       responses:
-        '200': { description: Perfil público do produtor }
+        '200': { description: Perfil público do produtor, content: { application/json: { schema: { $ref: '#/components/schemas/ProducerDetail' } } } }
         '404': { $ref: '#/components/responses/NotFound' }
   /orders:
     get:
@@ -450,24 +450,54 @@ paths:
     get:
       tags: [Avaliações]
       summary: Lista avaliações públicas de um produto
+      description: Apenas avaliações publicadas de um produto público de produtor aprovado. Ordenadas por createdAt e _id decrescentes. Não expõe encomenda, denúncias nem decisões administrativas.
       responses:
-        '200': { description: Avaliações e média }
+        '200': { description: Avaliações e média, content: { application/json: { schema: { $ref: '#/components/schemas/PublicReviews' } } } }
         '404': { $ref: '#/components/responses/NotFound' }
   /reviews/producers/{id}:
     parameters: [{ $ref: '#/components/parameters/id' }]
     get:
       tags: [Avaliações]
       summary: Lista avaliações públicas de um produtor
+      description: Apenas avaliações dirigidas ao produtor aprovado, sem combinar notas dos seus produtos. Ordenadas por createdAt e _id decrescentes.
       responses:
-        '200': { description: Avaliações e média }
+        '200': { description: Avaliações e média, content: { application/json: { schema: { $ref: '#/components/schemas/PublicReviews' } } } }
         '404': { $ref: '#/components/responses/NotFound' }
+  /reviews/{id}/denuncias:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    post:
+      tags: [Avaliações]
+      security: [{ bearerAuth: [] }]
+      summary: Denuncia uma avaliação como comprador ou produtor
+      description: >-
+        Não exige compra. Não permite denunciar a própria avaliação. Cada conta pode denunciar
+        uma avaliação uma vez, mesmo após republicação. Aceita avaliações publicadas ou denunciadas
+        de alvos públicos. Regista autor, motivo e data atomicamente e passa o estado a denunciada,
+        retirando a nota das listas, médias e filtros públicos até decisão administrativa.
+        Motivos e denunciantes são privados e consultáveis apenas pela administração.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [motivo]
+              properties:
+                motivo: { type: string, minLength: 1, maxLength: 500, description: Não vazio após remover espaços nas extremidades }
+      responses:
+        '201': { description: Denúncia registada, content: { application/json: { schema: { type: object, properties: { mensagem: { type: string } } } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: Papel sem permissão ou avaliação própria }
+        '404': { description: Avaliação inexistente ou alvo indisponível }
+        '409': { description: Denúncia repetida ou estado incompatível }
   /reviews/{id}/moderacao:
     parameters: [{ $ref: '#/components/parameters/id' }]
     patch:
       tags: [Avaliações]
       security: [{ bearerAuth: [] }]
       summary: Publica ou oculta uma avaliação como administrador
-      description: Motivo obrigatório ao ocultar. A referência à última decisão é comparada atomicamente; uma decisão desatualizada devolve 409. Qualquer administrador pode republicar.
+      description: Motivo obrigatório ao ocultar. A referência à última decisão e atualizadoEm, quando enviado, são comparados atomicamente; uma decisão ou avaliação desatualizada devolve 409. A interface envia ambos para detetar novas denúncias durante a análise. Qualquer administrador pode republicar. Preserva classificação, comentário e denúncias.
       requestBody:
         required: true
         content:
@@ -477,6 +507,7 @@ paths:
               required: [estado]
               properties:
                 estado: { type: string, enum: [publicada, oculta] }
+                atualizadoEm: { type: string, format: date-time, description: updatedAt observado no detalhe administrativo. Opcional para compatibilidade. }
                 motivo: { type: string, maxLength: 500, description: Obrigatório e não vazio ao ocultar }
                 decisaoAnterior: { type: string, format: date-time, nullable: true, default: null }
       responses:
@@ -807,7 +838,15 @@ components:
             localidade: { type: string }
             coordenadas: { type: object }
         produtos: { type: integer }
-        avaliacao: { type: object }
+        avaliacao: { $ref: '#/components/schemas/RatingSummary' }
+    ProducerDetail:
+      type: object
+      properties:
+        _id: { type: string }
+        nome: { type: string }
+        perfilProdutor: { $ref: '#/components/schemas/Producer/properties/perfilProdutor' }
+        produtos: { type: array, items: { $ref: '#/components/schemas/Product' } }
+        avaliacoes: { $ref: '#/components/schemas/PublicReviews' }
     ProductInput:
       type: object
       properties:
@@ -828,6 +867,7 @@ components:
           properties:
             _id: { type: string }
             produtorId: { $ref: '#/components/schemas/Producer' }
+            avaliacao: { $ref: '#/components/schemas/RatingSummary' }
             createdAt: { type: string, format: date-time }
             updatedAt: { type: string, format: date-time }
     Delivery:
@@ -837,6 +877,34 @@ components:
         tipo: { type: string, enum: [levantamento, entrega] }
         morada: { type: string }
         dataPrevista: { type: string, format: date-time }
+    RatingSummary:
+      type: object
+      required: [media, total]
+      description: Apenas avaliações publicadas. Sem avaliações devolve media null e total 0. Média arredondada a duas casas; filtros usam a média antes do arredondamento.
+      properties:
+        media: { type: number, nullable: true, minimum: 1, maximum: 5 }
+        total: { type: integer, minimum: 0 }
+    PublicReview:
+      type: object
+      required: [_id, autorId, classificacao, comentario, createdAt]
+      properties:
+        _id: { type: string }
+        autorId:
+          type: object
+          nullable: true
+          properties:
+            _id: { type: string }
+            nome: { type: string }
+        classificacao: { type: integer, minimum: 1, maximum: 5 }
+        comentario: { type: string }
+        createdAt: { type: string, format: date-time }
+    PublicReviews:
+      allOf:
+        - { $ref: '#/components/schemas/RatingSummary' }
+        - type: object
+          required: [items]
+          properties:
+            items: { type: array, items: { $ref: '#/components/schemas/PublicReview' } }
     Review:
       type: object
       properties:

@@ -64,6 +64,7 @@ function recordFacts(
     case "avaliacoes":
       return [
         ["Nota", `${item.classificacao}/5`],
+        ["Denúncias", item.totalDenuncias ?? 0],
         ["Autor", referenceName(item.autorId)],
         ["Alvo", referenceName(item.produtoId ?? item.produtorId)],
         [

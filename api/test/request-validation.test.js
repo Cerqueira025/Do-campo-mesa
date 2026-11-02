@@ -34,6 +34,7 @@ const writes = [
   { method: "POST", path: "/orders", account: 0 },
   { method: "PATCH", path: `/orders/${id}/estado`, account: 1 },
   { method: "POST", path: "/reviews", account: 0 },
+  { method: "POST", path: `/reviews/${id}/denuncias`, account: 0 },
   { method: "PATCH", path: `/reviews/${id}/moderacao`, account: 2 },
   { method: "PATCH", path: `/producers/${id}/validacao`, account: 2 },
   { method: "POST", path: "/auctions", account: 1 },
@@ -138,7 +139,11 @@ test("Autenticação, papel e aprovação precedem a validação comum do corpo"
       (await call({ ...route, account: undefined }, "[]")).status,
       401,
     );
-    const wrongRole = route.account === 0 ? 1 : 0;
+    const wrongRole = route.path.endsWith("/denuncias")
+      ? 2
+      : route.account === 0
+        ? 1
+        : 0;
     assert.equal(
       (await call({ ...route, account: wrongRole }, "[]")).status,
       403,

@@ -6,16 +6,30 @@ export interface CatalogResponse {
   total: number;
 }
 const queries = new Map<string, CatalogResponse>();
+export function invalidateCatalogCache() {
+  queries.clear();
+}
 let options: FilterOptions | null = null;
 
 export const catalogPageSize = 24;
+
+export function catalogPagination(page: number, total: number) {
+  const pages = Math.max(1, Math.ceil(total / catalogPageSize));
+  const current = Math.min(page, pages);
+  return {
+    page: current,
+    pages,
+    first: total ? (current - 1) * catalogPageSize + 1 : 0,
+    last: Math.min(current * catalogPageSize, total),
+  };
+}
 
 export function catalogQuery(
   search: string,
   filters: CatalogFilters,
   page = 1,
 ) {
-  const params = new URLSearchParams({ limit: "24" });
+  const params = new URLSearchParams({ limit: String(catalogPageSize) });
   // Mantém o offset dentro dos inteiros seguros aceites pela API, mesmo com URLs extremas.
   params.set(
     "page",

@@ -5,13 +5,19 @@ import Review from "../models/Review.js";
 import { requireAuth } from "../middleware/auth.js";
 import { requireObjectBody } from "../middleware/requestBody.js";
 import { prepareDecision, decisionConflict } from "../services/moderation.js";
+import {
+  publicReviewFields,
+  publicReviewTarget,
+  ratingSummary,
+} from "../services/reviews.js";
 
 const router = Router();
 
 async function publicReviews(filter, response) {
   const [items, summary] = await Promise.all([
     Review.find({ ...filter, estado: "publicada" })
-      .sort({ createdAt: -1 })
+      .select(publicReviewFields)
+      .sort({ createdAt: -1, _id: -1 })
       .populate("autorId", "nome"),
     Review.aggregate([
       { $match: { ...filter, estado: "publicada" } },
@@ -26,8 +32,7 @@ async function publicReviews(filter, response) {
   ]);
   response.json({
     items,
-    media: summary.length ? Math.round(summary[0].media * 100) / 100 : null,
-    total: summary[0]?.total || 0,
+    ...ratingSummary(summary[0]),
   });
 }
 
@@ -101,9 +106,80 @@ router.post(
   },
 );
 
+router.post(
+  "/:id/denuncias",
+  requireAuth("comprador", "produtor"),
+  requireObjectBody,
+  async (request, response, next) => {
+    try {
+      const { motivo } = request.body;
+      if (
+        typeof motivo !== "string" ||
+        !motivo.trim() ||
+        motivo.trim().length > 500
+      )
+        return response
+          .status(400)
+          .json({ erro: "Indique um motivo com até 500 caracteres." });
+      if (!mongoose.isObjectIdOrHexString(request.params.id))
+        return response.status(404).json({ erro: "Avaliação não encontrada." });
+      const review = await Review.findById(request.params.id);
+      if (!review || !(await publicReviewTarget(review)))
+        return response.status(404).json({ erro: "Avaliação não encontrada." });
+      if (String(review.autorId) === request.user.id)
+        return response
+          .status(403)
+          .json({ erro: "Não pode denunciar a sua própria avaliação." });
+      // A revisão temporal cresce mesmo quando duas escritas ocorrem no mesmo milissegundo.
+      const updated = await Review.findOneAndUpdate(
+        {
+          _id: review._id,
+          estado: { $in: ["publicada", "denunciada"] },
+          "denuncias.autorId": { $ne: request.user.id },
+        },
+        [
+          {
+            $set: {
+              estado: "denunciada",
+              denuncias: {
+                $concatArrays: [
+                  { $ifNull: ["$denuncias", []] },
+                  [
+                    {
+                      autorId: new mongoose.Types.ObjectId(request.user.id),
+                      motivo: { $literal: motivo.trim() },
+                      data: "$$NOW",
+                    },
+                  ],
+                ],
+              },
+              updatedAt: {
+                $max: [
+                  "$$NOW",
+                  { $add: [{ $ifNull: ["$updatedAt", new Date(0)] }, 1] },
+                ],
+              },
+            },
+          },
+        ],
+        { new: true, timestamps: false, updatePipeline: true },
+      );
+      if (!updated)
+        return response.status(409).json({
+          erro: "Já denunciou esta avaliação ou o seu estado foi alterado. Atualize os dados.",
+        });
+      response.status(201).json({ mensagem: "Denúncia registada." });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
 router.get("/products/:id", async (request, response, next) => {
   try {
     if (!mongoose.isValidObjectId(request.params.id))
+      return response.status(404).json({ erro: "Produto não encontrado." });
+    if (!(await publicReviewTarget({ produtoId: request.params.id })))
       return response.status(404).json({ erro: "Produto não encontrado." });
     await publicReviews(
       { produtoId: new mongoose.Types.ObjectId(request.params.id) },
@@ -117,6 +193,8 @@ router.get("/products/:id", async (request, response, next) => {
 router.get("/producers/:id", async (request, response, next) => {
   try {
     if (!mongoose.isValidObjectId(request.params.id))
+      return response.status(404).json({ erro: "Produtor não encontrado." });
+    if (!(await publicReviewTarget({ produtorId: request.params.id })))
       return response.status(404).json({ erro: "Produtor não encontrado." });
     await publicReviews(
       { produtorId: new mongoose.Types.ObjectId(request.params.id) },
@@ -145,6 +223,14 @@ router.patch(
         request.user.id,
         estado === "oculta",
       );
+      if (request.body.atualizadoEm !== undefined) {
+        const value = request.body.atualizadoEm;
+        if (typeof value !== "string" || !Number.isFinite(Date.parse(value)))
+          return response
+            .status(400)
+            .json({ erro: "Referência da avaliação inválida." });
+        decision.filter.updatedAt = new Date(value);
+      }
       const review = await Review.findOneAndUpdate(
         { _id: request.params.id, ...decision.filter },
         { $set: { estado, ultimaDecisao: decision.value } },

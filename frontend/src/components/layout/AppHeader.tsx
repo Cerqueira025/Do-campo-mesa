@@ -93,9 +93,7 @@ export default function AppHeader({
               />
             )}
             {utilizador.papel === "produtor" && (
-              <InternalLink href="/produtor/encomendas">
-                Encomendas recebidas
-              </InternalLink>
+              <InternalLink href="/conta">A minha conta</InternalLink>
             )}
             <IconButton
               variant={buttonVariant}

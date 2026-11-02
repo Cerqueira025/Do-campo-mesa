@@ -6,6 +6,7 @@ import Review from "../models/Review.js";
 import Auction from "../models/Auction.js";
 import { requireApprovedProducer, requireAuth } from "../middleware/auth.js";
 import { requireObjectBody } from "../middleware/requestBody.js";
+import { withProductRatings } from "../services/reviews.js";
 
 const router = Router();
 const publicProducer = {
@@ -175,7 +176,12 @@ router.get("/", async (request, response, next) => {
         .populate(publicProducer),
       Product.countDocuments(filter),
     ]);
-    response.json({ items, page: pageNumber, limit: limitNumber, total });
+    response.json({
+      items: await withProductRatings(items),
+      page: pageNumber,
+      limit: limitNumber,
+      total,
+    });
   } catch (error) {
     next(error);
   }
@@ -240,7 +246,7 @@ router.get("/:id", async (request, response, next) => {
       .lean();
     if (!product?.produtorId)
       return response.status(404).json({ erro: "Produto não encontrado." });
-    response.json(product);
+    response.json((await withProductRatings([product]))[0]);
   } catch (error) {
     next(error);
   }

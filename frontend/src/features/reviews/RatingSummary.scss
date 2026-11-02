@@ -1,0 +1,13 @@
+.rating-summary {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 0;
+  color: var(--color-green-950);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+
+  span {
+    color: var(--color-brown-500);
+  }
+}

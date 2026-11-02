@@ -152,6 +152,21 @@ test("Dois pedidos simultâneos recebem 201 e 409 quando a persistência recusa 
   assert.equal(fixture.records.size, 1);
 });
 
+test("Encomenda de leilão permite avaliar produto e produtor apenas após entrega", async (t) => {
+  const fixture = setup(t);
+  fixture.orders[0].leilaoId = "dca00000000000000000012d";
+  fixture.orders[0].estado = "pronta";
+  assert.equal((await invoke()).code, 400);
+  fixture.orders[0].estado = "entregue";
+  assert.equal((await invoke()).code, 201);
+  assert.equal(
+    (await invoke({ ...body, produtoId: undefined, produtorId: producerId }))
+      .code,
+    201,
+  );
+  assert.equal(fixture.records.size, 2);
+});
+
 test("Recusa encomenda alheia, não entregue ou inexistente antes de escrever", async (t) => {
   const fixture = setup(t);
   assert.equal((await invoke(body, producerId)).code, 400);

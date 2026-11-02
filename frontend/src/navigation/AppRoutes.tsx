@@ -5,11 +5,13 @@ import OrderDetailPage from "../pages/OrderDetailPage";
 import { useLayoutEffect } from "react";
 import HomePage from "../pages/HomePage";
 import ProductDetailPage from "../pages/ProductDetailPage";
+import ProducerDetailPage from "../pages/ProducerDetailPage";
 import AuctionDetailPage from "../pages/AuctionDetailPage";
 import {
   auctionIdFromPath,
   orderIdFromPath,
   productIdFromPath,
+  producerIdFromPath,
 } from "./routePaths";
 import NotFoundPage from "../pages/NotFoundPage";
 import { useLocation } from "./useLocation";
@@ -76,6 +78,8 @@ function resolvePage(pathname: string, location: string) {
   if (auctionId) return <AuctionDetailPage key={pathname} id={auctionId} />;
   const productId = productIdFromPath(pathname);
   if (productId) return <ProductDetailPage key={pathname} id={productId} />;
+  const producerId = producerIdFromPath(pathname);
+  if (producerId) return <ProducerDetailPage key={pathname} id={producerId} />;
   return <NotFoundPage />;
 }
 

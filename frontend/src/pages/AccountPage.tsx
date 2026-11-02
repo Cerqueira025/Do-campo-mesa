@@ -3,6 +3,7 @@ import Button from "../components/ui/Button";
 import CartLink from "../components/ui/CartLink";
 import { useAuth } from "../features/auth/useAuth";
 import AppHeader from "../components/layout/AppHeader";
+import ProducerRating from "../features/reviews/ProducerRating";
 import "../features/auth/AuthPage.scss";
 import "./AccountPage.scss";
 
@@ -53,6 +54,10 @@ export default function AccountPage() {
               <Button onClick={atualizar}>Atualizar estado</Button>
             </section>
           )}
+          {utilizador.papel === "produtor" &&
+            utilizador.validacao === "aceite" && (
+              <ProducerRating key={utilizador.id} id={utilizador.id} />
+            )}
           {utilizador.papel === "comprador" && (
             <div className="auth-actions">
               <CartLink />

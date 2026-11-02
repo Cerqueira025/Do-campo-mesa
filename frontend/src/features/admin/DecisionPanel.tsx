@@ -5,6 +5,7 @@ import { ApiError } from "../../api/client";
 import { useAuth } from "../auth/useAuth";
 import { adminDate, referenceName, type AdminRecord } from "./admin";
 import InternalLink from "../../navigation/InternalLink";
+import { notifyReviewChange } from "../reviews/review";
 
 interface DecisionAction {
   label: string;
@@ -29,6 +30,8 @@ export default function DecisionPanel({
   const [busy, setBusy] = useState(false);
   const pending = useRef(false);
   const observedDecision = useRef<string | null>(null);
+  const observedUpdate = useRef<string | undefined>(undefined);
+  const isReview = path.startsWith("/reviews/");
   const heading = useRef<HTMLHeadingElement>(null);
   const panel = useRef<HTMLElement>(null);
   const lastAction = useRef("");
@@ -56,8 +59,10 @@ export default function DecisionPanel({
           ...selected.body,
           motivo: reason.trim(),
           decisaoAnterior: observedDecision.current,
+          ...(isReview ? { atualizadoEm: observedUpdate.current } : {}),
         },
       });
+      if (isReview) notifyReviewChange();
       setMessage("Decisão guardada.");
       setSelected(null);
       setReason("");
@@ -114,6 +119,7 @@ export default function DecisionPanel({
               data-decision-action
               onClick={() => {
                 observedDecision.current = item.ultimaDecisao?.data ?? null;
+                observedUpdate.current = item.updatedAt;
                 lastAction.current = action.label;
                 setSelected(action);
                 setReason("");

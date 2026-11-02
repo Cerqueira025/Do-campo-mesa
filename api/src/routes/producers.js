@@ -6,6 +6,7 @@ import Review from "../models/Review.js";
 import { requireAuth } from "../middleware/auth.js";
 import { requireObjectBody } from "../middleware/requestBody.js";
 import { prepareDecision, decisionConflict } from "../services/moderation.js";
+import { publicReviewFields, withProductRatings } from "../services/reviews.js";
 
 const router = Router();
 const publicFields =
@@ -156,7 +157,8 @@ router.get("/:id", async (request, response, next) => {
         .select("-imagens")
         .sort({ nome: 1 }),
       Review.find({ produtorId: producer._id, estado: "publicada" })
-        .sort({ createdAt: -1 })
+        .select(publicReviewFields)
+        .sort({ createdAt: -1, _id: -1 })
         .populate("autorId", "nome"),
     ]);
     const rating = reviews.length
@@ -168,7 +170,7 @@ router.get("/:id", async (request, response, next) => {
       : null;
     response.json({
       ...producer,
-      produtos: products,
+      produtos: await withProductRatings(products),
       avaliacoes: { media: rating, total: reviews.length, items: reviews },
     });
   } catch (error) {

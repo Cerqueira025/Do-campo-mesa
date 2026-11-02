@@ -1,6 +1,8 @@
 import InternalLink from "../../navigation/InternalLink";
 import IconButton from "../ui/IconButton";
 import ImageWithFallback from "../ui/ImageWithFallback";
+import RatingSummary from "../../features/reviews/RatingSummary";
+import type { Rating } from "../../features/reviews/review";
 import "./ProductCard.scss";
 
 export interface ProductCardProduct {
@@ -11,6 +13,7 @@ export interface ProductCardProduct {
   image?: string;
   srcSet?: string;
   imageAlt?: string;
+  avaliacao?: Rating;
 }
 
 interface ProductCardProps {
@@ -46,6 +49,10 @@ function ProductCard({ product, onAdd, href }: ProductCardProps) {
           loading="lazy"
           alt={product.imageAlt ?? product.title}
         />
+      </div>
+
+      <div className="product-card__rating">
+        <RatingSummary rating={product.avaliacao} />
       </div>
 
       <IconButton

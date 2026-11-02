@@ -24,6 +24,13 @@ export interface AdminRecord {
   email?: string;
   papel?: string;
   createdAt: string;
+  updatedAt?: string;
+  totalDenuncias?: number;
+  denuncias?: {
+    autorId: AdminReference | null;
+    motivo: string;
+    data: string;
+  }[];
   perfilProdutor?: {
     descricao: string;
     localidade: string;

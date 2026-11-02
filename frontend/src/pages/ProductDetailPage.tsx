@@ -9,6 +9,7 @@ import Button from "../components/ui/Button";
 import ImageWithFallback from "../components/ui/ImageWithFallback";
 import OriginMap from "../components/location/OriginMap";
 import RelatedProducts from "../features/products/RelatedProducts";
+import PublicReviews from "../features/reviews/PublicReviews";
 import AppHeader from "../components/layout/AppHeader";
 import {
   catalogReturnUrl,
@@ -239,7 +240,13 @@ export default function ProductDetailPage({ id }: { id: string | null }) {
                           .toUpperCase()}
                       </span>
                       <div>
-                        <h2 id="producer-title">{product.produtorId.nome}</h2>
+                        <h2 id="producer-title">
+                          <InternalLink
+                            href={`/produtores/${product.produtorId._id}`}
+                          >
+                            {product.produtorId.nome}
+                          </InternalLink>
+                        </h2>
                         {profile?.localidade && <p>{profile.localidade}</p>}
                       </div>
                     </div>
@@ -327,6 +334,10 @@ export default function ProductDetailPage({ id }: { id: string | null }) {
                 </div>
               </div>
               <div className="page-content">
+                <PublicReviews
+                  key={product._id}
+                  path={`/reviews/products/${product._id}`}
+                />
                 <RelatedProducts
                   key={product._id}
                   id={product._id}

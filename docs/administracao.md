@@ -2,7 +2,7 @@
 
 A área React começa em `/admin` e exige o papel atual `administrador` na API.
 Inclui resumo, aprovação de registos pendentes, moderação de produtos e avaliações,
-utilizadores, encomendas e todos os estados dos leilões. Laravel, denúncias públicas,
+utilizadores, encomendas e todos os estados dos leilões. Laravel,
 gráficos e verificação dos serviços Cloud ficam fora desta implementação.
 
 ## Consultas
@@ -32,14 +32,16 @@ leilões incluem `licitacoes` com os últimos vinte lances.
 
 Utilizadores expõem dados da conta e do perfil, sem hashes. Produtos expõem dados
 do catálogo, publicação e bloqueio separados. Avaliações incluem autor, alvo,
-encomenda, nota, comentário e estado. Encomendas incluem as partes e o snapshot
+encomenda, nota, comentário, estado, `totalDenuncias` e `denuncias`, com autor público,
+motivo e data de cada denúncia. Documentos antigos sem denúncias devolvem lista vazia.
+Estes dados são exclusivos da administração. Encomendas incluem as partes e o snapshot
 da compra. Leilões incluem produtor, produtos, reserva, datas, valores e estado
 efetivo. Referências removidas são apresentadas como indisponíveis.
 
 ## Decisões
 
 - `PATCH /api/producers/:id/validacao`: `{ validacao: 'aceite' | 'rejeitado', motivo?, decisaoAnterior? }`.
-- `PATCH /api/reviews/:id/moderacao`: `{ estado: 'publicada' | 'oculta', motivo?, decisaoAnterior? }`.
+- `PATCH /api/reviews/:id/moderacao`: `{ estado: 'publicada' | 'oculta', motivo?, decisaoAnterior?, atualizadoEm? }`.
 - `PATCH /api/admin/products/:id/moderacao`: `{ bloqueado: boolean, motivo?, decisaoAnterior? }`.
 
 Motivo obrigatório ao rejeitar/ocultar, com 1–500 caracteres após remover espaços
@@ -49,6 +51,20 @@ omitam o campo). Cada atualização compara essa referência atomicamente; dados
 desatualizados devolvem `409` e exigem atualizar e confirmar novamente.
 Uma aprovação/rejeição só atua num registo ainda pendente. Qualquer administrador
 pode reverter a moderação de produtos e avaliações, sem validação de outros.
+
+Na moderação de avaliações, a interface conserva também o `updatedAt` observado ao
+abrir a confirmação e envia-o como `atualizadoEm`. A comparação é atómica: novas
+denúncias durante a análise devolvem `409`, sem alterar o estado. O campo continua
+opcional para clientes anteriores. As denúncias incrementam a referência temporal
+mesmo quando chegam no mesmo milissegundo.
+
+Compradores e produtores autenticados podem denunciar avaliações de terceiros de
+alvos públicos com `POST /api/reviews/:id/denuncias` e `{ motivo }` (1–500 caracteres).
+Não precisam de uma compra. A primeira denúncia retira imediatamente a avaliação
+da publicação; outras contas ainda podem denunciar a mesma avaliação. A escrita
+atómica permite uma denúncia por conta e avaliação, preservada após republicação.
+Na lista, filtrar por `denunciada` mostra a fila de análise; o detalhe apresenta
+motivos, autores e datas. Ocultar ou republicar preserva o conteúdo e as denúncias.
 
 Nos detalhes administrativos, `ultimaDecisao` contém
 `{ administradorId: { _id, nome } | null, data, motivo }`. Apenas a última decisão

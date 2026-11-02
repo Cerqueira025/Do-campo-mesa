@@ -197,6 +197,68 @@ test("Detalhe de produto oculto inclui leilões associados; referências removid
   assert.equal((await call("/admin/inexistente")).status, 404);
 });
 
+test("Administração consulta autores e motivos das denúncias e mantém compatibilidade com avaliações antigas", async (t) => {
+  authorize(t);
+  const records = [
+    {
+      _id: id,
+      estado: "denunciada",
+      denuncias: [
+        {
+          autorId: { _id: anotherAdmin, nome: "Denunciante" },
+          motivo: "Analisar",
+          data: "2026-01-01T00:00:00Z",
+        },
+      ],
+    },
+    { _id: anotherAdmin, estado: "publicada" },
+  ];
+  t.mock.method(Review, "find", () => query(records));
+  t.mock.method(Review, "countDocuments", async () => records.length);
+  t.mock.method(Review, "findById", () => query(records[0]));
+  const list = await call("/admin/reviews?estado=denunciada");
+  assert.equal(list.status, 200);
+  assert.equal(list.body.items[0].totalDenuncias, 1);
+  assert.equal(list.body.items[1].totalDenuncias, 0);
+  assert.deepEqual(list.body.items[1].denuncias, []);
+  const detail = await call(`/admin/reviews/${id}`);
+  assert.equal(detail.body.denuncias[0].motivo, "Analisar");
+  assert.equal(detail.body.denuncias[0].autorId.nome, "Denunciante");
+});
+
+test("Projeção real do Mongoose não seleciona denuncias e denuncias.autorId em simultâneo", async (t) => {
+  authorize(t);
+  const projections = [];
+  const inspect = (options) => {
+    const projection = options.projection;
+    projections.push(projection);
+    assert.equal(projection.denuncias, 1);
+    assert.equal(projection["denuncias.autorId"], undefined);
+  };
+  // Intercetar apenas o acesso ao driver conserva a projeção e os populate reais.
+  t.mock.method(Review.collection, "find", (_filter, options) => {
+    inspect(options);
+    return { toArray: async () => [] };
+  });
+  t.mock.method(Review.collection, "countDocuments", async () => 0);
+  t.mock.method(Review.collection, "findOne", async (_filter, options) => {
+    inspect(options);
+    return {
+      _id: id,
+      classificacao: 4,
+      comentario: "Original",
+      estado: "publicada",
+    };
+  });
+  const list = await call("/admin/reviews");
+  assert.equal(list.status, 200);
+  assert.deepEqual(list.body.items, []);
+  const detail = await call(`/admin/reviews/${id}`);
+  assert.equal(detail.status, 200);
+  assert.deepEqual(detail.body.denuncias, []);
+  assert.equal(projections.length, 2);
+});
+
 test("Detalhe administrativo de leilão inclui os últimos vinte lances mesmo com produto removido", async (t) => {
   authorize(t);
   t.mock.method(Auction, "findById", () =>

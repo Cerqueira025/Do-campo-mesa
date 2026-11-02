@@ -78,6 +78,17 @@
     font-weight: 700;
   }
 
+  &__rating {
+    position: relative;
+    z-index: 1;
+    align-self: flex-start;
+    max-width: 100%;
+    margin-top: 20px;
+    padding: 4px 8px;
+    border-radius: 12px;
+    background: var(--color-brown-100);
+  }
+
   &__image {
     position: absolute;
     right: -90px;
@@ -106,9 +117,5 @@
     width: 40px;
     font-size: var(--font-size-2xl);
     line-height: 1;
-  }
-
-  &__add:disabled {
-    pointer-events: none;
   }
 }

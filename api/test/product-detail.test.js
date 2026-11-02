@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import router from "../src/routes/products.js";
 import Product from "../src/models/Product.js";
 import User from "../src/models/User.js";
+import Review from "../src/models/Review.js";
 
 const handler = router.stack.find((layer) => layer.route?.path === "/:id").route
   .stack[0].handle;
@@ -26,6 +27,7 @@ async function invoke(value = id) {
 }
 
 test("Detalhe carrega só o produtor do produto e mantém a resposta pública", async (t) => {
+  t.mock.method(Review, "aggregate", async () => []);
   const product = {
     _id: id,
     nome: "Batata",
@@ -60,7 +62,10 @@ test("Detalhe carrega só o produtor do produto e mantém a resposta pública", 
       },
     };
   });
-  assert.deepEqual(await invoke(), { status: 200, body: product });
+  assert.deepEqual(await invoke(), {
+    status: 200,
+    body: { ...product, avaliacao: { media: null, total: 0 } },
+  });
 });
 
 for (const reason of [

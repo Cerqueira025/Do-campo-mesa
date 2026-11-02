@@ -21,6 +21,15 @@ export default function RelatedProducts({
     "loading",
   );
   const [retry, setRetry] = useState(0);
+  useEffect(() => {
+    const refresh = () => setRetry((value) => value + 1);
+    window.addEventListener("reviews-changed", refresh);
+    window.addEventListener("focus", refresh);
+    return () => {
+      window.removeEventListener("reviews-changed", refresh);
+      window.removeEventListener("focus", refresh);
+    };
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();

@@ -187,6 +187,22 @@ export default function AdminDetail({
             )}
             {section === "avaliacoes" && (
               <>
+                <h3>Denúncias ({item.totalDenuncias ?? 0})</h3>
+                {item.denuncias?.length ? (
+                  <ul>
+                    {item.denuncias.map((report, index) => (
+                      <li key={`${report.autorId?._id ?? "removed"}-${index}`}>
+                        <p>
+                          {referenceName(report.autorId)} ·{" "}
+                          {adminDate(report.data)}
+                        </p>
+                        <p className="admin-page__text">{report.motivo}</p>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p>Sem denúncias registadas.</p>
+                )}
                 <p className="admin-page__text">{item.comentario}</p>
                 <dl className="admin-page__facts">
                   <div>

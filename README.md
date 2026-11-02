@@ -361,6 +361,30 @@ A restrição definitiva continua no índice `review_author_order_target_unique`
 O fluxo não requer migração de documentos; confirme o índice com a inicialização
 já documentada antes de disponibilizar a funcionalidade.
 
+As classificações aparecem nos cartões, no detalhe dos produtos e em
+`/produtores/:id`, com nome, localização/mapa, produtos e avaliações do produtor.
+A conta de um produtor aprovado mostra a sua média e total, com acesso ao perfil.
+Os produtos públicos devolvem `avaliacao: { media, total }`, calculada em conjunto
+para cada lista. A nota do produtor considera apenas avaliações dirigidas ao produtor.
+Sem avaliações públicas, a média é `null` e o total é zero. As consultas
+`GET /api/reviews/products/:id` e `/producers/:id` devolvem apenas autor público,
+nota, comentário e data, por ordem decrescente de data e identificador. Alvos
+indisponíveis devolvem `404`.
+
+Compradores e produtores autenticados podem denunciar avaliações de terceiros
+através de `POST /api/reviews/:id/denuncias`, enviando um `motivo` de 1–500
+caracteres após remover espaços nas extremidades. Não é necessária compra.
+Cada conta denuncia cada avaliação uma vez, incluindo após republicação.
+A denúncia fica registada atomicamente e muda o estado para `denunciada`:
+a avaliação deixa de contar nas listas, médias e filtros até decisão administrativa.
+Os motivos e denunciantes só são expostos à administração. Ocultar ou republicar
+preserva a nota, comentário e denúncias. O frontend invalida a cache do catálogo
+após alterações e volta a consultar avaliações ao regressar à janela.
+
+Os testes normais simulam a persistência. O teste opcional de denúncias com MongoDB
+real usa `MONGODB_TEST_URI`, cria uma base temporária isolada, verifica o índice único,
+a concorrência e a recuperação das médias, e remove exclusivamente essa base no fim.
+
 ## Tempo real
 
 A API REST e Socket.IO partilham o mesmo servidor HTTP. O frontend liga-se a

@@ -25,7 +25,7 @@ const fields = {
   products:
     "nome descricao produtorId categoria preco unidade stock epoca biologico dataValidade publicado bloqueado createdAt updatedAt ultimaDecisao",
   reviews:
-    "autorId encomendaId produtoId produtorId classificacao comentario estado createdAt updatedAt ultimaDecisao",
+    "autorId encomendaId produtoId produtorId classificacao comentario estado createdAt updatedAt ultimaDecisao denuncias",
   orders:
     "compradorId produtorId linhas total estado entrega dataEntrega leilaoId createdAt updatedAt",
   auctions:
@@ -197,7 +197,10 @@ function populate(query, resource) {
   if (["products", "reviews", "orders", "auctions"].includes(resource))
     query.populate("produtorId", producerFields);
   if (resource === "reviews")
-    query.populate("autorId", "nome").populate("produtoId", "nome");
+    query
+      .populate("autorId", "nome")
+      .populate("produtoId", "nome")
+      .populate("denuncias.autorId", "nome");
   if (resource === "orders") query.populate("compradorId", "nome");
   if (resource === "auctions")
     query
@@ -207,6 +210,10 @@ function populate(query, resource) {
 }
 
 function decorate(item, resource, now) {
+  if (resource === "reviews") {
+    item.denuncias ??= [];
+    item.totalDenuncias = item.denuncias.length;
+  }
   if (resource === "products")
     item.visivel = Boolean(
       item.publicado &&

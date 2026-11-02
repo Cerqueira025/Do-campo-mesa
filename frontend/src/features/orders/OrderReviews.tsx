@@ -6,6 +6,7 @@ import { ApiError } from "../../api/client";
 import { useAuth } from "../auth/useAuth";
 import type { Order, Review } from "./order";
 import { useOrderPolling } from "./useOrderPolling";
+import { notifyReviewChange } from "../reviews/review";
 
 function ReviewForm({
   orderId,
@@ -43,6 +44,7 @@ function ReviewForm({
           comentario: comment.trim(),
         },
       });
+      notifyReviewChange();
       onSaved();
     } catch (failure) {
       setError(

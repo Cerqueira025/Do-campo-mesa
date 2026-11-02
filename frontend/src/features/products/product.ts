@@ -1,3 +1,5 @@
+import type { Rating } from "../reviews/review";
+
 export interface ApiProduct {
   _id: string;
   nome: string;
@@ -5,6 +7,7 @@ export interface ApiProduct {
   stock?: number;
   preco: number;
   unidade: string;
+  avaliacao?: Rating;
 }
 
 export interface ProductDetail extends ApiProduct {
@@ -123,6 +126,7 @@ export function mapProduct(product: ApiProduct) {
   return {
     id: product._id,
     stock: product.stock,
+    avaliacao: product.avaliacao,
     title: product.nome,
     category: product.categoria,
     weight: `${priceFormatter.format(product.preco / 100)}/${product.unidade}`,
