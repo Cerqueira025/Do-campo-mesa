@@ -73,6 +73,14 @@ npm run dev
 ### Comandos
 
 ```powershell
+npm test
 npm run build
 npm run lint
 ```
+
+`npm test` executa os testes de lógica existentes e os testes de interação React.
+Para executar apenas um grupo, usa `npm run test:unit` ou `npm run test:ui`.
+Os testes de interação usam Vitest, React Testing Library e jsdom, com respostas
+da API simuladas; não precisam de servidor nem de base de dados. Cobrem checkout,
+carrinho, sessão, páginas protegidas e atualização de encomendas. O workflow
+`.github/workflows/frontend.yml` executa ambos os grupos através de `npm test`.
