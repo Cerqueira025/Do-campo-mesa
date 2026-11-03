@@ -313,22 +313,26 @@ router.get("/:resource", async (request, response, next) => {
         : resource === "users" && query.validacao === "pendente"
           ? { createdAt: 1, _id: 1 }
           : { createdAt: -1, _id: 1 };
-    const [items, total, categorias] = await Promise.all([
-      populate(
-        models[resource]
-          .find(filter)
-          .select(fields[resource])
-          .sort(sort)
-          .skip((query.page - 1) * query.limit)
-          .limit(query.limit),
-        resource,
-      ).lean(),
+    const [total, categorias] = await Promise.all([
       models[resource].countDocuments(filter),
       resource === "products" ? Product.distinct("categoria") : undefined,
     ]);
+    const page = Math.min(
+      query.page,
+      Math.max(1, Math.ceil(total / query.limit)),
+    );
+    const items = await populate(
+      models[resource]
+        .find(filter)
+        .select(fields[resource])
+        .sort(sort)
+        .skip((page - 1) * query.limit)
+        .limit(query.limit),
+      resource,
+    ).lean();
     response.json({
       items: items.map((item) => decorate(item, resource, now)),
-      page: query.page,
+      page,
       limit: query.limit,
       total,
       ...(categorias

@@ -28,7 +28,7 @@ export default function ProtectedRoute({
     return (
       <main className="auth-page">
         <AppHeader />
-        <div className="page-content">
+        <div className="page-content" id="main-content" tabIndex={-1}>
           <section className="auth-panel">
             <LoadingPlaceholder label="A validar sessão…" />
           </section>
@@ -39,7 +39,7 @@ export default function ProtectedRoute({
     return (
       <main className="auth-page">
         <AppHeader />
-        <div className="page-content">
+        <div className="page-content" id="main-content" tabIndex={-1}>
           <section className="auth-panel" role="alert">
             <h1>Sessão indisponível</h1>
             <p>{erro}</p>
@@ -57,7 +57,7 @@ export default function ProtectedRoute({
     return (
       <main className="auth-page">
         <AppHeader />
-        <div className="page-content">
+        <div className="page-content" id="main-content" tabIndex={-1}>
           <section className="auth-panel">
             <h1>Sem permissão</h1>
             <p>A sua conta não tem acesso a esta página.</p>

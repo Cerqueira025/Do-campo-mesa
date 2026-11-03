@@ -80,6 +80,29 @@ test("Criação valida corpo ausente e datas antes de consultar produtos", async
   }
 });
 
+test("Criação rejeita lance mínimo inseguro antes de consultar produtos", async (t) => {
+  let lookups = 0;
+  t.mock.method(Product, "findOneAndUpdate", () => {
+    lookups += 1;
+    return null;
+  });
+  const max = Number.MAX_SAFE_INTEGER;
+  const rejected = await invoke({
+    ...body,
+    precoBase: max - 1,
+    incremento: 2,
+  });
+  assert.equal(rejected.code, 400);
+  assert.equal(lookups, 0);
+  const accepted = await invoke({
+    ...body,
+    precoBase: max - 100,
+    incremento: 100,
+  });
+  assert.equal(accepted.code, 404);
+  assert.equal(lookups, 1);
+});
+
 test("Criação usa um único instante e a mesma regra temporal das leituras", async (t) => {
   let time = now;
   t.mock.method(Date, "now", () => time);
@@ -174,7 +197,7 @@ test("Cria lote misto na ordem pedida e obtém unidades do servidor", async (t) 
     ...body,
     produtos: [
       { produtoId: productId.toUpperCase(), quantidade: 1.5, unidade: "l" },
-      { produtoId: secondId, quantidade: 2, unidade: "g" },
+      { produtoId: secondId, quantidade: 1, unidade: "g" },
     ],
   });
   assert.equal(response.code, 201);
@@ -188,7 +211,7 @@ test("Cria lote misto na ordem pedida e obtém unidades do servidor", async (t) 
       },
       {
         produtoId: response.body.produtos[1].produtoId,
-        quantidade: 2,
+        quantidade: 1,
         unidade: "unidade",
       },
     ],
@@ -197,6 +220,40 @@ test("Cria lote misto na ordem pedida e obtém unidades do servidor", async (t) 
   assert.equal(response.body.produtoId, undefined);
   assert.equal(response.body.quantidade, undefined);
   assert.equal(response.body.unidade, undefined);
+});
+
+test("Criação aplica regras de quantidade da unidade real do produto", async (t) => {
+  const cases = [
+    ["unidade", 0.5, false],
+    ["unidade", 1, true],
+    ["g", 50, false],
+    ["g", 150, false],
+    ["g", 200, true],
+    ["kg", 0.25, false],
+    ["kg", 0.5, true],
+    ["l", 0.25, false],
+    ["l", 1, true],
+  ];
+  for (const [unidade, quantidade, valid] of cases) {
+    const product = t.mock.method(Product, "findOneAndUpdate", async () => ({
+      _id: productId,
+      unidade,
+      stock: 1000,
+    }));
+    t.mock.method(Auction, "create", async ([data]) => {
+      const auction = new Auction(data);
+      await auction.validate();
+      auction.populate = async () => auction;
+      return [auction];
+    });
+    const result = await invoke({
+      ...body,
+      produtos: [{ produtoId: productId, quantidade, unidade: "unidade" }],
+    });
+    assert.equal(result.code, valid ? 201 : 400, `${unidade}: ${quantidade}`);
+    product.mock.restore();
+    Auction.create.restore?.();
+  }
 });
 
 test("Lista obrigatória rejeita duplicados normalizados e linhas inválidas sem consultar produtos", async (t) => {

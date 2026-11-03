@@ -1,5 +1,6 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import BrandMark from "../../../components/brand/BrandMark";
+import SkipToContentLink from "../../../components/layout/SkipToContentLink";
 import InternalLink from "../../../navigation/InternalLink";
 import "./AuthLayout.scss";
 
@@ -30,6 +31,7 @@ export default function AuthLayout({
 
   return (
     <main className="auth-layout">
+      <SkipToContentLink />
       <div className="auth-layout__card">
         <header className="auth-layout__header">
           <InternalLink
@@ -42,7 +44,12 @@ export default function AuthLayout({
           </InternalLink>
           <h1 className="auth-layout__title">{title}</h1>
         </header>
-        <section className="auth-layout__body" aria-label={documentTitle}>
+        <section
+          className="auth-layout__body"
+          id="main-content"
+          tabIndex={-1}
+          aria-label={documentTitle}
+        >
           <p
             className="auth-layout__error"
             role="alert"

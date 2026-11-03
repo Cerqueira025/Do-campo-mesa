@@ -272,6 +272,17 @@ router.patch(
         return response.status(409).json({
           erro: "Esta encomenda já não aguarda a escolha da modalidade.",
         });
+      let pickupAddress;
+      if (entrega.tipo === "levantamento") {
+        const producer = await User.findById(order.produtorId).select(
+          "perfilProdutor.morada",
+        );
+        pickupAddress = producer?.perfilProdutor?.morada?.trim();
+        if (!pickupAddress)
+          return response.status(400).json({
+            erro: "O produtor ainda não tem uma morada de levantamento. Escolha entrega ou peça ao produtor para atualizar o perfil.",
+          });
+      }
       const updated = await Order.findOneAndUpdate(
         {
           _id: order._id,
@@ -284,9 +295,10 @@ router.patch(
           $set: {
             entrega: {
               tipo: entrega.tipo,
-              ...(entrega.tipo === "entrega"
-                ? { morada: entrega.morada.trim() }
-                : {}),
+              morada:
+                entrega.tipo === "entrega"
+                  ? entrega.morada.trim()
+                  : pickupAddress,
             },
             estado: "confirmada",
           },

@@ -21,7 +21,11 @@ export default function OrderLayout({
       <div className="order-page__header">
         <AppHeader />
       </div>
-      <div className="order-page__inner page-content">
+      <div
+        className="order-page__inner page-content"
+        id="main-content"
+        tabIndex={-1}
+      >
         <h1>{title}</h1>
         {children}
       </div>

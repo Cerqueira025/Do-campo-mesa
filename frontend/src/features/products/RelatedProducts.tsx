@@ -15,7 +15,7 @@ export default function RelatedProducts({
   category: string;
   returnUrl: string;
 }) {
-  const { adicionar, canBuy } = useCart();
+  const { adicionar, canBuy, message } = useCart();
   const [products, setProducts] = useState<ApiProduct[]>([]);
   const [status, setStatus] = useState<"loading" | "success" | "error">(
     "loading",
@@ -75,23 +75,28 @@ export default function RelatedProducts({
           </Button>
         </div>
       ) : (
-        <ul className="related-products__grid">
-          {products.map((product) => (
-            <li key={product._id}>
-              <ProductCard
-                product={mapProduct(product)}
-                onAdd={
-                  canBuy &&
-                  initialPurchaseQuantity(product.unidade, product.stock ?? 0) >
-                    0
-                    ? () => void adicionar(product._id)
-                    : undefined
-                }
-                href={productHref(product._id, returnUrl)}
-              />
-            </li>
-          ))}
-        </ul>
+        <>
+          {message && <p role="status">{message}</p>}
+          <ul className="related-products__grid">
+            {products.map((product) => (
+              <li key={product._id}>
+                <ProductCard
+                  product={mapProduct(product)}
+                  onAdd={
+                    canBuy &&
+                    initialPurchaseQuantity(
+                      product.unidade,
+                      product.stock ?? 0,
+                    ) > 0
+                      ? () => void adicionar(product._id)
+                      : undefined
+                  }
+                  href={productHref(product._id, returnUrl)}
+                />
+              </li>
+            ))}
+          </ul>
+        </>
       )}
     </section>
   );

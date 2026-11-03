@@ -31,6 +31,7 @@ import {
   isAuction,
   parseBid,
   remainingSeconds,
+  serverClockOffset,
   type Auction,
   type AuctionBid,
 } from "../features/auctions/auction";
@@ -142,7 +143,11 @@ function AuctionContent({
             {participants ?? "—"}
           </p>
         </div>
-        <div className="auction-detail__summary page-content">
+        <div
+          className="auction-detail__summary page-content"
+          id="main-content"
+          tabIndex={-1}
+        >
           <h1>{auction.lote}</h1>
           <dl className="auction-detail__metrics">
             <div className="auction-detail__current">
@@ -311,9 +316,19 @@ function AuctionContent({
           {state === "cancelado"
             ? "O leilão foi cancelado."
             : state === "terminado"
-              ? "O leilão terminou."
+              ? auction.resultado?.vencedor
+                ? `Leilão ganho por ${auction.resultado.vencedorNome ?? "Comprador"} por ${priceFormatter.format(auction.resultado.valor / 100)}.`
+                : "O leilão terminou sem vencedor."
               : ""}
         </span>
+        {state === "terminado" &&
+          auction.resultado?.encomendaId &&
+          (utilizador?.id === auction.resultado.vencedorId ||
+            utilizador?.id === auction.produtorId?._id) && (
+            <InternalLink href={`/encomendas/${auction.resultado.encomendaId}`}>
+              Consultar encomenda
+            </InternalLink>
+          )}
       </form>
     </>
   );
@@ -331,6 +346,7 @@ export default function AuctionDetailPage({ id }: { id: string | null }) {
   const [bidError, setBidError] = useState("");
   const [busy, setBusy] = useState(false);
   const pending = useRef(false);
+  const refreshAuctionState = useRef<() => void>(() => {});
   const [status, setStatus] = useState<
     "loading" | "success" | "missing" | "error"
   >(id ? "loading" : "missing");
@@ -354,10 +370,16 @@ export default function AuctionDetailPage({ id }: { id: string | null }) {
           return;
         }
         if (!response.ok) throw new Error("Leilão indisponível");
+        const receivedAt = Date.now();
+        const nextOffset = serverClockOffset(
+          response.headers.get("Date"),
+          receivedAt,
+        );
         const data: unknown = await response.json();
         if (!isAuction(data) || data._id.toLowerCase() !== id!.toLowerCase())
           throw new Error("Resposta inválida");
         if (!controller.signal.aborted) {
+          setOffset(nextOffset);
           setAuction((previous) =>
             previous &&
             previous.licitacaoAtual.valor > data.licitacaoAtual.valor
@@ -385,11 +407,20 @@ export default function AuctionDetailPage({ id }: { id: string | null }) {
   useEffect(() => {
     if (!id || !socket) return;
     const enter = () => {
-      setConnected(true);
-      socket.emit("entrar", id, (answer: { ok: boolean; erro?: string }) => {
-        if (!answer.ok)
-          setBidError(answer.erro ?? "Não foi possível entrar no leilão.");
-      });
+      setConnected(false);
+      setParticipants(null);
+      refreshAuctionState.current = () =>
+        socket.emit("entrar", id, (answer: { ok: boolean; erro?: string }) => {
+          if (answer.ok) {
+            setConnected(true);
+            setBidError("");
+          } else {
+            setConnected(false);
+            setParticipants(null);
+            setBidError(answer.erro ?? "Não foi possível entrar no leilão.");
+          }
+        });
+      refreshAuctionState.current();
     };
     const disconnect = () => {
       setConnected(false);
@@ -509,6 +540,7 @@ export default function AuctionDetailPage({ id }: { id: string | null }) {
                 "Resultado incerto. Consulte o histórico antes de tentar novamente.",
             );
             setRetry((current) => current + 1);
+            if (socket.connected) refreshAuctionState.current();
           }
         },
       );
@@ -530,15 +562,26 @@ export default function AuctionDetailPage({ id }: { id: string | null }) {
     >
       {status !== "success" && navigation}
       {status === "loading" ? (
-        <LoadingPlaceholder label="A carregar leilão…" />
+        <div id="main-content" tabIndex={-1}>
+          <LoadingPlaceholder label="A carregar leilão…" />
+        </div>
       ) : status === "missing" ? (
-        <section className="auction-detail__message page-content">
+        <section
+          className="auction-detail__message page-content"
+          id="main-content"
+          tabIndex={-1}
+        >
           <h1>Leilão não encontrado</h1>
           <p>Este leilão não existe ou já não está disponível.</p>
           <InternalLink href={returnUrl}>Explorar produtos</InternalLink>
         </section>
       ) : status === "error" ? (
-        <section className="auction-detail__message page-content" role="alert">
+        <section
+          className="auction-detail__message page-content"
+          id="main-content"
+          tabIndex={-1}
+          role="alert"
+        >
           <h1>Não foi possível carregar o leilão</h1>
           <p>Tenta novamente dentro de instantes.</p>
           <Button

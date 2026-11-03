@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import router from "../src/routes/reviews.js";
 import Order from "../src/models/Order.js";
 import Review from "../src/models/Review.js";
+import Product from "../src/models/Product.js";
+import User from "../src/models/User.js";
 
 const handler = router.stack
   .find((layer) => layer.route?.methods.post)
@@ -93,6 +95,136 @@ test("Declara índice único por autor, encomenda e alvo, independentemente da m
   assert.equal(index[1].unique, true);
   assert.equal(index[1].sparse, undefined);
   assert.equal(index[1].partialFilterExpression, undefined);
+});
+
+test("Location da avaliação criada resolve para representação pública e oculta avaliações indisponíveis", async (t) => {
+  const fixture = setup(t);
+  const getHandler = router.stack
+    .find((layer) => layer.route?.path === "/:id" && layer.route.methods.get)
+    .route.stack.at(-1).handle;
+  let productAvailable = true;
+  t.mock.method(Product, "findOne", () => ({
+    select() {
+      return this;
+    },
+    populate() {
+      return this;
+    },
+    async lean() {
+      return productAvailable ? { produtorId: { _id: producerId } } : null;
+    },
+  }));
+  const created = await invoke(body);
+  assert.equal(created.code, 201);
+
+  const review = fixture.records.values().next().value;
+  t.mock.method(Review, "findOne", (filter) => ({
+    select() {
+      return this;
+    },
+    populate() {
+      return Promise.resolve(
+        filter.estado === "publicada" &&
+          review.estado === "publicada" &&
+          String(filter._id) === String(review._id)
+          ? review
+          : null,
+      );
+    },
+  }));
+
+  const get = async (id) => {
+    const response = {
+      code: 200,
+      status(code) {
+        this.code = code;
+        return this;
+      },
+      json(value) {
+        this.body = value;
+      },
+    };
+    await getHandler({ params: { id } }, response, (error) => {
+      throw error;
+    });
+    return response;
+  };
+  const response = await get(created.body.id);
+  assert.equal(response.code, 200);
+  assert.equal(response.body.comentario, "Original");
+  assert.equal(response.body.denuncias, undefined);
+  assert.equal(response.body.encomendaId, undefined);
+  assert.equal(response.body.produtoId, undefined);
+  assert.equal(response.body.produtorId, undefined);
+
+  for (const id of ["invalido", "dca000000000000000009999"]) {
+    assert.equal((await get(id)).code, 404);
+  }
+  review.estado = "oculta";
+  assert.equal((await get(created.body.id)).code, 404);
+  review.estado = "denunciada";
+  assert.equal((await get(created.body.id)).code, 404);
+  review.estado = "publicada";
+  productAvailable = false;
+  assert.equal((await get(created.body.id)).code, 404);
+});
+
+test("GET individual exige produtor aprovado quando a avaliação é sobre o produtor", async (t) => {
+  const fixture = setup(t);
+  const created = await invoke({
+    encomendaId: orderId,
+    produtorId: producerId,
+    classificacao: 5,
+    comentario: "Bom produtor",
+  });
+  const review = fixture.records.values().next().value;
+  t.mock.method(Review, "findOne", () => ({
+    select() {
+      return this;
+    },
+    populate() {
+      return Promise.resolve(review);
+    },
+  }));
+  let producerApproved = false;
+  t.mock.method(User, "exists", async () =>
+    producerApproved ? { _id: producerId } : null,
+  );
+  const getHandler = router.stack
+    .find((layer) => layer.route?.path === "/:id" && layer.route.methods.get)
+    .route.stack.at(-1).handle;
+  const response = {
+    code: 200,
+    status(code) {
+      this.code = code;
+      return this;
+    },
+    json(value) {
+      this.body = value;
+    },
+  };
+
+  await getHandler({ params: { id: created.body.id } }, response, (error) => {
+    throw error;
+  });
+  assert.equal(response.code, 404);
+
+  producerApproved = true;
+  const available = {
+    code: 200,
+    status(code) {
+      this.code = code;
+      return this;
+    },
+    json(value) {
+      this.body = value;
+    },
+  };
+  await getHandler({ params: { id: created.body.id } }, available, (error) => {
+    throw error;
+  });
+  assert.equal(available.code, 200);
+  assert.equal(available.body.comentario, "Bom produtor");
 });
 
 for (const target of [{ produtoId: productId }, { produtorId: producerId }]) {

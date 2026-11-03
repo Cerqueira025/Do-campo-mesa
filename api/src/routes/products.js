@@ -299,12 +299,12 @@ router.put(
           (product.isModified("stock") || product.isModified("unidade")) &&
           (await Auction.exists({
             "produtos.produtoId": product._id,
-            reservaStock: { $in: ["reservada", "atribuida"] },
+            reservaStock: "reservada",
           }).session(session))
         ) {
           throw Object.assign(
             new Error(
-              "Não é possível alterar stock ou unidade de um produto com quantidades reservadas ou atribuídas.",
+              "Não é possível alterar stock ou unidade de um produto com quantidades reservadas.",
             ),
             { status: 409 },
           );

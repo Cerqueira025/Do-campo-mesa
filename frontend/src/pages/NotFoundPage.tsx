@@ -15,7 +15,11 @@ export default function NotFoundPage() {
   return (
     <main className="not-found-page">
       <AppHeader />
-      <div className="not-found-page__inner page-content">
+      <div
+        className="not-found-page__inner page-content"
+        id="main-content"
+        tabIndex={-1}
+      >
         <section className="not-found-page__message">
           <h1>404 — Página não encontrada</h1>
           <p>

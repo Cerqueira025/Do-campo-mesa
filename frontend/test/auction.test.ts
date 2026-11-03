@@ -9,6 +9,7 @@ import {
   isAuction,
   parseBid,
   remainingSeconds,
+  serverClockOffset,
   type Auction,
 } from "../src/features/auctions/auction.ts";
 import { auctionIdFromPath } from "../src/navigation/routePaths.ts";
@@ -95,6 +96,23 @@ test("Aplica datas nos limites de início e fim e respeita o término explícito
   assert.equal(formatRemaining(1122), "18:42");
   assert.equal(formatRemaining(3601), "01:00:01");
   assert.equal(formatRemaining(0), "00:00");
+});
+
+test("Sincroniza o relógio local com Date do servidor e usa zero como fallback", () => {
+  const local = Date.parse("2026-10-15T12:00:10Z");
+  assert.equal(
+    serverClockOffset("Thu, 15 Oct 2026 12:00:00 GMT", local),
+    -10_000,
+  );
+  assert.equal(
+    serverClockOffset("Thu, 15 Oct 2026 12:00:20 GMT", local),
+    10_000,
+  );
+  assert.equal(serverClockOffset(null, local), 0);
+  assert.equal(serverClockOffset("invalid", local), 0);
+  const end = local + 30_000;
+  assert.equal(remainingSeconds(end, local - 10_000), 40);
+  assert.equal(remainingSeconds(end, local + 10_000), 20);
 });
 
 test("Seleciona o leilão em curso com fim mais próximo, sem alterar a lista recebida", () => {

@@ -28,7 +28,7 @@ export default function AccountPage() {
   return (
     <main className="auth-page">
       <AppHeader />
-      <div className="page-content">
+      <div className="page-content" id="main-content" tabIndex={-1}>
         <section className="auth-panel">
           <h1>A minha conta</h1>
           <dl className="auth-details">

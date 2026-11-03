@@ -6,7 +6,10 @@ import User from "../src/models/User.js";
 import Auction from "../src/models/Auction.js";
 import Bid from "../src/models/Bid.js";
 import Product from "../src/models/Product.js";
-import { registerSockets } from "../src/sockets/index.js";
+import {
+  emitAuctionTransition,
+  registerSockets,
+} from "../src/sockets/index.js";
 
 const secret = "socket-test-secret-with-at-least-32-characters";
 const buyer1 = "dca000000000000000000002";
@@ -189,6 +192,82 @@ function setup(t) {
   return { io, emissions, auctions, bids, users, token, connect };
 }
 
+test("Confirmações inválidas não interrompem os eventos de leilão", async (t) => {
+  const { connect, bids, emissions } = setup(t);
+  const guest = await connect();
+  const invalid = [undefined, null, "texto", 42, false, {}, []];
+
+  for (const ack of invalid) {
+    await guest.trigger("entrar", lotId, ack);
+    assert.ok(guest.rooms.has(`leilao:${lotId}`));
+    assert.equal(guest.sent.at(-1).name, "estado");
+    await guest.trigger("entrar", "invalid", ack);
+    await guest.trigger("licitar", { leilaoId: lotId, valor: 110 }, ack);
+  }
+  assert.equal(bids.length, 0);
+  assert.equal(
+    emissions.filter((item) => item.event === "nova-licitacao").length,
+    0,
+  );
+
+  t.mock.method(Bid, "find", () => {
+    throw new Error("Falha na consulta");
+  });
+  await guest.trigger("entrar", lotId, {});
+  const answers = [];
+  await guest.trigger("entrar", lotId, (answer) => answers.push(answer));
+  assert.deepEqual(answers, [
+    { ok: false, erro: "Não foi possível entrar no leilão." },
+  ]);
+});
+
+test("Licitações com confirmação inválida preservam sucesso e falha", async (t) => {
+  const { connect, auctions, bids, emissions } = setup(t);
+  const buyer = await connect(buyer1);
+  await buyer.trigger("entrar", lotId, {});
+  t.mock.method(mongoose, "startSession", async () => ({
+    async withTransaction(fn) {
+      await fn();
+    },
+    async endSession() {},
+  }));
+  t.mock.method(Auction, "findOneAndUpdate", async (filter, update) => {
+    auctions.get(filter._id).licitacaoAtual = update.$set.licitacaoAtual;
+    return auctions.get(filter._id);
+  });
+  t.mock.method(Bid, "create", async ([record]) => {
+    const bid = { ...record, _id: "bid-1", createdAt: new Date() };
+    bids.push(bid);
+    return [bid];
+  });
+  await buyer.trigger("licitar", { leilaoId: lotId, valor: 110 }, {});
+  assert.equal(bids.length, 1);
+  assert.equal(auctions.get(lotId).licitacaoAtual.valor, 110);
+  assert.equal(
+    emissions.filter((item) => item.event === "nova-licitacao").length,
+    1,
+  );
+  t.mock.method(Product, "findOneAndUpdate", async () => {
+    throw new Error("Falha");
+  });
+  await buyer.trigger("licitar", { leilaoId: lotId, valor: 120 }, []);
+  const answers = [];
+  await buyer.trigger("licitar", { leilaoId: lotId, valor: 120 }, (answer) =>
+    answers.push(answer),
+  );
+  assert.deepEqual(answers, [
+    {
+      ok: false,
+      erro: "Não foi possível confirmar a licitação. Consulte o histórico antes de tentar novamente.",
+    },
+  ]);
+  assert.equal(bids.length, 1);
+  assert.equal(
+    emissions.filter((item) => item.event === "nova-licitacao").length,
+    1,
+  );
+});
+
 test("Visitante assiste à sala pública; JWT inválido não obtém sala privada", async (t) => {
   const { connect, emissions, auctions } = setup(t);
   const guest = await connect();
@@ -237,6 +316,39 @@ test("Visitante assiste à sala pública; JWT inválido não obtém sala privada
         item.room === `leilao:${lotId}` &&
         item.event === "presenca" &&
         item.payload === 0,
+    ),
+  );
+});
+
+test("IDs de leilão com capitalização diferente partilham sala, presença e transições", async (t) => {
+  const { connect, emissions, io } = setup(t);
+  const lower = await connect();
+  const upper = await connect();
+  await lower.trigger("entrar", lotId, () => {});
+  await upper.trigger("entrar", lotId.toUpperCase(), () => {});
+  assert.ok(lower.rooms.has(`leilao:${lotId}`));
+  assert.ok(upper.rooms.has(`leilao:${lotId}`));
+  assert.ok(
+    emissions.some(
+      (item) =>
+        item.room === `leilao:${lotId}` &&
+        item.event === "presenca" &&
+        item.payload === 2,
+    ),
+  );
+  await upper.trigger("sair", lotId);
+  assert.ok(
+    emissions.some(
+      (item) =>
+        item.room === `leilao:${lotId}` &&
+        item.event === "presenca" &&
+        item.payload === 1,
+    ),
+  );
+  emitAuctionTransition(io, { id: lotId.toUpperCase(), estado: "ativo" });
+  assert.ok(
+    emissions.some(
+      (item) => item.room === `leilao:${lotId}` && item.event === "aberto",
     ),
   );
 });

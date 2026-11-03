@@ -190,6 +190,36 @@ router.get("/products/:id", async (request, response, next) => {
   }
 });
 
+router.get("/:id", async (request, response, next) => {
+  try {
+    if (!mongoose.isObjectIdOrHexString(request.params.id))
+      return response.status(404).json({ erro: "Avaliação não encontrada." });
+    const review = await Review.findOne({
+      _id: request.params.id,
+      estado: "publicada",
+    })
+      .select(`${publicReviewFields} produtoId produtorId`)
+      .populate("autorId", "nome");
+    if (
+      !review ||
+      !(await publicReviewTarget({
+        produtoId: review.produtoId,
+        produtorId: review.produtorId,
+      }))
+    )
+      return response.status(404).json({ erro: "Avaliação não encontrada." });
+    response.json({
+      _id: review._id,
+      autorId: review.autorId,
+      classificacao: review.classificacao,
+      comentario: review.comentario,
+      createdAt: review.createdAt,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.get("/producers/:id", async (request, response, next) => {
   try {
     if (!mongoose.isValidObjectId(request.params.id))

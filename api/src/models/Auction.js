@@ -69,6 +69,11 @@ const auctionSchema = new mongoose.Schema(
 );
 
 auctionSchema.pre("validate", function () {
+  if (!Number.isSafeInteger(this.licitacaoAtual?.valor + this.incremento))
+    this.invalidate(
+      "incremento",
+      "O próximo lance mínimo excede o limite numérico seguro.",
+    );
   if (this.dataInicio >= this.dataFim)
     this.invalidate("dataFim", "O fim deve ser posterior ao início.");
   if (this.licitacaoAtual?.valor < this.precoBase)

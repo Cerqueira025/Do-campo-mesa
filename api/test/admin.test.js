@@ -97,6 +97,50 @@ test("Consultas administrativas validam paginação, pesquisa limitada e identif
   }
 });
 
+test("Listagem limita a página pedida à última página existente", async (t) => {
+  let total = 30;
+  let skip;
+  t.mock.method(User, "find", () =>
+    query(total ? [{ _id: id, nome: "Quinta" }] : [], (key, value) => {
+      if (key === "skip") skip = value;
+    }),
+  );
+  t.mock.method(User, "countDocuments", async () => total);
+  const handler = admin.stack
+    .find((layer) => layer.route?.path === "/:resource")
+    .route.stack.at(-1).handle;
+  const invoke = async (page) => {
+    const response = {
+      code: 200,
+      status(code) {
+        this.code = code;
+        return this;
+      },
+      json(body) {
+        this.body = body;
+      },
+    };
+    await handler(
+      { params: { resource: "users" }, query: { page: String(page) } },
+      response,
+      (error) => {
+        throw error;
+      },
+    );
+    return response;
+  };
+
+  const beyondLast = await invoke(3);
+  assert.equal(beyondLast.body.page, 2);
+  assert.equal(skip, 24);
+
+  total = 0;
+  const empty = await invoke(3);
+  assert.equal(empty.body.page, 1);
+  assert.deepEqual(empty.body.items, []);
+  assert.equal(skip, 0);
+});
+
 test("Todas as consultas e a moderação de produtos exigem o papel atual de administrador", async (t) => {
   authorize(t, "comprador");
   const paths = [
@@ -173,6 +217,31 @@ test("Listagem pesquisa texto literal, filtra papéis, pagina no servidor e orde
   assert.equal(operations.skip, 24);
   assert.equal(operations.limit, 24);
   assert.equal(operations.select.includes("passwordHash"), false);
+
+  const outOfRange = await call(
+    "/admin/users?papel=produtor&validacao=pendente&q=Quinta.*&page=3",
+  );
+  assert.equal(outOfRange.status, 200);
+  assert.equal(outOfRange.body.total, 30);
+  assert.equal(outOfRange.body.page, 2);
+  assert.equal(operations.skip, 24);
+});
+
+test("Listagem administrativa sem registos mantém página efetiva em 1", async (t) => {
+  authorize(t);
+  let skip;
+  t.mock.method(User, "find", () =>
+    query([], (key, value) => {
+      if (key === "skip") skip = value;
+    }),
+  );
+  t.mock.method(User, "countDocuments", async () => 0);
+  const result = await call("/admin/users?page=3");
+  assert.equal(result.status, 200);
+  assert.equal(result.body.total, 0);
+  assert.equal(result.body.page, 1);
+  assert.equal(result.body.items.length, 0);
+  assert.equal(skip, 0);
 });
 
 test("Detalhe de produto oculto inclui leilões associados; referências removidas não impedem consulta", async (t) => {

@@ -2,6 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import router from "../src/routes/auctions.js";
 import Auction from "../src/models/Auction.js";
+import Order from "../src/models/Order.js";
+import User from "../src/models/User.js";
 
 const handler = (path) =>
   router.stack
@@ -91,6 +93,22 @@ function setup(t, records) {
   t.mock.method(Auction, "findById", (value) =>
     populated(records.find((record) => record._id === value) ?? null),
   );
+  t.mock.method(Order, "findOne", () => ({
+    select() {
+      return this;
+    },
+    async lean() {
+      return { _id: "dca000000000000000000099" };
+    },
+  }));
+  t.mock.method(User, "findById", () => ({
+    select() {
+      return this;
+    },
+    async lean() {
+      return { nome: "Ana" };
+    },
+  }));
   for (const method of ["create", "updateMany", "findByIdAndUpdate"]) {
     t.mock.method(Auction, method, () => {
       throw new Error("GET não deve escrever.");
@@ -259,6 +277,42 @@ test("Leilão terminado continua público se os alvos estiverem disponíveis", a
   setup(t, [{ ...valid, estado: "terminado" }]);
   assert.equal((await invoke("/:id")).body.estado, "terminado");
   assert.equal((await invoke("/", { estado: "terminado" })).body.length, 1);
+});
+
+test("Detalhe persiste o resultado e a encomenda de um leilão terminado com vencedor", async (t) => {
+  const record = {
+    ...structuredClone(valid),
+    estado: "terminado",
+    reservaStock: "atribuida",
+    licitacaoAtual: { valor: 2500, compradorId: "dca000000000000000000002" },
+  };
+  setup(t, [record]);
+  const detail = await invoke("/:id");
+  assert.deepEqual(detail.body.resultado, {
+    vencedor: true,
+    vencedorId: "dca000000000000000000002",
+    vencedorNome: "Ana",
+    valor: 2500,
+    encomendaId: "dca000000000000000000099",
+  });
+});
+
+test("Detalhe identifica leilão terminado sem vencedor sem criar resultado de encomenda", async (t) => {
+  const record = {
+    ...structuredClone(valid),
+    estado: "terminado",
+    reservaStock: "sem-reserva",
+    licitacaoAtual: { valor: 1000, compradorId: null },
+  };
+  setup(t, [record]);
+  const detail = await invoke("/:id");
+  assert.deepEqual(detail.body.resultado, {
+    vencedor: false,
+    vencedorId: null,
+    vencedorNome: null,
+    valor: 1000,
+    encomendaId: null,
+  });
 });
 
 test("Cancelamento prevalece sobre as datas e é consultável com o motivo", async (t) => {

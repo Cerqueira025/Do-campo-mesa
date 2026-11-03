@@ -35,7 +35,7 @@ export default function ProducerDetailPage({ id }: { id: string }) {
     missing,
     refresh,
   } = useReviewData<ProducerDetail>(`/producers/${id}`);
-  const { adicionar, canBuy } = useCart();
+  const { adicionar, canBuy, message } = useCart();
   useLayoutEffect(() => {
     restoreNavigation(!loading || Boolean(producer));
   }, [loading, producer]);
@@ -53,7 +53,11 @@ export default function ProducerDetailPage({ id }: { id: string }) {
       data-navigation-ready={!loading || Boolean(producer)}
     >
       <AppHeader />
-      <div className="page-content producer-detail__inner">
+      <div
+        className="page-content producer-detail__inner"
+        id="main-content"
+        tabIndex={-1}
+      >
         {loading && !producer && (
           <LoadingPlaceholder label="A carregar produtor…" />
         )}
@@ -91,6 +95,7 @@ export default function ProducerDetailPage({ id }: { id: string }) {
             </section>
             <section aria-labelledby="producer-products-title">
               <h2 id="producer-products-title">Produtos</h2>
+              {message && <p role="status">{message}</p>}
               {producer.produtos.length === 0 ? (
                 <p>Este produtor ainda não tem produtos disponíveis.</p>
               ) : (

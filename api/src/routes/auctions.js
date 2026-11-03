@@ -2,9 +2,12 @@ import { Router } from "express";
 import mongoose from "mongoose";
 import Auction from "../models/Auction.js";
 import Product from "../models/Product.js";
+import Order from "../models/Order.js";
+import User from "../models/User.js";
 import { requireApprovedProducer, requireAuth } from "../middleware/auth.js";
 import { requireObjectBody } from "../middleware/requestBody.js";
 import { auctionStateFilter } from "../domain/auction.js";
+import { validPurchaseQuantity } from "../domain/purchaseQuantity.js";
 import {
   findPublicAuction,
   publicAuction,
@@ -46,7 +49,24 @@ router.get("/:id", async (request, response, next) => {
     const result = await findPublicAuction(request.params.id, now);
     if (!result)
       return response.status(404).json({ erro: "Leilão não encontrado." });
-    response.json(result);
+    if (result.estado !== "terminado") return response.json(result);
+    const winnerId = result.licitacaoAtual.compradorId;
+    const [order, winner] = winnerId
+      ? await Promise.all([
+          Order.findOne({ leilaoId: result._id }).select("_id").lean(),
+          User.findById(winnerId).select("nome").lean(),
+        ])
+      : [null, null];
+    response.json({
+      ...result,
+      resultado: {
+        vencedor: Boolean(winnerId),
+        vencedorId: winnerId ? String(winnerId) : null,
+        vencedorNome: winner?.nome ?? null,
+        valor: result.licitacaoAtual.valor,
+        encomendaId: order ? String(order._id) : null,
+      },
+    });
   } catch (error) {
     next(error);
   }
@@ -63,6 +83,15 @@ router.post(
       const now = Date.now();
       const { produtos, lote, precoBase, incremento, dataInicio, dataFim } =
         request.body || {};
+      if (
+        !Number.isSafeInteger(precoBase + incremento) ||
+        !Number.isSafeInteger(precoBase) ||
+        !Number.isSafeInteger(incremento)
+      ) {
+        return response.status(400).json({
+          erro: "O lance mínimo do leilão excede o limite permitido.",
+        });
+      }
       if (
         !Array.isArray(produtos) ||
         !produtos.length ||
@@ -135,6 +164,18 @@ router.post(
           quantidade: line.quantidade,
           unidade: byId.get(ids[index]).unidade,
         }));
+        if (
+          lines.some(
+            (line) => !validPurchaseQuantity(line.quantidade, line.unidade),
+          )
+        ) {
+          throw Object.assign(
+            new Error(
+              "Indica quantidades válidas para a unidade de cada produto.",
+            ),
+            { status: 400 },
+          );
+        }
         if (
           lines.some((line) => line.quantidade > byId.get(line.produtoId).stock)
         ) {

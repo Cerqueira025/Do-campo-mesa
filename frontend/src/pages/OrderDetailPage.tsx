@@ -255,7 +255,7 @@ function OrderDetail({ id, backUrl }: { id: string; backUrl?: string }) {
               <p>
                 {order.entrega.tipo === "entrega"
                   ? order.entrega.morada
-                  : "Levantamento junto do produtor."}
+                  : order.entrega.morada || "Levantamento junto do produtor."}
               </p>
             </section>
           ) : order.leilaoId && buyer ? (

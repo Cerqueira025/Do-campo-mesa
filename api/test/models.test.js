@@ -111,6 +111,7 @@ test("Rejeita estados, preços e quantidades inválidos", async () => {
     [Order, { total: 1 }],
     [Auction, { estado: "desconhecido" }],
     [Auction, { incremento: 0 }],
+    [Auction, { precoBase: Number.MAX_SAFE_INTEGER - 1, incremento: 2 }],
     [Auction, { produtos: [] }],
     [Auction, { dataFim: new Date(0) }],
     [Bid, { valor: -1 }],

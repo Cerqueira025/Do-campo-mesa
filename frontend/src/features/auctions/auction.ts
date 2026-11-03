@@ -1,5 +1,6 @@
 export interface Auction {
   _id: string;
+  produtorId?: { _id: string; nome: string };
   produtos: {
     produtoId: { nome: string };
     quantidade: number;
@@ -14,6 +15,19 @@ export interface Auction {
     "pendente" | "reservada" | "libertada" | "atribuida" | "sem-reserva";
   motivoCancelamento?: keyof typeof cancellationMessages;
   licitacaoAtual: { valor: number; compradorId?: string | null };
+  resultado?: {
+    vencedor: boolean;
+    vencedorId: string | null;
+    vencedorNome: string | null;
+    valor: number;
+    encomendaId: string | null;
+  };
+}
+
+export function serverClockOffset(dateHeader: string | null, localNow: number) {
+  if (!dateHeader) return 0;
+  const serverNow = Date.parse(dateHeader);
+  return Number.isFinite(serverNow) ? serverNow - localNow : 0;
 }
 
 export interface AuctionBid {

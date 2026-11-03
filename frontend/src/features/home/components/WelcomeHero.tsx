@@ -11,7 +11,11 @@ function WelcomeHero() {
         <div className="welcome-hero__header">
           <AppHeader variant="overlay" />
         </div>
-        <div className="welcome-hero__content page-content">
+        <div
+          className="welcome-hero__content page-content"
+          id="main-content"
+          tabIndex={-1}
+        >
           <h1 className="welcome-hero__title" id="welcome-title">
             Do <span className="welcome-hero__accent">campo</span> à mesa
           </h1>

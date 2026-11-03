@@ -6,7 +6,12 @@ import Bid from "../models/Bid.js";
 import Product from "../models/Product.js";
 import { findPublicAuction } from "../services/publicAuction.js";
 
-const room = (id) => `leilao:${id}`;
+const room = (id) =>
+  `leilao:${
+    typeof id === "string" && mongoose.isObjectIdOrHexString(id)
+      ? id.toLowerCase()
+      : id
+  }`;
 const userRoom = (id) => `user:${id}`;
 
 export function registerSockets(io) {
@@ -59,10 +64,12 @@ export function registerSockets(io) {
     }
 
     socket.on("entrar", async (id, acknowledge) => {
+      acknowledge = typeof acknowledge === "function" ? acknowledge : undefined;
       try {
         if (!mongoose.isObjectIdOrHexString(id))
           throw new Error("Leilão não encontrado.");
-        const auction = await findPublicAuction(id);
+        const auctionId = id.toLowerCase();
+        const auction = await findPublicAuction(auctionId);
         if (!auction) throw new Error("Leilão não encontrado.");
         const previous = socket.data.auctionRoom;
         if (previous && previous !== room(id)) {
@@ -71,14 +78,14 @@ export function registerSockets(io) {
         }
         socket.data.auctionRoom = room(id);
         socket.join(room(id));
-        const bids = await Bid.find({ leilaoId: id })
+        const bids = await Bid.find({ leilaoId: auctionId })
           .sort({ createdAt: -1 })
           .limit(20)
           .populate("compradorId", "nome")
           .lean();
         const ownBid =
           user?.papel === "comprador"
-            ? await Bid.findOne({ leilaoId: id, compradorId: user.id })
+            ? await Bid.findOne({ leilaoId: auctionId, compradorId: user.id })
                 .sort({ createdAt: -1 })
                 .lean()
             : null;
@@ -134,6 +141,7 @@ export function registerSockets(io) {
     });
 
     socket.on("licitar", async (input, acknowledge) => {
+      acknowledge = typeof acknowledge === "function" ? acknowledge : undefined;
       const refuse = (erro) => acknowledge?.({ ok: false, erro });
       const { leilaoId, valor } = input ?? {};
       if (!user || user.papel !== "comprador" || user.expiresAt <= Date.now())
@@ -143,6 +151,7 @@ export function registerSockets(io) {
         socket.data.auctionRoom !== room(leilaoId)
       )
         return refuse("Entre no leilão para licitar.");
+      const auctionId = leilaoId.toLowerCase();
       if (!Number.isSafeInteger(valor) || valor <= 0)
         return refuse("Indique um lance válido em cêntimos.");
       let session;
@@ -151,7 +160,7 @@ export function registerSockets(io) {
           _id: user.id,
           papel: "comprador",
         }).select("_id");
-        const publicLot = currentUser && (await findPublicAuction(leilaoId));
+        const publicLot = currentUser && (await findPublicAuction(auctionId));
         if (!publicLot || publicLot.estado !== "ativo")
           return refuse("O leilão não está ativo.");
         session = await mongoose.startSession();
@@ -176,7 +185,7 @@ export function registerSockets(io) {
           const now = new Date();
           const updated = await Auction.findOneAndUpdate(
             {
-              _id: leilaoId,
+              _id: auctionId,
               estado: "ativo",
               reservaStock: "reservada",
               dataInicio: { $lte: now },
@@ -188,12 +197,12 @@ export function registerSockets(io) {
           );
           if (!updated) return;
           [bid] = await Bid.create(
-            [{ leilaoId, compradorId: user.id, valor }],
+            [{ leilaoId: auctionId, compradorId: user.id, valor }],
             { session, ordered: true },
           );
         });
         if (!bid) {
-          const latest = await Auction.findById(leilaoId)
+          const latest = await Auction.findById(auctionId)
             .select("estado reservaStock dataFim licitacaoAtual incremento")
             .lean();
           if (

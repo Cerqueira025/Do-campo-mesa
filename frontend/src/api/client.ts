@@ -8,7 +8,7 @@ export class ApiError extends Error {
 }
 
 export interface ApiOptions {
-  method?: "GET" | "POST" | "PATCH";
+  method?: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
   body?: unknown;
   token?: string;
   signal?: AbortSignal;
@@ -37,6 +37,7 @@ export async function api<T>(
       "Não foi possível contactar o servidor. Verifique a ligação e tente novamente.",
     );
   }
+  if (response.status === 204) return undefined as T;
   const data = await response.json().catch(() => null);
   if (!response.ok)
     throw new ApiError(

@@ -14,6 +14,7 @@ import InternalLink from "../../navigation/InternalLink";
 import { navigate } from "../../navigation/navigation";
 import { useAuth } from "../../features/auth/useAuth";
 import BrandMark from "../brand/BrandMark";
+import SkipToContentLink from "./SkipToContentLink";
 import "./AppHeader.scss";
 
 interface AppHeaderProps {
@@ -31,6 +32,7 @@ export default function AppHeader({
 
   return (
     <header className={`app-header app-header--${variant}`}>
+      <SkipToContentLink />
       <div className="app-header__brand-group">
         {onBack && (
           <IconButton

@@ -68,7 +68,7 @@ export default function ProductDetailPage({ id }: { id: string | null }) {
   }, [status, product?._id]);
 
   useEffect(() => {
-    if (!id || cachedProduct) return;
+    if (!id) return;
     const controller = new AbortController();
     async function load() {
       try {
@@ -76,7 +76,12 @@ export default function ProductDetailPage({ id }: { id: string | null }) {
           signal: controller.signal,
         });
         if (response.status === 404) {
-          if (!controller.signal.aborted) setStatus("missing");
+          if (!controller.signal.aborted) {
+            if (cachedProduct) {
+              setProduct(null);
+              setStatus("missing");
+            } else setStatus("missing");
+          }
           return;
         }
         if (!response.ok) throw new Error("Produto indisponível");
@@ -95,7 +100,7 @@ export default function ProductDetailPage({ id }: { id: string | null }) {
           setStatus("success");
         }
       } catch {
-        if (!controller.signal.aborted) setStatus("error");
+        if (!controller.signal.aborted && !cachedProduct) setStatus("error");
       }
     }
     void load();
@@ -159,6 +164,8 @@ export default function ProductDetailPage({ id }: { id: string | null }) {
       )}
       <div
         className={`product-detail__inner${status !== "success" ? " page-content" : ""}`}
+        id="main-content"
+        tabIndex={-1}
       >
         {status === "loading" ? (
           <LoadingPlaceholder label="A carregar produto…" />
@@ -335,11 +342,11 @@ export default function ProductDetailPage({ id }: { id: string | null }) {
               </div>
               <div className="page-content">
                 <PublicReviews
-                  key={product._id}
+                  key={`reviews-${product._id}`}
                   path={`/reviews/products/${product._id}`}
                 />
                 <RelatedProducts
-                  key={product._id}
+                  key={`related-${product._id}`}
                   id={product._id}
                   category={product.categoria}
                   returnUrl={returnUrl}

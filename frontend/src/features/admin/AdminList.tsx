@@ -145,17 +145,14 @@ export default function AdminList({ section }: { section: AdminSection }) {
   }
   const page = Number(params.get("page"));
   useEffect(() => {
-    if (!data || page <= 1 || data.items.length || error) return;
-    const last = Math.max(1, Math.ceil(data.total / 24));
-    if (page > last) {
-      const query = new URLSearchParams(search);
-      if (last > 1) query.set("page", String(last));
-      else query.delete("page");
-      navigate(`/admin/${section}${query.size ? `?${query}` : ""}`, {
-        replace: true,
-        preserveScroll: true,
-      });
-    }
+    if (!data || error || data.page === page) return;
+    const query = new URLSearchParams(search);
+    if (data.page > 1) query.set("page", String(data.page));
+    else query.delete("page");
+    navigate(`/admin/${section}${query.size ? `?${query}` : ""}`, {
+      replace: true,
+      preserveScroll: true,
+    });
   }, [data, page, section, search, error]);
 
   function select(

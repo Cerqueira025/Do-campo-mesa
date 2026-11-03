@@ -35,7 +35,11 @@ export default function AdminLayout({
         <div className="admin-page__header">
           <AppHeader />
         </div>
-        <div className="admin-page__heading page-content">
+        <div
+          className="admin-page__heading page-content"
+          id="main-content"
+          tabIndex={-1}
+        >
           <IconButton
             variant="primary"
             aria-label={

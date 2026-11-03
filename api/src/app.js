@@ -31,6 +31,10 @@ app.use("/api/reviews", reviewRoutes);
 app.use("/api/auctions", auctionRoutes);
 app.use("/api/admin", adminRoutes);
 
+app.use("/api", (_request, response) => {
+  response.status(404).json({ erro: "Rota da API não encontrada." });
+});
+
 app.use((error, _request, response, _next) => {
   if (response.headersSent) return _next(error);
   if (error.code === 11000)

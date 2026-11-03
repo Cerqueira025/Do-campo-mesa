@@ -2,20 +2,21 @@ import { useEffect, useState } from "react";
 import AuctionCard from "../../components/auction/AuctionCard";
 import Button from "../../components/ui/Button";
 import { productImages } from "../products/product";
-import { auctionHref, featuredAuction } from "./auction";
+import { auctionHref, featuredAuction, serverClockOffset } from "./auction";
 
 export default function FeaturedAuction() {
   const [auctions, setAuctions] = useState<unknown[]>([]);
   const [now, setNow] = useState(Date.now);
+  const [offset, setOffset] = useState(0);
   const [status, setStatus] = useState<"loading" | "success" | "error">(
     "loading",
   );
   const [retry, setRetry] = useState(0);
 
   useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    const timer = window.setInterval(() => setNow(Date.now() + offset), 1000);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [offset]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -26,10 +27,17 @@ export default function FeaturedAuction() {
           signal: controller.signal,
         });
         if (!response.ok) throw new Error("Leilões indisponíveis");
+        const receivedAt = Date.now();
+        const nextOffset = serverClockOffset(
+          response.headers.get("Date"),
+          receivedAt,
+        );
         const data: unknown = await response.json();
         if (!Array.isArray(data)) throw new Error("Resposta inválida");
         if (!controller.signal.aborted) {
           setAuctions(data);
+          setOffset(nextOffset);
+          setNow(receivedAt + nextOffset);
           setStatus("success");
         }
       } catch {
