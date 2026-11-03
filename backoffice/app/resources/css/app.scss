@@ -1,0 +1,200 @@
+@use "../../../../frontend/src/styles/abstracts/tokens" as tokens;
+@use "../../../../frontend/src/styles/abstracts/mixins" as mixins;
+
+:root {
+  @each $name, $value in tokens.$colors {
+    --color-#{$name}: #{$value};
+  }
+  font-family: tokens.$font-body;
+  color: var(--color-green-950);
+  background: var(--color-stone-50);
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+a {
+  color: inherit;
+}
+:focus-visible {
+  outline: 3px solid var(--color-green-900);
+  outline-offset: 4px;
+}
+.shell {
+  max-width: tokens.$content-max;
+  padding: 1.5rem;
+  margin-inline: auto;
+}
+.header,
+.navigation,
+.filters,
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+}
+.header {
+  padding-block: 1rem 2rem;
+}
+.brand {
+  font-size: 1.4rem;
+  font-weight: 700;
+  text-decoration: none;
+  margin-right: auto;
+}
+.navigation {
+  border-bottom: 1px solid var(--color-green-20);
+  padding-bottom: 1rem;
+}
+.navigation > a {
+  padding: 0.5rem;
+}
+.navigation [aria-current="page"] {
+  font-weight: 700;
+}
+.navigation form {
+  margin: 0;
+}
+main {
+  padding-block: 2rem;
+}
+h1 {
+  margin-top: 0.25rem;
+  font-size: 2rem;
+}
+h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+.eyebrow {
+  margin-bottom: 0;
+}
+.button {
+  display: inline-block;
+  border: 1px solid var(--color-green-950);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  font: inherit;
+  font-weight: 700;
+  background: var(--color-green-950);
+  color: var(--color-white);
+  text-decoration: none;
+  cursor: pointer;
+}
+.button:hover {
+  background: var(--color-green-900);
+}
+.button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+.button--light {
+  background: var(--color-brown-100);
+  color: var(--color-green-950);
+}
+.button--light:hover {
+  background: var(--color-stone-100);
+}
+.service-grid {
+  display: grid;
+  gap: 1rem;
+}
+.panel {
+  border: 1px solid var(--color-green-20);
+  border-radius: 1rem;
+  background: var(--color-white);
+  padding: 1.25rem;
+  overflow-wrap: anywhere;
+}
+.service-check__heading {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+}
+.status {
+  border-radius: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  background: var(--color-stone-100);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+.status--ok {
+  background: var(--color-green-950);
+  color: var(--color-white);
+}
+.status--failure {
+  background: var(--color-error-700);
+  color: var(--color-white);
+}
+.status--unknown {
+  background: var(--color-yellow-500);
+}
+dl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 2rem;
+  margin-bottom: 0;
+  font-size: 0.875rem;
+}
+dt {
+  font-weight: 700;
+}
+dd {
+  margin: 0.25rem 0 0;
+}
+.filters {
+  margin-block: 1.5rem;
+  align-items: end;
+}
+label {
+  display: grid;
+  gap: 0.5rem;
+  flex: 1 1 12rem;
+}
+select {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-green-50);
+  background: var(--color-white);
+  color: var(--color-green-950);
+  font: inherit;
+}
+.pagination {
+  margin-top: 1.5rem;
+}
+footer {
+  border-top: 1px solid var(--color-green-20);
+  padding-block: 1rem;
+  font-size: 0.875rem;
+}
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -5rem;
+  padding: 1rem;
+  background: var(--color-white);
+}
+.skip-link:focus {
+  top: 0.5rem;
+}
+@include mixins.up(tablet) {
+  .service-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@include mixins.up(desktop) {
+  .shell {
+    padding-inline: 2rem;
+  }
+}
+@include mixins.up(wide) {
+  .header {
+    padding-top: 2rem;
+  }
+}

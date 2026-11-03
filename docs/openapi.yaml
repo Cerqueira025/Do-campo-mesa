@@ -4,7 +4,7 @@ info:
   version: 1.0.0
   description: API REST para autenticação, catálogo, encomendas, avaliações e leilões.
 servers:
-  - url: http://localhost:3000/api
+  - url: /api
 tags:
   - name: Saúde
   - name: Autenticação
@@ -14,6 +14,103 @@ tags:
   - name: Avaliações
   - name: Leilões
 paths:
+  /auth/eu:
+    get:
+      tags: [Autenticação]
+      summary: Obtém os dados públicos da conta atual
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Conta atual
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserPublic' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /admin/backoffice/codes:
+    post:
+      tags: [Autenticação]
+      summary: Cria um código de entrada no backoffice para um administrador
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [state]
+              properties:
+                state: { type: string, pattern: '^[a-f0-9]{64}$' }
+      responses:
+        '201':
+          description: Código de utilização única válido até sessenta segundos
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [code, expiresAt]
+                properties:
+                  code: { type: string, pattern: '^[a-f0-9]{64}$' }
+                  expiresAt: { type: string, format: date-time }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '503': { description: Backoffice não configurado }
+  /internal/backoffice/exchange:
+    post:
+      tags: [Autenticação]
+      summary: Troca um código de utilização única pela sessão do administrador
+      security: [{ backofficeSecret: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, state]
+              properties:
+                code: { type: string, pattern: '^[a-f0-9]{64}$' }
+                state: { type: string, pattern: '^[a-f0-9]{64}$' }
+      responses:
+        '200':
+          description: Sessão com a expiração original
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [token, expiresAt, utilizador]
+                properties:
+                  token: { type: string }
+                  expiresAt: { type: integer }
+                  utilizador: { $ref: '#/components/schemas/UserPublic' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /admin/services:
+    get:
+      summary: Verifica a disponibilidade de MongoDB e Socket.io
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Resultados dos diagnósticos
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [results]
+                properties:
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      required: [service, status, message, durationMs, checkedAt]
+                      properties:
+                        service: { type: string, enum: [mongodb, socketio] }
+                        status: { type: string, enum: [ok, failure] }
+                        message: { type: string }
+                        durationMs: { type: integer, minimum: 0 }
+                        checkedAt: { type: string, format: date-time }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
   /health:
     get:
       tags: [Saúde]
@@ -76,13 +173,13 @@ paths:
       tags: [Produtos]
       summary: Pesquisa produtos publicados de produtores aprovados
       parameters:
-        - { name: q, in: query, schema: { type: string, maxLength: 100 }, description: Pesquisa sem distinção de maiúsculas em produto, categoria e produtor. }
+        - { name: q, in: query, schema: { type: string, maxLength: 100 }, description: 'Pesquisa sem distinção de maiúsculas em produto, categoria e produtor.' }
         - { name: categoria, in: query, schema: { type: string } }
         - { name: precoMin, in: query, schema: { type: number, minimum: 0 }, description: Preço em euros. }
         - { name: precoMax, in: query, schema: { type: number, minimum: 0 }, description: Preço em euros. }
         - { name: bio, in: query, schema: { type: boolean } }
-        - { name: avaliacaoMin, in: query, schema: { type: number, minimum: 1, maximum: 5 }, description: Média mínima das avaliações públicas do produto. Exclui produtos sem avaliações públicas quando usado. }
-        - { name: epoca, in: query, schema: { type: string }, description: Primavera (primavera), verão (verao), outono e inverno incluem produtos de todo-o-ano. Todo-o-ano seleciona apenas produtos disponíveis todo o ano. }
+        - { name: avaliacaoMin, in: query, schema: { type: number, minimum: 1, maximum: 5 }, description: 'Média mínima das avaliações públicas do produto. Exclui produtos sem avaliações públicas quando usado.' }
+        - { name: epoca, in: query, schema: { type: string }, description: 'Primavera (primavera), verão (verao), outono e inverno incluem produtos de todo-o-ano. Todo-o-ano seleciona apenas produtos disponíveis todo o ano.' }
         - { name: localidade, in: query, schema: { type: string, maxLength: 100 } }
         - { name: produtorId, in: query, schema: { type: string } }
         - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
@@ -223,7 +320,7 @@ paths:
                     required: [produtoId, quantidade]
                     properties:
                       produtoId: { type: string }
-                      quantidade: { type: number, exclusiveMinimum: 0 }
+                      quantidade: { type: number, minimum: 0, exclusiveMinimum: true }
                 entrega: { $ref: '#/components/schemas/Delivery' }
       responses:
         '201': { description: Encomenda criada, content: { application/json: { schema: { $ref: '#/components/schemas/Order' } } } }
@@ -344,7 +441,7 @@ paths:
               properties:
                 produtoId: { type: string }
                 lote: { type: string }
-                quantidade: { type: number, exclusiveMinimum: 0 }
+                quantidade: { type: number, minimum: 0, exclusiveMinimum: true }
                 precoBase: { type: integer, minimum: 0, description: Cêntimos. }
                 incremento: { type: integer, minimum: 1, description: Cêntimos. }
                 dataInicio: { type: string, format: date-time }
@@ -364,6 +461,10 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
 components:
   securitySchemes:
+    backofficeSecret:
+      type: apiKey
+      in: header
+      name: X-Backoffice-Secret
     bearerAuth:
       type: http
       scheme: bearer

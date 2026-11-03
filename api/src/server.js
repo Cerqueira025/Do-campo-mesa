@@ -1,4 +1,7 @@
 import app from './app.js';
+import { createServer } from 'node:http';
+import { Server } from 'socket.io';
+import { registerSockets } from './sockets/index.js';
 import { connectDatabase, disconnectDatabase, databaseErrorMessage } from './config/database.js';
 
 const port = Number(process.env.PORT) || 3000;
@@ -8,7 +11,10 @@ try {
     throw new Error('JWT_SECRET tem de ter pelo menos 32 caracteres.');
   }
   await connectDatabase();
-  app.listen(port, () => {
+  const server = createServer(app);
+  const io = new Server(server);
+  registerSockets(io);
+  server.listen(port, () => {
     console.log(`API disponível em http://localhost:${port}`);
   });
 } catch (error) {

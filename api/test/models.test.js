@@ -1,8 +1,16 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
-import bcrypt from 'bcrypt';
-import { seedData, insertSeedData } from '../src/scripts/seed-data.js';
-import { User, Product, Order, Auction, Bid, Review } from '../src/models/index.js';
+import test from "node:test";
+import assert from "node:assert/strict";
+import bcrypt from "bcrypt";
+import { seedData, insertSeedData } from "../src/scripts/seed-data.js";
+import {
+  User,
+  Product,
+  Order,
+  Auction,
+  Bid,
+  Review,
+  models,
+} from "../src/models/index.js";
 
 const passwordHash = await bcrypt.hash('CampoMesaDemo123!', 4);
 const fixtures = seedData(passwordHash, new Date('2026-10-15T12:00:00Z'));
@@ -88,12 +96,22 @@ test('IDs do seed permanecem estáveis mesmo quando as datas mudam', () => {
 
 test('Seed repetido preserva documentos e timestamps existentes', async (t) => {
   const collections = new Map();
+  for (const model of models) {
+    t.mock.method(model, "createCollection", async () => {});
+    t.mock.method(model, "createIndexes", async () => {});
+  }
   for (const [model] of fixtures) {
     const stored = new Map();
-    t.mock.method(model, 'createCollection', async () => {});
-    t.mock.method(model, 'createIndexes', async () => {});
-    t.mock.method(model, 'find', (filter) => ({ select: () => ({ lean: async () => [...stored.values()]
-      .filter((row) => filter.email ? filter.email.$in.includes(row.email) : filter._id.$in.some((id) => String(id) === String(row._id))) }) }));
+    t.mock.method(model, "find", (filter) => ({
+      select: () => ({
+        lean: async () =>
+          [...stored.values()].filter((row) =>
+            filter.email
+              ? filter.email.$in.includes(row.email)
+              : filter._id.$in.some((id) => String(id) === String(row._id)),
+          ),
+      }),
+    }));
     collections.set(model.collection.name, stored);
     t.mock.method(model.collection, 'updateOne', async (filter, update, options) => {
       assert.equal(options.upsert, true);

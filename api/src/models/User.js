@@ -34,4 +34,10 @@ const userSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 userSchema.index({ email: 1 }, { unique: true });
+userSchema.methods.publico = function () {
+  return {
+    id: this.id, nome: this.nome, email: this.email, papel: this.papel,
+    ...(this.papel === 'produtor' ? { validacao: this.perfilProdutor.validacao } : {}),
+  };
+};
 export default mongoose.model('User', userSchema, 'users');

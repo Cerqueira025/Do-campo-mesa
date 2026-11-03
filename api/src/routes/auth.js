@@ -2,6 +2,7 @@ import { Router } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
 const tokenFor = (user) => jwt.sign(
@@ -54,13 +55,14 @@ router.post('/login', async (request, response, next) => {
     if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
       return response.status(401).json({ erro: 'Credenciais inválidas.' });
     }
-    response.json({ token: tokenFor(user), utilizador: {
-      id: user.id, nome: user.nome, email: user.email, papel: user.papel,
-      ...(user.papel === 'produtor' ? { validacao: user.perfilProdutor.validacao } : {}),
-    } });
+    response.json({ token: tokenFor(user), utilizador: user.publico() });
   } catch (error) {
     next(error);
   }
+});
+
+router.get('/eu', requireAuth(), (request, response) => {
+  response.set('Cache-Control', 'no-store').json(request.user.publico());
 });
 
 export default router;

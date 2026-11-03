@@ -1,58 +1,76 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Backoffice técnico — Do Campo à Mesa
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Painel Laravel 13 com Blade e Eloquent, aberto pelo botão **Serviços e sistema** na administração React. A execução sem infraestrutura Cloud foi acordada com o professor. A gestão do marketplace mantém-se no React e na API Node.js.
 
-## About Laravel
+## Preparação local
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Requisitos: PHP 8.5 com PDO SQLite (versão usada pelas dependências bloqueadas), Composer, Node.js e a base MongoDB já configurada para a API. Não há criação de novas contas administrativas nem cópia dos dados do marketplace para SQLite.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+1. Na raiz da aplicação Laravel (`backoffice/app`), executar `composer install` e `npm ci`.
+2. Copiar `.env.example` para `.env` se ainda não existir. Executar `php artisan key:generate` apenas se `APP_KEY` estiver vazia.
+3. Gerar um segredo aleatório com pelo menos 32 caracteres e colocar o mesmo `BACKOFFICE_SECRET` em `api/.env` e no `.env` do Laravel. Não usar `JWT_SECRET` para este propósito. Nunca colocar este segredo no frontend.
+4. Manter `DB_CONNECTION=sqlite`, `SESSION_DRIVER=database` e `SESSION_ENCRYPT=true`. Criar `database/database.sqlite` se necessário e executar `php artisan migrate`.
+5. Na pasta `api`, executar `npm ci` e `npm run db:init` para preparar também a coleção `backoffice_codes` e os índices únicos/TTL. Não é necessário repetir o seed.
+6. Na pasta Laravel, executar `npm run build` para preparar os estilos e JavaScript.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Usar **127.0.0.1 nos três endereços**; misturar localhost e 127.0.0.1 quebra a associação da sessão na entrada.
 
-## Learning Laravel
+| Configuração                   | Valor local                                 |
+| ------------------------------ | ------------------------------------------- |
+| Laravel `APP_URL`              | `http://127.0.0.1:8000`                     |
+| Laravel `MARKETPLACE_API_URL`  | `http://127.0.0.1:3000`                     |
+| Laravel `MARKETPLACE_SITE_URL` | `http://127.0.0.1:5173`                     |
+| Frontend `VITE_BACKOFFICE_URL` | `http://127.0.0.1:8000` (valor por defeito) |
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+`MARKETPLACE_SITE_URL` é a origem exata autorizada, sem caminho. Os endereços de regresso são fixos e não vêm de parâmetros recebidos. Reiniciar a API e o Laravel depois de alterar configurações; reiniciar o Vite depois de alterar variáveis do frontend.
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Arranque
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+No Windows, depois da preparação, `npm start` na raiz do repositório abre os três
+serviços em janelas separadas. Consulta [o arranque conjunto](../../README.md#arrancar-todos-os-serviços-no-windows)
+para pré-requisitos e paragem.
 
-## Agentic Development
+Para arranque manual, abrir três terminais nas pastas indicadas:
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
-
-```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+```powershell
+# api
+npm run dev
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+```powershell
+# frontend
+npm run dev -- --host 127.0.0.1 --port 5173 --strictPort
+```
 
-## Contributing
+```powershell
+# backoffice/app
+php artisan serve --host=127.0.0.1 --port=8000
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Abrir `http://127.0.0.1:5173/admin`, entrar com uma conta administrativa existente e selecionar **Serviços e sistema**. A instalação base do Laravel já não tem página de boas-vindas.
 
-## Code of Conduct
+## Funcionamento e limites
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+A entrada usa um identificador ligado à sessão Laravel e um código aleatório de utilização única com validade máxima de 60 segundos. Só o hash do código fica no MongoDB. O Laravel troca-o por autenticação através de um segredo entre servidores. A sessão é regenerada e o JWT fica encriptado na sessão SQLite, com a expiração original. O código e o JWT não passam no endereço do browser.
 
-## Security Vulnerabilities
+Cada pedido protegido reconfirma a conta e o papel na API. 401/403 terminam a sessão do backoffice; indisponibilidade bloqueia o acesso e permite tentar novamente. **Voltar à administração** mantém as sessões. **Sair do backoffice** termina apenas a sessão Laravel; o site continua autenticado. O logout do React também não revoga o JWT já emitido: a sessão Laravel continua sujeita à sua expiração e à validação do papel atual.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Ao abrir **Serviços**, o JavaScript inicia um POST com proteção CSRF. O botão **Verificar agora** permite repetir. Não existem agendadores, verificações periódicas nem repetição automática após falha. Sem JavaScript não há verificação automática. O servidor impede verificações simultâneas na mesma sessão através de um lock local.
 
-## License
+- API: resposta HTTP e conteúdo esperado de `/api/health`.
+- MongoDB: `ping` real pela ligação existente da API.
+- Socket.io: ligação WebSocket temporária e evento `diagnostico` com confirmação, sem entrar em salas de leilões.
+- Swagger: página `/api-docs/` e YAML legível com os campos `openapi` e `paths` em `/api-docs/openapi.yaml`; o diagnóstico não valida integralmente o contrato OpenAPI.
+- Armazenamento: **Não implementado**; não há simulação de serviço Cloud.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Cada teste tem um orçamento máximo de cinco segundos. A falha em obter o diagnóstico pela API produz **Não foi possível verificar** para os serviços dependentes. Os testes comprovam as capacidades indicadas, não o funcionamento completo dos fluxos de negócio. Não existem ações de reinício ou configuração dos serviços.
+
+O histórico SQLite guarda serviço, estado, mensagem sanitizada, duração, data e identificador de execução. Mostra 25 resultados por página com filtros de serviço e estado. A execução seguinte elimina registos com mais de 30 dias. Abrir o histórico não cria nem elimina verificações. A gravação dos cinco resultados e a limpeza são transacionais; se falharem, o painel indica que os resultados não foram guardados.
+
+Preservar `database/database.sqlite` para manter o histórico. Não o adicionar ao Git. O backoffice usa os tokens e breakpoints SCSS do frontend como fonte comum de apresentação. Laravel Boost foi instalado em desenvolvimento por exigência do `AGENTS.md` desta pasta.
+
+## Swagger e verificação
+
+A API publica Swagger UI em `http://127.0.0.1:3000/api-docs/`. Usa a especificação existente em `docs/openapi.yaml`, com os novos endpoints de entrada e diagnóstico. O servidor OpenAPI é relativo (`/api`), permitindo usar **Authorize** e **Try it out** na mesma origem. A autorização do Swagger não é persistida entre carregamentos. Reiniciar a API depois de editar a especificação OpenAPI, que é carregada no arranque.
+
+Executar `npm test` na API, `npm test`, `npm run lint` e `npm run build` no frontend, e `php artisan test --compact` e `npm run build` no Laravel. A raiz disponibiliza as verificações de estilo partilhadas. Testes Laravel usam SQLite em memória e HTTP simulado; os testes normais da API não precisam da base de demonstração. Dois testes MongoDB de concorrência continuam opcionais através da configuração de testes já existente.

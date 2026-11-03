@@ -9,15 +9,22 @@
     "db:init": "node src/scripts/init-db.js",
     "db:seed": "node src/scripts/seed-db.js",
     "test": "node --test test/*.test.js",
+    "test:docs": "node --test test/openapi.test.js",
     "test:api": "node src/scripts/test-api.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.3",
-    "mongoose": "^9.11.1"
+    "mongoose": "^9.11.1",
+    "socket.io": "^4.8.4",
+    "socket.io-client": "^4.8.4",
+    "swagger-ui-express": "^5.0.1",
+    "yaml": "^2.9.1"
   },
   "devDependencies": {
-    "@usebruno/cli": "^4.2.1"
+    "@apidevtools/swagger-parser": "^13.0.0",
+    "@usebruno/cli": "^4.2.1",
+    "ajv-draft-04": "^1.0.0"
   }
 }
