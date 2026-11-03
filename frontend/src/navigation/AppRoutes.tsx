@@ -23,6 +23,7 @@ import ResetPasswordPage from "../pages/auth/ResetPasswordPage";
 import AccountPage from "../pages/AccountPage";
 import ProtectedRoute from "../features/auth/ProtectedRoute";
 import AdminPage from "../features/admin/AdminPage";
+import BackofficeEntry from "../features/admin/BackofficeEntry";
 
 function resolvePage(pathname: string, location: string) {
   switch (pathname) {
@@ -61,6 +62,12 @@ function resolvePage(pathname: string, location: string) {
         </ProtectedRoute>
       );
   }
+  if (pathname === "/admin/backoffice")
+    return (
+      <ProtectedRoute roles={["administrador"]}>
+        <BackofficeEntry />
+      </ProtectedRoute>
+    );
   if (/^\/admin(?:\/|$)/.test(pathname))
     return (
       <ProtectedRoute roles={["administrador"]}>

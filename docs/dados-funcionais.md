@@ -1,8 +1,9 @@
 # Dados funcionais MongoDB
 
-Executar dentro de `api/`: `npm test`, seguido de `npm run db:seed`.
+Configurar `api/.env` conforme o [README principal](../README.md#base-de-dados-mongodb).
+Executar dentro de `api/`: `npm test`, `npm run db:init` e `npm run db:seed`.
 O comando usa a BD configurada em `MONGODB_DB_NAME`; não apaga nem atualiza documentos existentes.
-Uma segunda execução insere zero documentos. Não executar em simultâneo com alterações aos dados ou com Bruno.
+Uma segunda execução de um seed concluído insere zero documentos. Não executar em simultâneo com alterações aos dados ou com Bruno.
 Não há garantia de inserção atómica do conjunto: uma falha de rede pode deixar parte inserida; repetir conclui os documentos em falta.
 
 ## Contas e identificadores
@@ -42,6 +43,9 @@ Produtos sem imagem correspondente apresentam “Imagem indisponível”.
 
 ## Resultados esperados após inserção inicial
 
+Estes resultados referem-se aos exemplos sem compras, decisões ou passagem do ciclo
+de leilões posteriores. Não são contagens da base atualmente configurada.
+
 - `GET /api/products?q=exploração funcional&limit=24&page=1`: 24 de 30 resultados; página 2 contém os outros 6, sem repetições.
 - Os IDs 2031–2036 não aparecem no catálogo nem no detalhe público. Stock zero continua visível: não existe filtro automático de stock.
 - As opções públicas incluem as três localidades, sem duplicados, e as quintas 1–3; excluem as quintas 4–6.
@@ -49,7 +53,13 @@ Produtos sem imagem correspondente apresentam “Imagem indisponível”.
 - As médias públicas dos produtos 2001, 2011, 2021, 2003 e 2013 são, respetivamente, 3; 3,5; 4; 4,5; 5. O produto 2005 não tem avaliações.
 - As 24 avaliações de produtos são públicas; as 12 de produtores dividem-se entre denunciadas e ocultas e não contribuem para médias públicas.
 - Leilões 4006 e 4009 não têm licitações; o valor atual mantém o preço base e o comprador é nulo.
-- Pedidos de encomenda a produtores não aceites devolvem 409; misturar produtores devolve 400. Preços, nomes e unidades enviados pelo cliente são ignorados; linhas do mesmo produto são consolidadas.
+- Pedidos de encomenda a produtores não aceites devolvem 409. Uma compra com vários produtores aceites devolve 201 e uma lista com uma encomenda por produtor, mesmo quando existe apenas um. A criação e a reserva de stock são uma única transação; uma falha reverte o conjunto. Preços, nomes e unidades enviados pelo cliente são ignorados; linhas do mesmo produto são consolidadas.
+
+Nas compras do catálogo, as quantidades seguem as regras partilhadas em
+`shared/purchaseQuantity.mjs`: múltiplos de 1 para `unidade`, de 100 para `g` e de
+0,5 para `kg` e `l`, com mínimo igual ao passo. Stock positivo inferior ao mínimo
+não permite uma compra válida. Estas restrições das compras não alteram os
+snapshots históricos nem a validação própria das quantidades de um lote de leilão.
 
 Os testes funcionais usam os exemplos inseridos inicialmente. Se forem alterados manualmente, o seed preserva essas alterações e alguns resultados esperados podem deixar de se aplicar.
 Não inserir dados inválidos para testar rejeições: enviar pedidos inválidos à API.
@@ -57,7 +67,9 @@ Não inserir dados inválidos para testar rejeições: enviar pedidos inválidos
 ## Testes e limites
 
 `npm test` valida os schemas, cobertura, relações, conflitos antes das escritas, preservação dos documentos e cálculo das encomendas.
-Os testes locais de transação usam uma sessão simulada; a garantia real de rollback é verificada pela coleção Bruno contra MongoDB.
+Os testes locais de transação usam uma sessão simulada. A coleção Bruno inclui
+cenários para verificar rollback contra MongoDB com suporte a transações;
+executá-los é necessário para obter evidência real, e não aconteceu nesta revisão documental.
 
 Com a API iniciada, executar `npm run test:api`. A pasta `bruno/07-functional` acrescenta 33 pedidos aos testes existentes,
 usa as sessões criadas nas pastas anteriores e `demoPassword` do ambiente Bruno. Executar a coleção completa, pela ordem das pastas.
@@ -78,11 +90,22 @@ Leilões terminados continuam consultáveis se cumprirem essas condições.
 O destaque da página inicial usa leilões reais da API e seleciona o ativo com fim mais próximo.
 O destaque e o detalhe voltam a consultar a API a cada cinco segundos.
 Os contadores atualizam-se localmente a cada segundo, sem inferir uma ativação.
-Entradas inválidas são ignoradas individualmente no destaque. Não existem ainda
-licitações em tempo real ou conversão de leilão em encomenda.
-A interface só apresenta os primeiros 24 produtos; a paginação é testada na API.
+Entradas inválidas são ignoradas individualmente no destaque. No detalhe, compradores
+autenticados podem licitar por Socket.IO; a API confirma cada lance antes de emitir
+eventos. Um leilão com reserva e vencedor gera uma encomenda única no fecho.
+O vencedor escolhe levantamento ou entrega no detalhe da encomenda para a confirmar.
+Leilões históricos já terminados não são convertidos retroativamente.
+A interface apresenta 24 produtos por página, com Anterior/Seguinte e `page` na URL.
+
+Para demonstrar lances atuais, prepara um novo leilão pela API com produtos de um
+produtor aprovado, stock suficiente e datas atuais, e usa duas contas de comprador.
+Repetir o seed não reabre leilões nem repõe produtores já decididos como pendentes.
+Antes de iniciar os leilões, confirma os índices com `npm run db:init`.
 
 ## Verificação em 15 de outubro de 2026
+
+Registo histórico da execução nessa data; não representa testes repetidos nesta revisão
+nem os totais atuais. Os comandos e os fluxos atuais estão descritos acima.
 
 - 20 testes locais passaram; 71 pedidos/testes Bruno passaram contra Atlas, incluindo os 33 novos cenários.
 - Foram inseridos exatamente 141 documentos. A repetição inseriu zero e a comparação do conteúdo completo confirmou preservação dos documentos e dos timestamps.
@@ -90,7 +113,8 @@ A interface só apresenta os primeiros 24 produtos; a paginação é testada na 
 - A base continha uma conta adicional aos exemplos: os totais após expansão são 19 utilizadores, 39 produtos, 27 encomendas, 12 leilões, 27 licitações e 38 avaliações.
 
 Os leilões usam `produtos`, uma lista obrigatória com quantidade e unidade por produto.
-O exemplo 4004 é um lote misto de 2 kg de Batata e 10 g de Mel do mesmo produtor.
+O exemplo 4004 é um lote misto de 2 kg de Batata e 10 g de Mel do mesmo produtor;
+as regras de compra do catálogo não se aplicam às quantidades deste lote.
 Esse exemplo só é acrescentado em novas inserções; o seed preserva leilões já existentes.
 A imagem de capa vem do primeiro produto e a licitação aplica-se ao lote completo.
 Antes de usar uma base antiga, executar a migração descrita no README, com a API parada.

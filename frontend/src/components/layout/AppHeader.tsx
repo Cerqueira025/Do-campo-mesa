@@ -58,13 +58,7 @@ export default function AppHeader({
         ) : utilizador ? (
           <>
             <IconButton
-              href={
-                utilizador.papel === "administrador"
-                  ? "/admin"
-                  : utilizador.papel === "produtor"
-                    ? "/produtor/encomendas"
-                    : "/conta"
-              }
+              href={utilizador.papel === "administrador" ? "/admin" : "/conta"}
               icon={
                 <FontAwesomeIcon
                   icon={
@@ -80,22 +74,26 @@ export default function AppHeader({
               aria-label={
                 utilizador.papel === "administrador"
                   ? "Administração"
-                  : utilizador.papel === "produtor"
-                    ? "Encomendas recebidas"
-                    : "A minha conta"
+                  : "A minha conta"
               }
               variant="primary"
             />
-            {utilizador.papel === "comprador" && (
+            {(utilizador.papel === "comprador" ||
+              utilizador.papel === "produtor") && (
               <IconButton
-                href="/encomendas"
+                href={
+                  utilizador.papel === "produtor"
+                    ? "/produtor/encomendas"
+                    : "/encomendas"
+                }
                 icon={<FontAwesomeIcon icon={faTruckFast} aria-hidden="true" />}
-                aria-label="Encomendas"
+                aria-label={
+                  utilizador.papel === "produtor"
+                    ? "Encomendas recebidas"
+                    : "Encomendas"
+                }
                 variant="primary"
               />
-            )}
-            {utilizador.papel === "produtor" && (
-              <InternalLink href="/conta">A minha conta</InternalLink>
             )}
             <IconButton
               variant={buttonVariant}

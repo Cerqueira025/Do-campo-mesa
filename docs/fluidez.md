@@ -17,7 +17,10 @@ Ao regressar, os resultados anteriores aparecem imediatamente e são atualizados
 Se a atualização falhar, os resultados e as opções anteriores continuam utilizáveis, com mensagem e ação para repetir.
 Uma combinação desconhecida apresenta um placeholder estático; a pesquisa mantém o debounce de 250 ms.
 
-O detalhe do produto e o do leilão fazem sempre uma nova consulta ao entrar.
+O detalhe do produto pode apresentar imediatamente um produto da cache do catálogo,
+mas faz sempre uma nova consulta ao entrar. Uma resposta 404 remove o conteúdo em
+cache; uma falha de rede mantém esse conteúdo, quando existe. Sem cache, a falha
+apresenta o estado de erro. O detalhe do leilão também consulta a API ao entrar.
 Mudanças de identificador reiniciam o estado e cancelam pedidos anteriores. Produtos relacionados carregam separadamente.
 
 ## Recursos e API
@@ -34,7 +37,11 @@ O conjunto de imagens substituído passou de **10 105 161 bytes para 841 762 byt
 reduzindo de três para duas consultas num detalhe existente. Mantém a resposta pública e devolve 404
 para produto privado, inexistente ou com produtor indisponível. Não existem alterações aos schemas ou índices.
 
-## Verificação
+## Verificação histórica
+
+Os resultados seguintes pertencem à intervenção de fluidez registada em
+[`fluidez-medicoes.json`](fluidez-medicoes.json). Não são contagens das suites
+atuais nem testes repetidos na revisão documental de 3 de novembro de 2026.
 
 - 19 testes do frontend e 26 testes locais da API passaram.
 - Lint e build de produção passaram; os avisos Sass existentes provêm dos imports internos de Bootstrap.
@@ -48,7 +55,7 @@ para produto privado, inexistente ou com produtor indisponível. Não existem al
 Os testes unitários correm com `npm test` em `frontend/` e `api/`; os testes REST correm com
 `npm run test:api` em `api/`, com a API iniciada. Não executar os testes REST simultaneamente com alterações aos dados de demonstração.
 
-## Medições
+## Medições históricas
 
 Os resultados e as condições de medição encontram-se em `fluidez-medicoes.json`.
 As execuções interrompidas por alterações do Vite foram excluídas dos resultados finais.

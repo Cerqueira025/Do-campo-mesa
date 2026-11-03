@@ -2,8 +2,28 @@
 
 A área React começa em `/admin` e exige o papel atual `administrador` na API.
 Inclui resumo, aprovação de registos pendentes, moderação de produtos e avaliações,
-utilizadores, encomendas e todos os estados dos leilões. Laravel,
-gráficos e verificação dos serviços Cloud ficam fora desta implementação.
+utilizadores, encomendas e todos os estados dos leilões. O botão «Serviços e sistema»
+abre o backoffice técnico Laravel, com entrada direta, verificações locais e histórico
+de 30 dias. Consulta [a preparação e funcionamento do backoffice](../backoffice/app/README.md).
+A execução sem infraestrutura Cloud foi acordada com o professor. Gráficos ficam fora desta implementação.
+
+## Entrada no backoffice técnico
+
+O botão «Serviços e sistema» inicia a sessão Laravel em `/entrar`, regressa à SPA
+em `/admin/backoffice?state=…` e envia um código temporário por POST para `/entrada`.
+O JWT não passa no endereço do browser. A configuração exige `BACKOFFICE_SECRET`
+igual nos dois servidores e a mesma origem local (`127.0.0.1`) nos endereços de entrada.
+
+| Endpoint da API                          | Autorização e função                                                                                                    |
+| ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `POST /api/admin/backoffice/codes`       | Administrador com JWT; recebe `{ state }` e emite código de utilização única, válido até 60 segundos.                   |
+| `POST /api/internal/backoffice/exchange` | Servidor Laravel com `X-Backoffice-Secret`; troca `{ code, state }` por autenticação, preservando a expiração original. |
+| `GET /api/admin/services`                | Administrador com JWT; executa diagnóstico de MongoDB e Socket.IO.                                                      |
+
+O Laravel verifica ainda `/api/health` e Swagger, mostra o armazenamento como
+não implementado e guarda os cinco resultados no histórico SQLite. O diagnóstico
+é iniciado ao abrir Serviços por POST com CSRF, ou pelo botão «Verificar agora»;
+não existe verificação periódica. Abrir o histórico não executa diagnósticos.
 
 ## Consultas
 

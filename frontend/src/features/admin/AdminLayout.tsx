@@ -6,6 +6,7 @@ import InternalLink from "../../navigation/InternalLink";
 import AppHeader from "../../components/layout/AppHeader";
 import { adminSections, type AdminSection } from "./admin";
 import "./AdminLayout.scss";
+import Button from "../../components/ui/Button";
 
 let menuPreference: boolean | undefined;
 
@@ -57,6 +58,12 @@ export default function AdminLayout({
             <p>Administração</p>
             <h1>{title}</h1>
           </div>
+          <Button
+            href={`${import.meta.env.VITE_BACKOFFICE_URL || "http://127.0.0.1:8000"}/entrar`}
+            variant="cream"
+          >
+            Serviços e sistema
+          </Button>
         </div>
         <div
           className={`admin-page__layout page-content${open ? " admin-page__layout--open" : ""}`}

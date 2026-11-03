@@ -2,6 +2,15 @@
 
 Revisão do commit `76b7e9e`, dos dois PDFs principais, do frontend React, da API Express/Mongoose, dos sockets, da coleção Bruno, da configuração de integração contínua e do esqueleto Laravel.
 
+> **Documento histórico.** Os achados, contagens e resultados abaixo descrevem
+> a auditoria de 2 de novembro de 2026. Na revisão documental de 3 de novembro,
+> o código já inclui Swagger UI, backoffice técnico Laravel e workflow de testes,
+> lint e build do frontend. A documentação funcional também foi atualizada.
+> Estas alterações não constituem uma nova auditoria nem comprovam a resolução
+> dos restantes achados. Para preparação e comportamento atuais, consulta o
+> [README principal](../README.md), o [frontend](../frontend/README.md),
+> os [dados funcionais](dados-funcionais.md) e o [backoffice](../backoffice/app/README.md).
+
 O projeto já tem uma base funcional considerável: catálogo com filtros e paginação, autenticação e papéis, carrinho, encomendas por produtor, avaliações, denúncias, administração React, reservas de stock e implementação de licitações por Socket.IO. Ainda não cumpre integralmente o enunciado. As maiores lacunas são a gestão pelo produtor, fotografias e storage, Swagger UI, preparação/publicação Cloud e entregáveis. Há também falhas concretas de segurança, integração e consistência.
 
 Este documento contém todos os achados identificados nesta auditoria. Não constitui uma garantia de ausência de outros bugs: a cobertura e os limites estão explicitados abaixo. Nenhuma correção funcional foi aplicada.
@@ -378,23 +387,25 @@ Existe `docs/openapi.yaml`, mas `/api-docs` devolve 404 e a aplicação não ser
 
 ### D02 — OpenAPI mistura regras de versões diferentes — P1, análise estrutural
 
-O documento declara OpenAPI 3.0.3, mas usa `exclusiveMinimum: 0` em **quatro locais**: quantidade de entrada de encomenda, de entrada de leilão e nos schemas de resposta Order/Auction. Em 3.0, esta restrição é booleana e acompanha `minimum`; para quantidade positiva, a forma compatível é `minimum: 0` e `exclusiveMinimum: true`.
+**Resolvido em 2026-11-03.** As quatro restrições de quantidade identificadas usam agora `minimum: 0` e `exclusiveMinimum: true`, compatíveis com OpenAPI 3.0.3.
 
-A leitura YAML e a resolução dos `$ref` passaram: foram encontrados 28 caminhos, 33 operações e zero referências locais partidas. Isso não equivale a validar integralmente o documento contra OpenAPI 3.0.
+A especificação completa, atualmente com 39 caminhos, passou `SwaggerParser.validate`, incluindo validação estrutural OpenAPI 3.0.3 e resolução das referências locais.
 
-**Evidência:** `docs/openapi.yaml:337`, `:681`, `:764`, `:949`.
+**Evidência:** `docs/openapi.yaml`, schemas `OrderCreateInput`, `AuctionInput`, `Order` e `Auction`.
 **Fontes do formato:** [OpenAPI 3.0.3 — Schema Object](https://spec.openapis.org/oas/v3.0.3.html#schema-object), [JSON Schema referenciado — minimum/exclusiveMinimum](https://json-schema.org/draft-04/draft-fge-json-schema-validation-00#rfc.section.5.1.3).
 
 ### D03 — Schemas incompletos ou divergentes das respostas reais — P2, código e documento
 
-- `ProductInput` não declara os campos obrigatórios usados na criação: nome, descrição, categoria, preço, unidade e stock. O mesmo schema é reutilizado no PUT, que na implementação admite atualização parcial; convém distinguir os contratos.
-- `Review.autorId` é documentado como string, mas POST e moderação fazem populate e devolvem objeto com ID/nome. A consulta das avaliações próprias devolve o ID simples. É necessário descrever as variantes reais.
-- A lista administrativa declara os itens apenas como `type: object`; os detalhes administrativos nem definem o schema da resposta. Ficam por documentar de forma verificável as decisões, denúncias, visibilidade e referências resolvidas.
-- A modalidade de entrega exige morada quando o tipo é entrega na API, mas o schema `Delivery` não exprime essa condição.
+**Resolvido em 2026-11-03.** Os quatro contratos identificados foram alinhados com os modelos e handlers da API:
 
-Falta validar a especificação completa e confrontar os contratos com pedidos/respostas reais, incluindo limites de quantidade e erros das operações.
+- `ProductCreateInput` exige nome, descrição, categoria, preço, unidade e stock na criação; `ProductInput` mantém a atualização parcial no PUT.
+- `Review` descreve o autor como ID nas avaliações próprias; `ReviewWithAuthor`, usado na criação e moderação, descreve o objeto com ID/nome, ou `null` se removido.
+- As listagens e os detalhes administrativos têm schemas por recurso, incluindo paginação, decisões, denúncias, visibilidade e referências resolvidas que podem ser `null`. O detalhe de produto inclui os leilões associados e o detalhe de leilão inclui até vinte licitações. Nas avaliações administrativas, `encomendaId` mantém o ID, conforme a implementação.
+- `Delivery` distingue levantamento de entrega com `oneOf`; entrega exige uma morada com pelo menos um carácter que não seja espaço.
 
-**Evidência:** `docs/openapi.yaml:573`, `:599`, `:850`, `:873`, `:908`; rotas correspondentes.
+**Verificação:** validação completa com `SwaggerParser.validate`; 32 verificações de contratos com Ajv Draft 4, incluindo campos obrigatórios de produto, atualização parcial, moradas válidas/inválidas, variantes de autor e respostas dos handlers das cinco listagens e quatro detalhes administrativos. A comparação dos handlers usou dados do seed e persistência simulada, sem alterar a base de dados. Passaram ainda os 63 testes de `admin`, `reviews`, `order-reviews`, `orders`, `auction-order-delivery` e `models`.
+
+**Evidência:** `docs/openapi.yaml`, schemas `ProductCreateInput`, `Review`, `ReviewWithAuthor`, `Delivery` e `Admin*`; `api/src/routes/admin.js`, `products.js`, `reviews.js` e `orders.js`.
 
 ### D04 — Publicação Cloud e URLs não estão demonstrados — P1, sem evidência
 

@@ -7,7 +7,7 @@ Plataforma web para aproximar produtores locais de consumidores e restauração.
 
 - `frontend/` — aplicação React + TypeScript, criada com Vite.
 - `api/` — API REST em Node.js + Express, ligada ao MongoDB Atlas.
-- `backoffice/app/` — aplicação Laravel existente, reservada ao backoffice opcional.
+- `backoffice/app/` — backoffice técnico Laravel com diagnóstico de serviços e histórico SQLite.
 - `docs/` — documentação técnica e especificação OpenAPI.
 
 As imagens dos produtos são ficheiros WebP locais do frontend, com variantes de 480 e 960 px.
@@ -16,32 +16,77 @@ Para acrescentar uma imagem, consulta [as instruções do frontend](frontend/REA
 
 ## Quick Start
 
-1. Clone do repositório:
+Requisitos: Node.js 22.14 ou superior, MongoDB com suporte a transações
+(replica set, como o Atlas) e, para o backoffice, PHP 8.5 com PDO SQLite e Composer,
+conforme as dependências bloqueadas.
 
-```
+1. Clona o repositório e entra na pasta:
+
+```powershell
 git clone https://github.com/Cerqueira025/Do-campo-mesa.git
+cd Do-campo-mesa
 ```
 
 2. Inicia o Frontend:
 
 ```powershell
 cd frontend
-npm install
-npm run dev
+npm ci
+npm run dev -- --host 127.0.0.1 --port 5173 --strictPort
 ```
 
 3. Inicia a API (depois de instalar as dependências):
 
 ```powershell
 cd api
-npm install
+npm ci
 npm run db:init
 npm run db:seed
 npm run dev
 ```
 
-Antes de iniciar a API, configura `api/.env` a partir de `api/.env.example`.
+Executa os comandos de cada serviço num terminal separado, a partir da raiz do
+repositório. Antes de iniciar a API, configura `api/.env` a partir de `api/.env.example`.
+O seed destina-se apenas a desenvolvimento/demonstração. Para bases antigas com
+leilões, segue primeiro as migrações descritas abaixo.
 É necessário Node.js 22.14 ou superior. A API só aceita pedidos depois de se ligar ao MongoDB.
+
+### Arrancar todos os serviços no Windows
+
+Depois da preparação inicial da API, do frontend e do
+[backoffice Laravel](backoffice/app/README.md#preparação-local), executa na raiz:
+
+```powershell
+npm start
+```
+
+O script `start.ps1` abre três janelas PowerShell, identificadas pelo serviço:
+
+| Serviço            | Endereço              |
+| ------------------ | --------------------- |
+| Frontend           | http://127.0.0.1:5173 |
+| API                | http://127.0.0.1:3000 |
+| Backoffice Laravel | http://127.0.0.1:8000 |
+
+Swagger está disponível em http://127.0.0.1:3000/api-docs/ e Socket.IO arranca
+com a API. O MongoDB continua no Atlas. Mantém `PORT=3000` na configuração da API
+e usa `127.0.0.1` no browser para preservar a sessão de entrada no backoffice.
+
+É necessário Node.js 22.14+, npm e PHP 8.5 no PATH, dependências instaladas,
+os ficheiros `api/.env` e `backoffice/app/.env` configurados, SQLite preparado
+com as migrações e assets do Laravel compilados. Se faltar um ficheiro necessário,
+o script indica a preparação em falta antes de abrir as janelas. Instalações,
+migrações, seed e compilação são passos prévios ao arranque.
+
+Consulta os logs em cada janela para confirmar o arranque ou identificar erros.
+Para parar os serviços, usa `Ctrl+C` em cada janela. As janelas permanecem abertas
+para consultar os logs. Evita repetir `npm start` enquanto os serviços estiverem ativos.
+
+Também podes executar o script por caminho absoluto a partir de outra pasta:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\caminho\Do-campo-mesa\start.ps1"
+```
 
 ## Lint
 
@@ -67,7 +112,7 @@ npm run lint
 | `npm run lint:frontend` | ESLint existente do frontend React/TypeScript.                                                |
 | `npm run lint:js`       | ESLint da API (incluindo testes e scripts), JavaScript do backoffice e configurações de lint. |
 | `npm run lint:php`      | Laravel Pint em modo de verificação (`--test`).                                               |
-| `npm run lint:styles`   | Stylelint dos estilos CSS/SCSS do frontend e CSS do backoffice.                               |
+| `npm run lint:styles`   | Stylelint dos estilos CSS/SCSS do frontend e do backoffice.                                   |
 | `npm run lint:format`   | Prettier verifica a formatação de JS/TS, CSS/SCSS, JSON e Markdown.                           |
 
 Os comandos apenas verificam os ficheiros, sem aplicar correções. O comando global
@@ -99,14 +144,15 @@ identificados por `_id` fixo. Repetir o seed não duplica nem atualiza exemplos;
 alterar `SEED_PASSWORD` também não altera passwords de contas já criadas.
 Usar o seed apenas na base de desenvolvimento/demonstração.
 
-| Coleção    | Organização                                                                                                                           |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `users`    | Conta, papel e perfil do produtor embebido; email único e password com hash bcrypt.                                                   |
-| `products` | Produtor referenciado, preço, unidade e stock.                                                                                        |
-| `orders`   | Comprador e produtor referenciados; linhas embebidas com nome, preço e unidade no momento da compra.                                  |
-| `auctions` | Produtor referenciado, lista obrigatória de produtos com quantidade/unidade por linha, lote, início/fim e licitação atual embebida.   |
-| `bids`     | Histórico separado de licitações, referenciado por leilão e comprador.                                                                |
-| `reviews`  | Autor e encomenda referenciados; um único alvo, produto ou produtor, e estado de moderação. Índice único por autor, encomenda e alvo. |
+| Coleção            | Organização                                                                                                                           |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `users`            | Conta, papel e perfil do produtor embebido; email único e password com hash bcrypt.                                                   |
+| `products`         | Produtor referenciado, preço, unidade e stock.                                                                                        |
+| `orders`           | Comprador e produtor referenciados; linhas embebidas com nome, preço e unidade no momento da compra.                                  |
+| `auctions`         | Produtor referenciado, lista obrigatória de produtos com quantidade/unidade por linha, lote, início/fim e licitação atual embebida.   |
+| `bids`             | Histórico separado de licitações, referenciado por leilão e comprador.                                                                |
+| `reviews`          | Autor e encomenda referenciados; um único alvo, produto ou produtor, e estado de moderação. Índice único por autor, encomenda e alvo. |
+| `backoffice_codes` | Hash de código de entrada, utilizador, estado de associação da sessão e expirações; índices único e TTL.                              |
 
 Valores monetários (`preco`, `precoUnitario`, `total`, `precoBase`, `incremento`
 e `valor`) são inteiros em cêntimos: `150` representa 1,50 €.
@@ -176,8 +222,9 @@ sem um preço individual fictício. A encomenda fica pendente até o vencedor es
 levantamento ou entrega no detalhe; para entrega, indica a morada. Só então passa
 a `confirmada` e o produtor pode avançar o estado. Leilões já terminados não são
 convertidos retroativamente.
-Enquanto houver quantidades `reservada` ou `atribuida`, alterar stock ou unidade
-do produto devolve `409`. Os restantes dados continuam editáveis.
+Enquanto houver quantidades com reserva `reservada`, alterar stock ou unidade
+do produto devolve `409`. Depois da atribuição do lote ao vencedor, essa reserva
+já não bloqueia a edição. Os restantes dados continuam editáveis.
 
 O processamento corre no arranque, antes de aceitar pedidos, e após cada ciclo
 aguarda cinco segundos antes do seguinte. Atrasos incluem o tempo da base de dados.
@@ -210,9 +257,59 @@ Numa base nova basta o processo normal de init/seed; exemplos ainda por terminar
 começam pendentes e só ficam ativos depois de o servidor reservar o lote.
 
 `docs/openapi.yaml` descreve os endpoints de autenticação, produtos,
-produtores, encomendas, avaliações e leilões. Os pedidos usam JWT onde exigido;
+produtores, encomendas, avaliações, leilões, administração e integração do backoffice.
+A API publica a especificação em `/api-docs/openapi.yaml` e Swagger UI em `/api-docs/`,
+com **Authorize** e **Try it out**. Reinicia a API depois de alterar a especificação,
+que é carregada no arranque. Os pedidos usam JWT onde exigido;
 os valores monetários enviados e devolvidos pela API são cêntimos inteiros.
 O filtro `precoMin`/`precoMax` do catálogo recebe euros.
+
+### Testar a API no Swagger
+
+Com a API iniciada, abre http://127.0.0.1:3000/api-docs/.
+
+1. Expande uma consulta pública, por exemplo `GET /health`, e escolhe
+   **Try it out → Execute**. A interface mostra o pedido curl, o código HTTP
+   e o corpo da resposta.
+2. Executa `POST /auth/login` com uma conta de demonstração e a respetiva
+   password. O exemplo usa `produtor@example.test` e a password por defeito
+   do seed; ajusta-a se a conta tiver outra password.
+3. Copia apenas o valor de `token`, abre **Authorize**, cola-o em `bearerAuth`
+   sem o prefixo `Bearer` e confirma em **Authorize → Close**.
+4. Executa `GET /auth/eu` para confirmar a sessão. O token é enviado nas
+   operações protegidas; sem token recebem `401`, e um papel sem permissão
+   recebe `403`. Usa **Logout** no diálogo para remover a autorização.
+   A autorização não é conservada ao recarregar a página.
+5. Com um produtor aprovado, cria um produto descartável em `POST /products`.
+   A resposta é `201`, com `Location` e o `_id` criado. Usa esse ID para testar
+   `PUT /products/{id}` com apenas `{"nome":"Produto atualizado"}` (`200`)
+   e `DELETE /products/{id}` (`204`, sem corpo). A eliminação exige que o
+   produto não tenha leilões associados.
+
+Os pedidos executam operações reais na base de demonstração configurada.
+Obtém IDs nas consultas da API; os exemplos de encomenda e leilão exigem IDs
+existentes e quantidades compatíveis com a unidade e o stock. Nos leilões,
+substitui também as datas por um intervalo futuro. As áreas administrativas
+apresentam os filtros e respostas específicos de cada recurso. A troca interna
+do backoffice é uma integração entre servidores; não introduzas o segredo
+de integração no Swagger.
+
+Para validar a especificação e executar os testes dedicados, dentro de `api/`:
+
+```powershell
+npm run test:docs
+```
+
+Estes testes verificam OpenAPI 3.0.3, referências, exemplos, cobertura das rotas,
+schemas de respostas, segurança, publicação do YAML e recursos da interface.
+Executam ainda login e CRUD através de um servidor temporário com persistência
+simulada; não precisam de Atlas nem alteram dados reais. Também fazem parte de
+`npm test` e do workflow de testes da API. A validação automatizada usa Swagger
+Parser e Ajv Draft 4; não depende de um validador remoto. Para uma revisão manual,
+podes abrir `docs/openapi.yaml` no [Swagger Editor](https://editor.swagger.io/)
+e confirmar que não apresenta erros.
+
+### Coleção Bruno
 
 Abre a pasta `bruno/` no Bruno e seleciona o ambiente `local`. Para executar a
 coleção completa, inicia primeiro a API (`npm run dev` numa janela de terminal)
@@ -229,10 +326,12 @@ já libertadas não devolvem stock novamente. Não usar estes marcadores
 em dados próprios. A execução pode alterar dados da base de demonstração
 durante o teste, pelo que convém não a usar simultaneamente.
 
-`npm test` dentro de `api/` verifica os schemas, os hashes, as relações dos
-exemplos e a repetição do seed com escrita simulada, além das regras de criação
-de encomendas. Não precisa de Atlas.
-A verificação do índice único de email e da ligação real exige a base acessível.
+`npm test` dentro de `api/` verifica schemas, autenticação, permissões, catálogo,
+encomendas, avaliações, administração, reservas, migrações, sockets e entrada no
+backoffice, além das relações dos exemplos e da repetição do seed. Os testes normais
+usam persistência simulada e não precisam de Atlas. Dois testes de integração
+MongoDB são opcionais com `MONGODB_TEST_URI`, exclusivamente numa base isolada.
+A verificação dos índices e da ligação real exige uma base acessível.
 
 ## Autenticação
 
@@ -324,7 +423,7 @@ o Atlas). A criação de leilões só confirma após o commit; uma falha reverte
 inteiro. A eliminação continua bloqueada por qualquer leilão associado.
 
 `npm test` na API inclui testes de reservas, reversão, repetição, migração e edição
-protegida, com persistência simulada. O teste de concorrência real é optativo:
+protegida, com persistência simulada. O teste de concorrência real dos leilões é optativo:
 configura `MONGODB_TEST_URI` no ambiente para um MongoDB de testes com suporte a
 transações (replica set), depois executa `npm test`. Não reutilizes o URI da base
 de demonstração ou produção. O teste cria e remove exclusivamente uma base com
@@ -410,3 +509,28 @@ corre periodicamente; só um commit confirmado gera eventos. Executa `npm run db
 na API para instalar o índice único parcial de `orders.leilaoId` antes de iniciar
 leilões com licitações. A distribuição por várias instâncias exige um adaptador de
 salas partilhado, fora desta fase.
+
+## Backoffice técnico Laravel
+
+A administração React inclui o acesso «Serviços e sistema», com entrada direta no Laravel.
+O painel verifica API, MongoDB, Socket.io e Swagger UI e guarda um histórico SQLite
+de 30 dias. A execução local, sem infraestrutura Cloud, foi acordada com o professor.
+Consulta [a preparação, os endereços e os testes do backoffice](backoffice/app/README.md).
+
+## Documentação e limites atuais
+
+- [Frontend](frontend/README.md): organização, rotas, estilos, imagens e verificações.
+- [Administração](docs/administracao.md): consultas, decisões e moderação.
+- [Dados funcionais](docs/dados-funcionais.md): contas fictícias, cenários e limites do seed.
+- [Navegação e fluidez](docs/fluidez.md): comportamento e medições históricas.
+- [OpenAPI](docs/openapi.yaml): contrato REST servido pelo Swagger UI.
+- [Auditoria de 2 de novembro](docs/auditoria-2026-11-02.md): diagnóstico histórico,
+  com nota sobre alterações posteriores; não é uma validação da versão atual.
+
+A interface do produtor inclui conta e acompanhamento de encomendas; a gestão
+de produtos e a criação de leilões estão disponíveis pela API, sem formulários
+equivalentes no frontend. As imagens são locais; não existe storage Cloud integrado.
+O repositório não inclui configuração de alojamento de produção. A execução local
+sem infraestrutura Cloud foi acordada com o professor; o backoffice assinala o
+armazenamento como não implementado. O relatório final e o vídeo não estão
+identificados na documentação atual.
