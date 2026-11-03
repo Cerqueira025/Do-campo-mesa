@@ -1,0 +1,31 @@
+meta {
+  name: Recusa avaliação repetida mesmo depois de ocultada
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/reviews
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{testBuyerToken}}
+}
+
+body:json {
+  {
+    "encomendaId": "{{testOrderId}}",
+    "produtoId": "dca000000000000000000065",
+    "classificacao": 1,
+    "comentario": "{{testRun}} tentativa de substituir avaliação oculta"
+  }
+}
+
+tests {
+  test("repetição da avaliação oculta recebe 409", function() {
+    expect(res.getStatus()).to.equal(409);
+    expect(res.getBody().erro).to.equal("Já avaliou este alvo nesta encomenda.");
+  });
+}

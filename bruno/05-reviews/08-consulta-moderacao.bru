@@ -1,0 +1,24 @@
+meta {
+  name: Consulta referência da avaliação
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{baseUrl}}/admin/reviews/{{testReviewId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+tests {
+  test("devolve 200", function() { expect(res.getStatus()).to.equal(200); });
+}
+
+script:post-response {
+  bru.setVar("reviewDecision", res.getBody().ultimaDecisao?.data ?? null);
+  bru.setVar("reviewUpdatedAt", res.getBody().updatedAt);
+}

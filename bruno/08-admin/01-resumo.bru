@@ -1,0 +1,23 @@
+meta {
+  name: Consulta administrativa resumo
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/admin/summary
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+tests {
+  test("consulta administrativa paginada sem hashes", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().pendingProducers).to.be.a("number");
+    expect(JSON.stringify(res.getBody())).not.to.include("passwordHash");
+  });
+}

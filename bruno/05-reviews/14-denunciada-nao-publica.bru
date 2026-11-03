@@ -1,0 +1,23 @@
+meta {
+  name: Avaliação denunciada sai da lista pública
+  type: http
+  seq: 14
+}
+
+get {
+  url: {{baseUrl}}/reviews/products/dca000000000000000000065
+  body: none
+  auth: none
+}
+
+tests {
+  test("devolve 200", function() { expect(res.getStatus()).to.equal(200); });
+  test("exclui avaliação e dados privados", function() {
+    expect(res.getBody().items.some(item => item._id === bru.getVar("testReviewId"))).to.equal(false);
+    for (const item of res.getBody().items) {
+      expect(item).not.to.have.property("denuncias");
+      expect(item).not.to.have.property("encomendaId");
+      expect(item).not.to.have.property("ultimaDecisao");
+    }
+  });
+}

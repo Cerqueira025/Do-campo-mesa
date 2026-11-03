@@ -26,7 +26,8 @@ body:json {
 tests {
   test("cria encomenda com preço calculado pelo servidor", function() {
     expect(res.getStatus()).to.equal(201);
-    const order = res.getBody();
+    expect(res.getBody()).to.have.length(1);
+    const order = res.getBody()[0];
     expect(order.estado).to.equal("pendente");
     expect(order.total).to.equal(order.linhas[0].precoUnitario);
     expect(order.compradorId).to.equal(bru.getVar("testBuyerId"));
@@ -34,5 +35,5 @@ tests {
 }
 
 script:post-response {
-  bru.setVar("testOrderId", res.getBody()._id);
+  bru.setVar("testOrderId", res.getBody()[0]._id);
 }

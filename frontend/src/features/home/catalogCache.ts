@@ -1,34 +1,80 @@
-import type { ApiProduct } from '../products/product'
-import type { CatalogFilters, FilterOptions } from './catalogFilters'
+import type { ProductDetail } from "../products/product";
+import type { CatalogFilters, FilterOptions } from "./catalogFilters";
 
-export interface CatalogResponse { items: ApiProduct[]; total: number }
-const queries = new Map<string, CatalogResponse>()
-let options: FilterOptions | null = null
+export interface CatalogResponse {
+  items: ProductDetail[];
+  total: number;
+}
+const queries = new Map<string, CatalogResponse>();
+export function invalidateCatalogCache() {
+  queries.clear();
+}
+let options: FilterOptions | null = null;
 
-export function catalogQuery(search: string, filters: CatalogFilters) {
-  const params = new URLSearchParams({ limit: '24' })
-  if (search.trim()) params.set('q', search.trim())
+export const catalogPageSize = 24;
+
+export function catalogPagination(page: number, total: number) {
+  const pages = Math.max(1, Math.ceil(total / catalogPageSize));
+  const current = Math.min(page, pages);
+  return {
+    page: current,
+    pages,
+    first: total ? (current - 1) * catalogPageSize + 1 : 0,
+    last: Math.min(current * catalogPageSize, total),
+  };
+}
+
+export function catalogQuery(
+  search: string,
+  filters: CatalogFilters,
+  page = 1,
+) {
+  const params = new URLSearchParams({ limit: String(catalogPageSize) });
+  // Mantém o offset dentro dos inteiros seguros aceites pela API, mesmo com URLs extremas.
+  params.set(
+    "page",
+    String(
+      Math.min(page, Math.floor(Number.MAX_SAFE_INTEGER / catalogPageSize)),
+    ),
+  );
+  if (search.trim()) params.set("q", search.trim());
   for (const key of Object.keys(filters).sort() as (keyof CatalogFilters)[]) {
-    if (filters[key]) params.set(key, filters[key])
+    if (filters[key]) params.set(key, filters[key]);
   }
-  return params.toString()
+  return params.toString();
 }
 
 export function readCatalogCache(key: string) {
-  const value = queries.get(key)
-  if (value) { queries.delete(key); queries.set(key, value) }
-  return value
+  const value = queries.get(key);
+  if (value) {
+    queries.delete(key);
+    queries.set(key, value);
+  }
+  return value;
 }
 
 export function writeCatalogCache(key: string, value: CatalogResponse) {
-  queries.delete(key)
-  queries.set(key, value)
-  if (queries.size > 10) queries.delete(queries.keys().next().value!)
+  queries.delete(key);
+  queries.set(key, value);
+  if (queries.size > 10) queries.delete(queries.keys().next().value!);
 }
 
-export const readFilterCache = () => options
-export function writeFilterCache(value: FilterOptions) { options = value }
+export function readCatalogProduct(id: string) {
+  for (const result of [...queries.values()].reverse()) {
+    const product = result.items.find(
+      (item) => item._id.toLowerCase() === id.toLowerCase(),
+    );
+    if (product) return product;
+  }
+}
 
-let filtersOpen = false
-export const readFiltersOpen = () => filtersOpen
-export function writeFiltersOpen(value: boolean) { filtersOpen = value }
+export const readFilterCache = () => options;
+export function writeFilterCache(value: FilterOptions) {
+  options = value;
+}
+
+let filtersOpen = false;
+export const readFiltersOpen = () => filtersOpen;
+export function writeFiltersOpen(value: boolean) {
+  filtersOpen = value;
+}

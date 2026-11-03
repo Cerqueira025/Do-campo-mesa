@@ -11,12 +11,12 @@ post {
 }
 
 auth:bearer {
-  token: {{buyerToken}}
+  token: {{testBuyerToken}}
 }
 
 body:json {
   {
-    "encomendaId": "dca0000000000000000000c9",
+    "encomendaId": "{{testOrderId}}",
     "produtoId": "dca000000000000000000065",
     "classificacao": 5,
     "comentario": "{{testRun}} avaliação automática"

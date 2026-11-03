@@ -1,0 +1,22 @@
+meta {
+  name: JWT anterior mantém validade após recuperação
+  type: http
+  seq: 25
+}
+
+get {
+  url: {{baseUrl}}/auth/eu
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{testBuyerToken}}
+}
+
+tests {
+  test("JWT já emitido mantém a sessão", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().id).to.equal(bru.getVar("testBuyerId"));
+  });
+}

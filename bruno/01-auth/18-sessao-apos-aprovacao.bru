@@ -1,0 +1,22 @@
+meta {
+  name: Sessão reflete aprovação sem novo login
+  type: http
+  seq: 18
+}
+
+get {
+  url: {{baseUrl}}/auth/eu
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{authProducerToken}}
+}
+
+tests {
+  test("mesmo token consulta a aprovação atual", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().validacao).to.equal("aceite");
+  });
+}

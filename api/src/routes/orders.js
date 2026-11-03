@@ -1,115 +1,390 @@
-import { Router } from 'express';
-import mongoose from 'mongoose';
-import Order from '../models/Order.js';
-import Product from '../models/Product.js';
-import User from '../models/User.js';
-import { requireAuth } from '../middleware/auth.js';
+import { Router } from "express";
+import mongoose from "mongoose";
+import Order from "../models/Order.js";
+import Product from "../models/Product.js";
+import User from "../models/User.js";
+import Review from "../models/Review.js";
+import { requireAuth } from "../middleware/auth.js";
+import { requireObjectBody } from "../middleware/requestBody.js";
+import {
+  validPurchaseQuantity,
+  quantityRestriction,
+} from "../domain/purchaseQuantity.js";
 
 const router = Router();
-const states = ['pendente', 'confirmada', 'pronta', 'entregue'];
+const states = ["pendente", "confirmada", "pronta", "entregue"];
 
-router.post('/', requireAuth('comprador'), async (request, response, next) => {
-  const { linhas, entrega } = request.body;
-  if (!Array.isArray(linhas) || !linhas.length || linhas.some((line) =>
-    !line || !mongoose.isValidObjectId(line.produtoId) || !Number.isFinite(line.quantidade) || line.quantidade <= 0)) {
-    return response.status(400).json({ erro: 'Indica linhas com produto e quantidade válida.' });
-  }
-  if (!entrega || !['levantamento', 'entrega'].includes(entrega.tipo) ||
-    (entrega.tipo === 'entrega' && (typeof entrega.morada !== 'string' || !entrega.morada.trim()))) {
-    return response.status(400).json({ erro: 'Dados de entrega ou levantamento inválidos.' });
-  }
+router.post(
+  "/",
+  requireAuth("comprador"),
+  requireObjectBody,
+  async (request, response, next) => {
+    const { linhas, entrega } = request.body;
+    if (
+      !Array.isArray(linhas) ||
+      !linhas.length ||
+      linhas.some(
+        (line) =>
+          !line ||
+          !mongoose.isValidObjectId(line.produtoId) ||
+          !Number.isFinite(line.quantidade) ||
+          line.quantidade <= 0,
+      )
+    ) {
+      return response
+        .status(400)
+        .json({ erro: "Indica linhas com produto e quantidade válida." });
+    }
+    if (
+      !entrega ||
+      !["levantamento", "entrega"].includes(entrega.tipo) ||
+      (entrega.tipo === "entrega" &&
+        (typeof entrega.morada !== "string" || !entrega.morada.trim()))
+    ) {
+      return response
+        .status(400)
+        .json({ erro: "Dados de entrega ou levantamento inválidos." });
+    }
 
-  const quantities = new Map();
-  for (const line of linhas) {
-    const id = new mongoose.Types.ObjectId(line.produtoId).toString();
-    quantities.set(id, (quantities.get(id) || 0) + line.quantidade);
-  }
-  const session = await mongoose.startSession();
+    const quantities = new Map();
+    for (const line of linhas) {
+      const id = new mongoose.Types.ObjectId(line.produtoId).toString();
+      quantities.set(id, (quantities.get(id) || 0) + line.quantidade);
+    }
+    let session;
+    try {
+      session = await mongoose.startSession();
+      let orders;
+      await session.withTransaction(async () => {
+        const products = await Product.find({
+          _id: { $in: [...quantities.keys()] },
+          publicado: true,
+          bloqueado: { $ne: true },
+        }).session(session);
+        if (products.length !== quantities.size)
+          throw Object.assign(
+            new Error("Um ou mais produtos estão indisponíveis."),
+            { status: 409 },
+          );
+        const groups = new Map();
+        for (const product of products) {
+          const productLines = linhas.filter(
+            (line) =>
+              new mongoose.Types.ObjectId(line.produtoId).toString() ===
+              String(product._id),
+          );
+          if (
+            productLines.some(
+              (line) =>
+                !validPurchaseQuantity(line.quantidade, product.unidade),
+            ) ||
+            !validPurchaseQuantity(
+              quantities.get(String(product._id)),
+              product.unidade,
+            )
+          ) {
+            throw Object.assign(
+              new Error(
+                `${product.nome}: ${quantityRestriction(product.unidade)}`,
+              ),
+              { status: 400 },
+            );
+          }
+          const producerId = String(product.produtorId);
+          if (!groups.has(producerId)) groups.set(producerId, []);
+          groups.get(producerId).push({
+            produtoId: product.id,
+            nome: product.nome,
+            precoUnitario: product.preco,
+            quantidade: quantities.get(String(product._id)),
+            unidade: product.unidade,
+          });
+        }
+        const documents = [];
+        for (const [producerId, lines] of groups) {
+          const producer = await User.findOne({
+            _id: producerId,
+            papel: "produtor",
+            "perfilProdutor.validacao": "aceite",
+          }).session(session);
+          if (!producer)
+            throw Object.assign(new Error("O produtor está indisponível."), {
+              status: 409,
+            });
+          const total = lines.reduce(
+            (sum, line) =>
+              sum + Math.round(line.precoUnitario * line.quantidade),
+            0,
+          );
+          if (!Number.isSafeInteger(total))
+            throw Object.assign(
+              new Error("O total excede o limite permitido."),
+              { status: 400 },
+            );
+          documents.push({
+            compradorId: request.user.id,
+            produtorId: producerId,
+            linhas: lines,
+            total,
+            estado: "pendente",
+            entrega: {
+              tipo: entrega.tipo,
+              ...(entrega.tipo === "entrega"
+                ? { morada: entrega.morada.trim() }
+                : {}),
+              ...(entrega.dataPrevista !== undefined
+                ? { dataPrevista: entrega.dataPrevista }
+                : {}),
+            },
+          });
+        }
+
+        for (const product of products) {
+          const updated = await Product.findOneAndUpdate(
+            {
+              _id: product._id,
+              publicado: true,
+              bloqueado: { $ne: true },
+              stock: { $gte: quantities.get(String(product._id)) },
+            },
+            { $inc: { stock: -quantities.get(String(product._id)) } },
+            { new: true, session, runValidators: true },
+          );
+          if (!updated)
+            throw Object.assign(
+              new Error(`Stock insuficiente para ${product.nome}.`),
+              { status: 409 },
+            );
+        }
+
+        orders = await Order.create(documents, { session, ordered: true });
+      });
+      for (const order of orders)
+        request.app
+          ?.get("io")
+          ?.to(`user:${order.produtorId}`)
+          .emit("nova-encomenda", {
+            id: String(order._id),
+            total: order.total,
+          });
+      response.status(201).location("/api/orders").json(orders);
+    } catch (error) {
+      next(error);
+    } finally {
+      await session?.endSession();
+    }
+  },
+);
+
+router.get("/", requireAuth(), async (request, response, next) => {
   try {
-    let order;
-    await session.withTransaction(async () => {
-      const products = await Product.find({
-        _id: { $in: [...quantities.keys()] }, publicado: true,
-      }).session(session);
-      if (products.length !== quantities.size) throw Object.assign(new Error('Um ou mais produtos estão indisponíveis.'), { status: 409 });
-      const producerId = String(products[0].produtorId);
-      if (products.some((product) => String(product.produtorId) !== producerId)) {
-        throw Object.assign(new Error('Cria uma encomenda por produtor.'), { status: 400 });
-      }
-      const producer = await User.findOne({
-        _id: producerId, papel: 'produtor', 'perfilProdutor.validacao': 'aceite',
-      }).session(session);
-      if (!producer) throw Object.assign(new Error('O produtor está indisponível.'), { status: 409 });
-      const lines = products.map((product) => ({
-        produtoId: product.id, nome: product.nome, precoUnitario: product.preco,
-        quantidade: quantities.get(String(product._id)), unidade: product.unidade,
-      }));
-      const total = lines.reduce((sum, line) => sum + Math.round(line.precoUnitario * line.quantidade), 0);
-      if (!Number.isSafeInteger(total)) throw Object.assign(new Error('O total excede o limite permitido.'), { status: 400 });
-
-      for (const product of products) {
-        const updated = await Product.findOneAndUpdate({
-          _id: product._id, publicado: true, stock: { $gte: quantities.get(String(product._id)) },
-        }, { $inc: { stock: -quantities.get(String(product._id)) } }, { new: true, session, runValidators: true });
-        if (!updated) throw Object.assign(new Error(`Stock insuficiente para ${product.nome}.`), { status: 409 });
-      }
-
-      [order] = await Order.create([{
-        compradorId: request.user.id, produtorId: producerId, linhas: lines, total,
-        estado: 'pendente', entrega,
-      }], { session });
-    });
-    await order.populate('produtorId', 'nome');
-    response.status(201).location(`/api/orders/${order.id}`).json(order);
-  } catch (error) {
-    next(error);
-  } finally {
-    await session.endSession();
-  }
-});
-
-router.get('/', requireAuth(), async (request, response, next) => {
-  try {
-    const filter = request.user.papel === 'administrador'
-      ? {} : { $or: [{ compradorId: request.user.id }, { produtorId: request.user.id }] };
-    const orders = await Order.find(filter).sort({ createdAt: -1 })
-      .populate('compradorId', 'nome').populate('produtorId', 'nome');
+    const filter =
+      request.user.papel === "administrador"
+        ? {}
+        : {
+            $or: [
+              { compradorId: request.user.id },
+              { produtorId: request.user.id },
+            ],
+          };
+    const orders = await Order.find(filter)
+      .sort({ createdAt: -1 })
+      .populate("compradorId", "nome")
+      .populate("produtorId", "nome");
     response.json(orders);
   } catch (error) {
     next(error);
   }
 });
 
-router.get('/:id', requireAuth(), async (request, response, next) => {
+router.get("/:id", requireAuth(), async (request, response, next) => {
   try {
+    if (!mongoose.isObjectIdOrHexString(request.params.id))
+      return response.status(404).json({ erro: "Encomenda não encontrada." });
     const filter = { _id: request.params.id };
-    if (request.user.papel !== 'administrador') {
-      filter.$or = [{ compradorId: request.user.id }, { produtorId: request.user.id }];
+    if (request.user.papel !== "administrador") {
+      filter.$or = [
+        { compradorId: request.user.id },
+        { produtorId: request.user.id },
+      ];
     }
-    const order = await Order.findOne(filter).populate('compradorId', 'nome').populate('produtorId', 'nome');
-    if (!order) return response.status(404).json({ erro: 'Encomenda não encontrada.' });
+    const order = await Order.findOne(filter)
+      .populate("compradorId", "nome")
+      .populate("produtorId", "nome");
+    if (!order)
+      return response.status(404).json({ erro: "Encomenda não encontrada." });
     response.json(order);
   } catch (error) {
     next(error);
   }
 });
 
-router.patch('/:id/estado', requireAuth('produtor'), async (request, response, next) => {
-  try {
-    const { estado } = request.body;
-    if (!states.includes(estado)) return response.status(400).json({ erro: 'Estado de encomenda inválido.' });
-    const order = await Order.findOne({ _id: request.params.id, produtorId: request.user.id });
-    if (!order) return response.status(404).json({ erro: 'Encomenda não encontrada.' });
-    if (states.indexOf(estado) !== states.indexOf(order.estado) + 1) {
-      return response.status(409).json({ erro: 'A encomenda só pode avançar para o estado seguinte.' });
+router.get(
+  "/:id/reviews",
+  requireAuth("comprador"),
+  async (request, response, next) => {
+    try {
+      if (!mongoose.isObjectIdOrHexString(request.params.id))
+        return response.status(404).json({ erro: "Encomenda não encontrada." });
+      const order = await Order.findOne({
+        _id: request.params.id,
+        compradorId: request.user.id,
+      });
+      if (!order)
+        return response.status(404).json({ erro: "Encomenda não encontrada." });
+      const reviews = await Review.find({
+        encomendaId: order._id,
+        autorId: request.user.id,
+      }).sort({ createdAt: 1 });
+      response.json(reviews);
+    } catch (error) {
+      next(error);
     }
-    order.estado = estado;
-    if (estado === 'entregue') order.dataEntrega = new Date();
-    await order.save();
-    response.json(order);
-  } catch (error) {
-    next(error);
-  }
-});
+  },
+);
+
+router.patch(
+  "/:id/entrega",
+  requireAuth("comprador"),
+  requireObjectBody,
+  async (request, response, next) => {
+    try {
+      if (!mongoose.isObjectIdOrHexString(request.params.id))
+        return response.status(404).json({ erro: "Encomenda não encontrada." });
+      const { entrega } = request.body;
+      if (
+        !entrega ||
+        !["levantamento", "entrega"].includes(entrega.tipo) ||
+        (entrega.tipo === "entrega" &&
+          (typeof entrega.morada !== "string" || !entrega.morada.trim()))
+      ) {
+        return response
+          .status(400)
+          .json({ erro: "Dados de entrega ou levantamento inválidos." });
+      }
+      const order = await Order.findOne({
+        _id: request.params.id,
+        compradorId: request.user.id,
+      });
+      if (!order)
+        return response.status(404).json({ erro: "Encomenda não encontrada." });
+      if (!order.leilaoId || order.estado !== "pendente" || order.entrega)
+        return response.status(409).json({
+          erro: "Esta encomenda já não aguarda a escolha da modalidade.",
+        });
+      let pickupAddress;
+      if (entrega.tipo === "levantamento") {
+        const producer = await User.findById(order.produtorId).select(
+          "perfilProdutor.morada",
+        );
+        pickupAddress = producer?.perfilProdutor?.morada?.trim();
+        if (!pickupAddress)
+          return response.status(400).json({
+            erro: "O produtor ainda não tem uma morada de levantamento. Escolha entrega ou peça ao produtor para atualizar o perfil.",
+          });
+      }
+      const updated = await Order.findOneAndUpdate(
+        {
+          _id: order._id,
+          compradorId: request.user.id,
+          leilaoId: order.leilaoId,
+          estado: "pendente",
+          entrega: null,
+        },
+        {
+          $set: {
+            entrega: {
+              tipo: entrega.tipo,
+              morada:
+                entrega.tipo === "entrega"
+                  ? entrega.morada.trim()
+                  : pickupAddress,
+            },
+            estado: "confirmada",
+          },
+        },
+        { new: true, runValidators: true },
+      );
+      if (!updated)
+        return response.status(409).json({
+          erro: "A encomenda foi alterada por outro pedido. Atualize os dados e tente novamente.",
+        });
+      request.app
+        ?.get("io")
+        ?.to(`user:${updated.produtorId}`)
+        .emit("encomenda-atualizada", {
+          id: String(updated._id),
+          estado: updated.estado,
+        });
+      response.json(updated);
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+router.patch(
+  "/:id/estado",
+  requireAuth("produtor"),
+  requireObjectBody,
+  async (request, response, next) => {
+    try {
+      if (!mongoose.isObjectIdOrHexString(request.params.id))
+        return response.status(404).json({ erro: "Encomenda não encontrada." });
+      const { estado } = request.body;
+      if (!states.includes(estado))
+        return response
+          .status(400)
+          .json({ erro: "Estado de encomenda inválido." });
+      const order = await Order.findOne({
+        _id: request.params.id,
+        produtorId: request.user.id,
+      });
+      if (!order)
+        return response.status(404).json({ erro: "Encomenda não encontrada." });
+      if (order.leilaoId && !order.entrega)
+        return response.status(409).json({
+          erro: "O comprador ainda não escolheu a modalidade da encomenda.",
+        });
+      if (states.indexOf(estado) !== states.indexOf(order.estado) + 1) {
+        return response.status(409).json({
+          erro: "A encomenda só pode avançar para o estado seguinte.",
+        });
+      }
+      const updated = await Order.findOneAndUpdate(
+        {
+          _id: order._id,
+          produtorId: request.user.id,
+          estado: order.estado,
+        },
+        {
+          $set: {
+            estado,
+            ...(estado === "entregue" ? { dataEntrega: new Date() } : {}),
+          },
+        },
+        {
+          new: true,
+          runValidators: true,
+        },
+      );
+      if (!updated)
+        return response.status(409).json({
+          erro: "A encomenda foi alterada por outro pedido. Atualize os dados e tente novamente.",
+        });
+      request.app
+        ?.get("io")
+        ?.to(`user:${updated.compradorId}`)
+        .emit("encomenda-atualizada", {
+          id: String(updated._id),
+          estado: updated.estado,
+          produtor: request.user.nome,
+        });
+      response.json(updated);
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
 export default router;

@@ -1,0 +1,44 @@
+@use "../styles/abstracts/mixins" as mixins;
+
+.producer-detail {
+  &__inner {
+    display: grid;
+    gap: 32px;
+    padding-block: 32px;
+  }
+
+  &__profile {
+    display: grid;
+    gap: 24px;
+    min-width: 0;
+    overflow-wrap: anywhere;
+
+    @include mixins.up(desktop) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  &__description {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  &__products {
+    display: grid;
+    gap: 24px;
+    padding: 0;
+    list-style: none;
+
+    @include mixins.up(tablet) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    @include mixins.up(desktop) {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    @include mixins.up(wide) {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+}

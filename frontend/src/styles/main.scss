@@ -1,7 +1,7 @@
-@use './abstracts/tokens' as tokens;
-@use './bootstrap';
-@use './base/reset';
-@use './base/global';
+@use "./abstracts/tokens" as tokens;
+@use "./bootstrap";
+@use "./base/reset";
+@use "./base/global";
 
 :root {
   @each $name, $value in tokens.$colors {

@@ -1,3 +1,5 @@
+@use "../abstracts/tokens" as tokens;
+
 :root {
   font-family: var(--font-body);
   font-synthesis: none;
@@ -16,4 +18,8 @@ button {
 ::selection {
   color: var(--color-white);
   background: var(--color-green-900);
+}
+
+.page-content {
+  padding-inline: tokens.$page-padding-inline;
 }

@@ -1,0 +1,65 @@
+.app-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px 24px;
+  padding: 16px 24px;
+  background: var(--color-green-950);
+  color: var(--color-white);
+
+  &__brand-group {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 6px;
+
+    svg {
+      width: 16px;
+    }
+  }
+
+  &__brand {
+    color: inherit;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+
+    &:hover {
+      color: inherit;
+    }
+    &:focus-visible {
+      outline: 2px solid currentColor;
+      outline-offset: 4px;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px 20px;
+    overflow-wrap: anywhere;
+
+    a:not(.button, .icon-button) {
+      color: inherit;
+    }
+
+    a:not(.icon-button):focus-visible {
+      outline: 2px solid var(--color-yellow-500);
+      outline-offset: 4px;
+    }
+  }
+
+  &--default :is(a, button):focus-visible {
+    outline-color: var(--color-yellow-500);
+  }
+
+  &--overlay {
+    padding: 0;
+    background: transparent;
+    color: var(--color-green-950);
+  }
+}

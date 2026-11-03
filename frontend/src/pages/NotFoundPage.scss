@@ -1,0 +1,27 @@
+@use "../styles/abstracts/mixins" as *;
+
+.not-found-page {
+  > .app-header {
+    max-width: 960px;
+    margin-inline: auto;
+  }
+}
+
+.not-found-page__inner {
+  max-width: 960px;
+  margin-inline: auto;
+  padding-block: 24px 48px;
+
+  @include up(tablet) {
+    padding-block: 48px 64px;
+  }
+}
+
+.not-found-page__message {
+  margin-top: 32px;
+  padding: 24px;
+  background: var(--color-white);
+  color: var(--color-green-950);
+  border: 1px solid var(--color-green-20);
+  border-radius: 16px;
+}

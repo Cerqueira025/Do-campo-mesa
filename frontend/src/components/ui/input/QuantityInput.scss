@@ -1,0 +1,47 @@
+.quantity-input {
+  display: flex;
+  align-items: center;
+  width: 140px;
+  min-height: 44px;
+  border-radius: 24px;
+  background: var(--color-stone-100);
+  color: var(--color-green-950);
+
+  &__value {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    padding: 4px 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: center;
+    appearance: textfield;
+
+    &::-webkit-inner-spin-button,
+    &::-webkit-outer-spin-button {
+      margin: 0;
+      appearance: none;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-green-900);
+      outline-offset: 2px;
+    }
+  }
+}
+
+.quantity-input-field {
+  min-width: 0;
+
+  &__message {
+    display: block;
+    margin-top: 8px;
+    color: var(--color-error-700);
+    font-size: var(--font-size-xs);
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+  }
+}

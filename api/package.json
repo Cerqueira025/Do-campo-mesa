@@ -8,6 +8,8 @@
     "start": "node src/server.js",
     "db:init": "node src/scripts/init-db.js",
     "db:seed": "node src/scripts/seed-db.js",
+    "db:migrate:auction-products": "node src/scripts/migrate-auction-products.js",
+    "db:migrate:auction-stock": "node src/scripts/migrate-auction-stock.js",
     "test": "node --test test/*.test.js",
     "test:api": "node src/scripts/test-api.js"
   },
@@ -15,7 +17,8 @@
     "bcrypt": "^6.0.0",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.3",
-    "mongoose": "^9.11.1"
+    "mongoose": "^9.11.1",
+    "socket.io": "^4.8.4"
   },
   "devDependencies": {
     "@usebruno/cli": "^4.2.1"

@@ -1,0 +1,22 @@
+{
+  "name": "do-campo-a-mesa",
+  "private": true,
+  "scripts": {
+    "start": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File ./start.ps1",
+    "lint": "npm run lint:frontend && npm run lint:js && npm run lint:php && npm run lint:styles && npm run lint:format",
+    "lint:frontend": "npm --prefix frontend run lint",
+    "lint:js": "eslint api backoffice/app/resources/js backoffice/app/vite.config.js eslint.config.mjs stylelint.config.mjs",
+    "lint:php": "cd backoffice/app && php vendor/bin/pint --test",
+    "lint:styles": "stylelint \"frontend/src/**/*.{css,scss}\" \"backoffice/app/resources/css/**/*.{css,scss}\"",
+    "lint:format": "prettier --check \"api/**/*.{js,md}\" api/package.json \"frontend/src/**/*.{js,jsx,ts,tsx,css,scss}\" \"frontend/test/**/*.{ts,tsx}\" frontend/package.json frontend/eslint.config.js frontend/vite.config.ts frontend/README.md \"backoffice/app/{app,bootstrap,config,database,resources,routes,tests}/**/*.{js,md,css,scss}\" backoffice/app/package.json backoffice/app/composer.json README.md \"docs/**/*.md\""
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.14.0",
+    "globals": "^17.13.0",
+    "prettier": "^3.9.10",
+    "stylelint": "^17.16.0",
+    "stylelint-config-recommended": "^18.0.0",
+    "stylelint-config-recommended-scss": "^17.0.1"
+  }
+}

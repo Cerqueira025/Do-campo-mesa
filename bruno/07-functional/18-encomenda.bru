@@ -26,7 +26,7 @@ body:json {
       },
       {
         "produtoId": "{{functionalProduct1}}",
-        "quantidade": 0.75
+        "quantidade": 1
       }
     ],
     "entrega": {
@@ -38,15 +38,16 @@ body:json {
 tests {
   test("Consolida linhas e ignora preços manipulados", function() {
     expect(res.getStatus()).to.equal(201);
-    const order = res.getBody();
+    expect(res.getBody()).to.have.length(1);
+    const order = res.getBody()[0];
     expect(order.linhas).to.have.length(1);
-    expect(order.linhas[0].quantidade).to.equal(1.25);
+    expect(order.linhas[0].quantidade).to.equal(1.5);
     expect(order.linhas[0].precoUnitario).to.equal(151);
     expect(order.linhas[0].unidade).to.equal('kg');
-    expect(order.total).to.equal(189);
+    expect(order.total).to.equal(227);
   });
 }
 
 script:post-response {
-  bru.setVar("functionalOrder", res.getBody()._id);
+  bru.setVar("functionalOrder", res.getBody()[0]._id);
 }

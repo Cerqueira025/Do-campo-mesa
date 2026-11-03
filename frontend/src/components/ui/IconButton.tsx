@@ -1,34 +1,61 @@
-import type { ButtonHTMLAttributes, ReactNode } from 'react'
-import './IconButton.scss'
+import type {
+  AnchorHTMLAttributes,
+  ButtonHTMLAttributes,
+  ReactNode,
+} from "react";
+import InternalLink from "../../navigation/InternalLink";
+import "./IconButton.scss";
 
-type IconButtonVariant = 'primary' | 'secondary' | 'cream' | 'product'
+type IconButtonVariant = "primary" | "secondary" | "cream" | "dark" | "plain";
 
-interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'aria-label'> {
-  icon: ReactNode
-  variant?: IconButtonVariant
-  'aria-label': string
+interface IconButtonBaseProps {
+  icon: ReactNode;
+  variant?: IconButtonVariant;
+  "aria-label": string;
 }
 
+type IconButtonProps = IconButtonBaseProps &
+  (
+    | (Omit<ButtonHTMLAttributes<HTMLButtonElement>, "aria-label"> & {
+        href?: never;
+      })
+    | (Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "aria-label"> & {
+        href: string;
+      })
+  );
+
 function IconButton({
-  'aria-label': ariaLabel,
-  className = '',
+  "aria-label": ariaLabel,
+  className = "",
   icon,
-  variant = 'primary',
-  type = 'button',
-  ...buttonProps
+  variant = "primary",
+  ...elementProps
 }: IconButtonProps) {
-  const classes = ['icon-button', `icon-button--${variant}`, className].filter(Boolean).join(' ')
+  const classes = ["icon-button", `icon-button--${variant}`, className]
+    .filter(Boolean)
+    .join(" ");
+
+  if (elementProps.href !== undefined)
+    return (
+      <InternalLink
+        {...elementProps}
+        className={classes}
+        aria-label={ariaLabel}
+      >
+        {icon}
+      </InternalLink>
+    );
 
   return (
     <button
+      type="button"
+      {...elementProps}
       className={classes}
-      type={type}
       aria-label={ariaLabel}
-      {...buttonProps}
     >
       {icon}
     </button>
-  )
+  );
 }
 
-export default IconButton
+export default IconButton;

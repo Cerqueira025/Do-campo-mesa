@@ -1,0 +1,23 @@
+meta {
+  name: Consulta administrativa da última decisão
+  type: http
+  seq: 29
+}
+
+get {
+  url: {{baseUrl}}/admin/users/{{rejectedProducerId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+tests {
+  test("apenas a administração consulta o motivo", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().ultimaDecisao.motivo).to.equal("Registo de teste incompleto");
+    expect(res.getBody().perfilProdutor.validacao).to.equal("rejeitado");
+  });
+}

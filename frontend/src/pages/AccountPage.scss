@@ -1,0 +1,10 @@
+.auth-details {
+  display: grid;
+  gap: 16px;
+  dt {
+    font-weight: 700;
+  }
+  dd {
+    margin: 4px 0 0;
+  }
+}

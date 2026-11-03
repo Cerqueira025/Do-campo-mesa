@@ -1,0 +1,23 @@
+meta {
+  name: Recusa denúncia do autor
+  type: http
+  seq: 11
+}
+
+post {
+  url: {{baseUrl}}/reviews/{{testReviewId}}/denuncias
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{testBuyerToken}}
+}
+
+body:json {
+  {"motivo": "Teste de denúncia própria"}
+}
+
+tests {
+  test("devolve 403", function() { expect(res.getStatus()).to.equal(403); });
+}

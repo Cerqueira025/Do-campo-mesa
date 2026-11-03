@@ -1,0 +1,23 @@
+meta {
+  name: Nova denúncia impede decisão antiga
+  type: http
+  seq: 15
+}
+
+patch {
+  url: {{baseUrl}}/reviews/{{testReviewId}}/moderacao
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+body:json {
+  {"estado": "publicada", "decisaoAnterior": "{{reviewDecision}}", "atualizadoEm": "{{reviewUpdatedAt}}"}
+}
+
+tests {
+  test("devolve 409", function() { expect(res.getStatus()).to.equal(409); });
+}

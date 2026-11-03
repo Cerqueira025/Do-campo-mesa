@@ -1,0 +1,23 @@
+meta {
+  name: Recusa denúncia repetida
+  type: http
+  seq: 13
+}
+
+post {
+  url: {{baseUrl}}/reviews/{{testReviewId}}/denuncias
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{producerToken}}
+}
+
+body:json {
+  {"motivo": "Repetição"}
+}
+
+tests {
+  test("devolve 409", function() { expect(res.getStatus()).to.equal(409); });
+}
