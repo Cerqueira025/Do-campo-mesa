@@ -50,7 +50,8 @@ router.get("/:id", async (request, response, next) => {
     if (!result)
       return response.status(404).json({ erro: "Leilão não encontrado." });
     if (result.estado !== "terminado") return response.json(result);
-    const winnerId = result.licitacaoAtual.compradorId;
+    const currentBid = result.licitacaoAtual ?? { valor: result.precoBase, compradorId: null };
+    const winnerId = currentBid.compradorId;
     const [order, winner] = winnerId
       ? await Promise.all([
           Order.findOne({ leilaoId: result._id }).select("_id").lean(),
@@ -63,7 +64,7 @@ router.get("/:id", async (request, response, next) => {
         vencedor: Boolean(winnerId),
         vencedorId: winnerId ? String(winnerId) : null,
         vencedorNome: winner?.nome ?? null,
-        valor: result.licitacaoAtual.valor,
+        valor: currentBid.valor,
         encomendaId: order ? String(order._id) : null,
       },
     });

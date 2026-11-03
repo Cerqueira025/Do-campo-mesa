@@ -134,7 +134,7 @@ test("Conflito concorrente ao escolher modalidade não emite notificação", asy
   const { order, events, invoke } = fixture(t);
   t.mock.method(Order, "findOneAndUpdate", async () => null);
   assert.equal(
-    (await invoke(delivery, buyer, { entrega: { tipo: "levantamento" } })).code,
+    (await invoke(delivery, buyer, { entrega: { tipo: "entrega", morada: "Rua A" } })).code,
     409,
   );
   assert.equal(order.estado, "pendente");

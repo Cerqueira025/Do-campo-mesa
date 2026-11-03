@@ -16,6 +16,7 @@ const valid = {
   _id: id,
   estado: "ativo",
   reservaStock: "reservada",
+  licitacaoAtual: { valor: 100, compradorId: null },
   dataInicio: new Date(now - 1000),
   dataFim: new Date(now + 1000),
   produtos: [
@@ -200,7 +201,15 @@ test("A passagem do tempo não ativa um leilão sem reserva confirmada", async (
   record.reservaStock = "reservada";
   assert.equal((await invoke("/:id")).body.estado, "ativo");
   t.mock.method(Date, "now", () => now + 1000);
-  assert.equal((await invoke("/:id")).body.estado, "terminado");
+  const ended = await invoke("/:id");
+  assert.equal(ended.body.estado, "terminado");
+  assert.deepEqual(ended.body.resultado, {
+    vencedor: false,
+    vencedorId: null,
+    vencedorNome: null,
+    valor: 100,
+    encomendaId: null,
+  });
 });
 
 const unavailable = {
@@ -275,8 +284,20 @@ test("Lote misto exige todos os produtos disponíveis, incluindo o segundo", asy
 
 test("Leilão terminado continua público se os alvos estiverem disponíveis", async (t) => {
   setup(t, [{ ...valid, estado: "terminado" }]);
-  assert.equal((await invoke("/:id")).body.estado, "terminado");
-  assert.equal((await invoke("/", { estado: "terminado" })).body.length, 1);
+  const detail = await invoke("/:id");
+  const list = await invoke("/", { estado: "terminado" });
+  assert.equal(detail.code, 200);
+  assert.equal(detail.body.estado, "terminado");
+  assert.deepEqual(detail.body.resultado, {
+    vencedor: false,
+    vencedorId: null,
+    vencedorNome: null,
+    valor: 100,
+    encomendaId: null,
+  });
+  assert.deepEqual(list.body.map(({ _id, estado }) => ({ _id, estado })), [
+    { _id: id, estado: "terminado" },
+  ]);
 });
 
 test("Detalhe persiste o resultado e a encomenda de um leilão terminado com vencedor", async (t) => {
