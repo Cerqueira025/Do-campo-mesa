@@ -1,0 +1,24 @@
+meta {
+  name: Conserva referência antes de denúncia
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{baseUrl}}/admin/reviews/{{testReviewId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+tests {
+  test("devolve 200", function() { expect(res.getStatus()).to.equal(200); });
+}
+
+script:post-response {
+  bru.setVar("reviewDecision", res.getBody().ultimaDecisao?.data ?? null);
+  bru.setVar("reviewUpdatedAt", res.getBody().updatedAt);
+}

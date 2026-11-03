@@ -1,8 +1,8 @@
-@use '../styles/abstracts/mixins' as *;
+@use "../styles/abstracts/mixins" as *;
 
 .home-page {
   &__auction {
-    padding: 24px 24px 0;
+    padding-block: 24px 0;
   }
 
   &__auction-inner {
@@ -11,7 +11,7 @@
   }
 
   &__products {
-    padding: 24px 24px 64px;
+    padding-block: 24px 64px;
   }
 
   &__products-inner {
@@ -51,7 +51,7 @@
     height: 48px;
     font-size: 20px;
 
-    &[aria-expanded='true'] {
+    &[aria-expanded="true"] {
       background: var(--color-green-20);
     }
   }
@@ -86,6 +86,20 @@
     p {
       margin: 0;
     }
+  }
+
+  &__pagination {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    margin-top: 24px;
+  }
+
+  &__results:focus-visible {
+    outline: 2px solid var(--color-green-900);
+    outline-offset: 4px;
   }
 
   @include up(desktop) {

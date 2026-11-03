@@ -1,0 +1,25 @@
+meta {
+  name: Comprador não pode validar produtores
+  type: http
+  seq: 15
+}
+
+patch {
+  url: {{baseUrl}}/producers/{{authProducerId}}/validacao
+  body: json
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{testBuyerToken}}
+}
+
+body:json {
+  { "validacao": "aceite" }
+}
+
+tests {
+  test("apenas administrador pode validar", function() {
+    expect(res.getStatus()).to.equal(403);
+  });
+}

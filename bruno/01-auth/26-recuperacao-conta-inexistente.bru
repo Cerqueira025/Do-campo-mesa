@@ -1,0 +1,25 @@
+meta {
+  name: Recuperação de conta inexistente
+  type: http
+  seq: 26
+}
+
+post {
+  url: {{baseUrl}}/auth/recuperar-password
+  body: json
+  auth: none
+}
+
+script:pre-request {
+  bru.setVar("missingRecoveryEmail", "bruno-missing-" + Date.now() + "@example.test");
+}
+
+body:json {
+  { "email": "{{missingRecoveryEmail}}", "password": "BrunoNovaPassword123!" }
+}
+
+tests {
+  test("conta inexistente devolve 404", function() {
+    expect(res.getStatus()).to.equal(404);
+  });
+}

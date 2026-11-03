@@ -8,13 +8,22 @@ import auctionRoutes from "./routes/auctions.js";
 import backofficeRoutes from "./routes/backoffice.js";
 import swaggerUi from "swagger-ui-express";
 import { readFileSync } from "node:fs";
+import adminRoutes from "./routes/admin.js";
 
 const app = express();
 
-app.use(express.json({ limit: '100kb' }));
+app.use(
+  express.json({
+    limit: "100kb",
+    // O parser transforma um corpo vazio em {}; preservar a distinção para as rotas.
+    verify(request, _response, buffer) {
+      request.emptyJsonBody = buffer.length === 0;
+    },
+  }),
+);
 
-app.get('/api/health', (_request, response) => {
-  response.json({ status: 'ok' });
+app.get("/api/health", (_request, response) => {
+  response.json({ status: "ok" });
 });
 
 app.use("/api/auth", authRoutes);
@@ -43,20 +52,32 @@ app.use(
     },
   }),
 );
+app.use("/api/admin", adminRoutes);
 
 app.use("/api", (_request, response) => {
   response.status(404).json({ erro: "Rota da API não encontrada." });
 });
 
 app.use((error, _request, response, _next) => {
-  if (response.headersSent) return;
-  if (error.code === 11000) return response.status(409).json({ erro: 'Já existe um registo com estes dados.' });
-  if (error.name === 'ValidationError' || error.name === 'CastError' || error.type === 'entity.parse.failed' || error.status === 413) {
-    return response.status(error.status === 413 ? 413 : 400).json({ erro: error.message });
+  if (response.headersSent) return _next(error);
+  if (error.code === 11000)
+    return response
+      .status(409)
+      .json({ erro: "Já existe um registo com estes dados." });
+  if (
+    error.name === "ValidationError" ||
+    error.name === "CastError" ||
+    error.type === "entity.parse.failed" ||
+    error.status === 413
+  ) {
+    return response
+      .status(error.status === 413 ? 413 : 400)
+      .json({ erro: error.message });
   }
-  if (error.status) return response.status(error.status).json({ erro: error.message });
-  console.error('Erro inesperado na API:', error.name || 'Error');
-  response.status(500).json({ erro: 'Ocorreu um erro interno.' });
+  if (error.status)
+    return response.status(error.status).json({ erro: error.message });
+  console.error("Erro inesperado na API:", error.name || "Error");
+  response.status(500).json({ erro: "Ocorreu um erro interno." });
 });
 
 export default app;

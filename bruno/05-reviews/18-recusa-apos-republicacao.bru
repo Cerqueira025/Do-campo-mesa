@@ -1,0 +1,23 @@
+meta {
+  name: Republicação não permite repetir denúncia
+  type: http
+  seq: 18
+}
+
+post {
+  url: {{baseUrl}}/reviews/{{testReviewId}}/denuncias
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{producerToken}}
+}
+
+body:json {
+  {"motivo": "Nova tentativa"}
+}
+
+tests {
+  test("devolve 409", function() { expect(res.getStatus()).to.equal(409); });
+}

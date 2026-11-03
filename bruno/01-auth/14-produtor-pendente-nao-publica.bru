@@ -1,0 +1,25 @@
+meta {
+  name: Produtor pendente não publica
+  type: http
+  seq: 14
+}
+
+post {
+  url: {{baseUrl}}/products
+  body: json
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{authProducerToken}}
+}
+
+body:json {
+  { "nome": "BRUNO_AUTOTEST_produto_pendente" }
+}
+
+tests {
+  test("produtor por validar recebe 403", function() {
+    expect(res.getStatus()).to.equal(403);
+  });
+}

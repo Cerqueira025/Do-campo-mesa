@@ -1,0 +1,26 @@
+meta {
+  name: Prepara encomenda temporária para avaliação
+  type: http
+  seq: 7
+}
+
+patch {
+  url: {{baseUrl}}/orders/{{testOrderId}}/estado
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{producerToken}}
+}
+
+body:json {
+  { "estado": "pronta" }
+}
+
+tests {
+  test("produtor prepara a encomenda temporária", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().estado).to.equal("pronta");
+  });
+}

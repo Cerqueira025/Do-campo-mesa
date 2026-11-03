@@ -14,7 +14,7 @@ tests {
   test("detalhe contém lote e produtor", function() {
     expect(res.getStatus()).to.equal(200);
     expect(res.getBody().lote).to.contain("BRUNO_AUTOTEST_");
-    expect(res.getBody().produtoId).to.have.property("nome");
+    expect(res.getBody().produtos[0].produtoId).to.have.property("nome");
     expect(res.getBody().produtorId).to.have.property("nome");
   });
 }

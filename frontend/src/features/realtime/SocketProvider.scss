@@ -1,0 +1,25 @@
+.realtime-notices {
+  position: fixed;
+  z-index: 30;
+  right: 1rem;
+  bottom: 1rem;
+  display: grid;
+  gap: 0.5rem;
+  width: min(26rem, calc(100vw - 2rem));
+}
+.realtime-notices__item {
+  padding: 1rem;
+  border: 1px solid var(--color-green-300);
+  border-radius: 1rem;
+  background: var(--color-green-950);
+  color: var(--color-white);
+  box-shadow: 0 0.5rem 2rem var(--color-green-20);
+}
+.realtime-notices__item p {
+  margin: 0 0 0.75rem;
+}
+.realtime-notices__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}

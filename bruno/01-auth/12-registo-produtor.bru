@@ -1,0 +1,41 @@
+meta {
+  name: Regista produtor de teste pendente
+  type: http
+  seq: 12
+}
+
+post {
+  url: {{baseUrl}}/auth/registo
+  body: json
+  auth: none
+}
+
+script:pre-request {
+  bru.setVar("authProducerEmail", "bruno-test-" + Date.now() + "-" + Math.random().toString(36).slice(2) + "@example.test");
+}
+
+body:json {
+  {
+    "nome": "Produtor Bruno Teste",
+    "email": "{{authProducerEmail}}",
+    "password": "{{testPassword}}",
+    "papel": "produtor",
+    "perfilProdutor": {
+      "localidade": "Viana do Castelo",
+      "morada": "Rua da Quinta de Teste",
+      "coordenadas": { "latitude": 41.69, "longitude": -8.83 },
+      "validacao": "aceite"
+    }
+  }
+}
+
+tests {
+  test("registo ignora aprovação enviada pelo cliente", function() {
+    expect(res.getStatus()).to.equal(201);
+    expect(res.getBody().validacao).to.equal("pendente");
+  });
+}
+
+script:post-response {
+  bru.setVar("authProducerId", res.getBody().id);
+}

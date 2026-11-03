@@ -1,0 +1,198 @@
+@use "../../styles/abstracts/mixins" as mixins;
+
+.admin-page {
+  min-height: 100vh;
+  background: var(--color-stone-50);
+  color: var(--color-green-950);
+
+  &__layout :where(a:not(.button)) {
+    color: var(--color-green-950);
+  }
+  &__layout a:focus-visible,
+  &__results:focus-visible {
+    outline: 2px solid var(--color-green-900);
+    outline-offset: 4px;
+  }
+  &__layout :is(.button, .icon-button):focus-visible,
+  &__heading .icon-button:focus-visible {
+    outline-color: var(--color-green-900);
+  }
+  &__inner {
+    max-width: 1440px;
+    margin-inline: auto;
+  }
+  &__heading,
+  &__actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding-block: 1rem;
+  }
+  &__header {
+    margin-bottom: 2rem;
+  }
+  &__heading {
+    h1,
+    p {
+      margin: 0;
+    }
+  }
+  &__layout {
+    display: grid;
+    align-items: start;
+    gap: 1.5rem;
+    padding-block: 1rem;
+  }
+  &__content {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  &__menu {
+    padding: 1.25rem;
+    border: 1px solid var(--color-green-20);
+    border-radius: 1.5rem;
+    background: var(--color-white);
+    box-shadow: 0 8px 32px var(--color-green-20);
+  }
+  &__menu a {
+    display: block;
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    text-decoration: none;
+  }
+  &__menu a:hover {
+    background: var(--color-stone-50);
+  }
+  &__menu a[aria-current="page"] {
+    background: var(--color-green-950);
+    color: var(--color-white);
+    font-weight: 700;
+  }
+  &__toolbar {
+    margin-bottom: 1rem;
+    .search-bar {
+      flex: 1 1 16rem;
+    }
+  }
+  &__filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    > * {
+      flex: 1 1 12rem;
+      max-width: 24rem;
+    }
+  }
+  &__panel {
+    padding: 1.25rem;
+    margin-block: 1rem;
+    border: 1px solid var(--color-green-20);
+    border-radius: 1rem;
+    background: var(--color-white);
+  }
+  &__facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem 2rem;
+    dd {
+      margin: 0.25rem 0 0;
+    }
+    dt {
+      font-weight: 700;
+    }
+  }
+  &__text {
+    white-space: pre-wrap;
+  }
+  &__reference {
+    font-size: var(--font-size-xs);
+  }
+  &__image {
+    display: block;
+    width: 5rem;
+    height: 5rem;
+    object-fit: contain;
+    margin-bottom: 1rem;
+    font-size: var(--font-size-xs);
+  }
+  &__product-name {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 12rem;
+  }
+  &__product-name .admin-page__image {
+    flex: 0 0 4rem;
+    width: 4rem;
+    height: auto;
+    min-height: 4rem;
+    margin: 0;
+    font-weight: 400;
+  }
+  &__cards {
+    padding: 0;
+    list-style: none;
+  }
+  &__table {
+    display: none;
+    overflow-x: auto;
+    border: 1px solid var(--color-green-20);
+    border-radius: 1rem;
+    background: var(--color-white);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-size-xs);
+  }
+  th,
+  td {
+    padding: 0.875rem;
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px solid var(--color-green-20);
+  }
+  thead {
+    background: var(--color-brown-100);
+  }
+  &__summary {
+    display: grid;
+    gap: 1rem;
+  }
+  &__count {
+    font-size: var(--font-size-3xl);
+    font-weight: 700;
+  }
+  &__error {
+    color: var(--color-error-700);
+  }
+  &__confirmation {
+    display: grid;
+    gap: 1rem;
+    border-top: 1px solid var(--color-green-20);
+    padding-top: 1rem;
+  }
+  &__actions {
+    padding-inline: 1rem;
+    margin-block: 1rem;
+  }
+  @include mixins.up(tablet) {
+    &__summary {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @include mixins.up(desktop) {
+    &__layout--open {
+      grid-template-columns: 260px minmax(0, 1fr);
+    }
+    &__table {
+      display: block;
+    }
+    &__cards:not(&__cards--always) {
+      display: none;
+    }
+  }
+}

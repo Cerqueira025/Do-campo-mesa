@@ -1,4 +1,5 @@
-@use '../styles/abstracts/mixins' as *;
+@use "../styles/abstracts/mixins" as *;
+@use "../styles/abstracts/tokens" as tokens;
 
 .product-detail {
   padding: 24px 0 48px;
@@ -6,43 +7,35 @@
 
   &--loaded {
     padding-top: 0;
-    padding-bottom: calc(200px + env(safe-area-inset-bottom));
+    padding-bottom: calc(var(--product-order-height, 190px) + 24px);
   }
 
   &__inner {
     max-width: var(--content-max);
     margin-inline: auto;
-    padding-inline: 24px;
   }
 
-  &__back {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+  &__header {
+    max-width: var(--content-max);
+    margin-inline: auto;
     margin-bottom: 24px;
-  }
-
-  &__back .icon-button {
-    width: 44px;
   }
 
   &__hero {
     position: relative;
     display: flex;
-    align-items: flex-end;
-    min-height: clamp(380px, 75vw, 400px);
-    padding-top: 88px;
+    flex-direction: column;
+    min-height: 500px;
     overflow: hidden;
     margin-bottom: 24px;
     background: var(--color-brown-100);
   }
 
-  &__hero &__back {
-    position: absolute;
-    z-index: 1;
-    top: 20px;
-    left: max(24px, calc((100% - var(--content-max)) / 2 + 24px));
-    margin: 0;
+  &__top-row {
+    position: relative;
+    z-index: 2;
+    padding-block: 20px;
+    padding-inline: max(24px, calc((100% - var(--content-max)) / 2 + 24px));
   }
 
   &__visual {
@@ -65,10 +58,20 @@
   }
 
   &__heading {
+    margin-top: auto;
     position: relative;
     width: 100%;
-    padding: 112px max(24px, calc((100% - var(--content-max)) / 2 + 24px)) 28px;
-    background: linear-gradient(180deg, transparent, var(--color-brown-50), var(--color-brown-90));
+    padding-block: 112px 28px;
+    padding-inline: max(
+      #{tokens.$page-padding-inline},
+      calc((100% - var(--content-max)) / 2 + #{tokens.$page-padding-inline})
+    );
+    background: linear-gradient(
+      180deg,
+      transparent,
+      var(--color-brown-50),
+      var(--color-brown-90)
+    );
     color: var(--color-white);
   }
 
@@ -106,7 +109,12 @@
     font-weight: 400;
   }
 
-  &__information {
+  &__purchase {
+    padding-inline: 24px;
+  }
+
+  &__information,
+  &__content {
     display: grid;
     gap: 24px;
     min-width: 0;
@@ -125,7 +133,8 @@
     overflow-wrap: anywhere;
   }
 
-  &__summary, &__facts {
+  &__summary,
+  &__facts {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 20px;
@@ -159,7 +168,7 @@
     padding: 4px 12px;
     border-radius: 20px;
     background: var(--color-green-500);
-    color: white;
+    color: var(--color-white);
     font-size: var(--font-size-xs);
     font-weight: 700;
   }
@@ -207,34 +216,47 @@
     bottom: 0;
     left: 0;
     right: 0;
-    padding: 16px 24px calc(16px + env(safe-area-inset-bottom));
+    padding: 12px 24px calc(12px + env(safe-area-inset-bottom));
     border-top: 1px solid var(--color-green-20);
     background: var(--color-white);
   }
 
   &__order-row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 12px 24px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(140px, 1.5fr);
+    grid-template-areas:
+      "quantity quantity"
+      "price actions";
+    align-items: end;
+    gap: 12px 16px;
   }
 
-  &__order-row > div {
-    flex: 1 1 90px;
+  &__order-price {
+    grid-area: price;
+    align-self: center;
   }
 
-  &__order-row span {
+  &__order-quantity {
+    grid-area: quantity;
+  }
+
+  &__order-price span {
     display: block;
     font-size: var(--font-size-xs);
   }
 
-  &__order-row strong {
+  &__order-price strong {
     font-size: var(--font-size-xl);
   }
 
-  &__order-row .button {
-    flex: 1 1 160px;
-    border-radius: 24px;
+  &__order-actions {
+    display: flex;
+    grid-area: actions;
+    align-items: center;
+
+    .button {
+      flex: 1;
+    }
   }
 
   &__order p {
@@ -242,10 +264,9 @@
     font-size: var(--font-size-xs);
   }
 
-
   @include up(desktop) {
     &__hero {
-      padding-top: 112px;
+      min-height: 460px;
     }
     padding-bottom: 55px;
     &__heading {
@@ -260,5 +281,8 @@
       border-radius: 24px;
     }
 
+    &__order-row {
+      grid-template-columns: minmax(0, 1fr) 320px;
+    }
   }
 }

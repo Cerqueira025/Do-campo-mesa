@@ -9,7 +9,7 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 46px;
+  min-height: 44px;
   border: 0;
 
   &:focus-visible {
@@ -33,6 +33,17 @@
     --bs-btn-hover-bg: var(--color-white-20);
     --bs-btn-active-bg: var(--color-white-20);
     --bs-btn-disabled-bg: var(--color-white-10);
+  }
+
+  &--dark {
+    --bs-btn-bg: var(--color-green-950);
+    --bs-btn-hover-bg: var(--color-green-900);
+    --bs-btn-active-bg: var(--color-green-900);
+    --bs-btn-disabled-bg: var(--color-green-950);
+
+    &:focus-visible {
+      outline-color: var(--color-green-900);
+    }
   }
 
   &--cream {

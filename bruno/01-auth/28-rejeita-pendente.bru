@@ -1,0 +1,27 @@
+meta {
+  name: Rejeita produtor ainda pendente
+  type: http
+  seq: 28
+}
+
+patch {
+  url: {{baseUrl}}/producers/{{rejectedProducerId}}/validacao
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+body:json {
+  { "validacao": "rejeitado", "motivo": "Registo de teste incompleto", "decisaoAnterior": null }
+}
+
+tests {
+  test("rejeita pendente sem expor os dados da decisão", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().validacao).to.equal("rejeitado");
+    expect(res.getBody().ultimaDecisao).to.equal(undefined);
+  });
+}

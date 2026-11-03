@@ -1,0 +1,17 @@
+meta {
+  name: Sessão exige token
+  type: http
+  seq: 11
+}
+
+get {
+  url: {{baseUrl}}/auth/eu
+  body: none
+  auth: none
+}
+
+tests {
+  test("sem token recebe 401", function() {
+    expect(res.getStatus()).to.equal(401);
+  });
+}

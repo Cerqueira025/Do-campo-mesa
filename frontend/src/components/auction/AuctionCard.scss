@@ -1,4 +1,4 @@
-@use '../../styles/abstracts/mixins' as *;
+@use "../../styles/abstracts/mixins" as *;
 
 .auction-card {
   position: relative;
@@ -201,6 +201,5 @@
     &__bid {
       border-bottom: none;
     }
-      
   }
 }
