@@ -60,6 +60,9 @@ Nas compras do catálogo, as quantidades seguem as regras partilhadas em
 0,5 para `kg` e `l`, com mínimo igual ao passo. Stock positivo inferior ao mínimo
 não permite uma compra válida. Estas restrições das compras não alteram os
 snapshots históricos nem a validação própria das quantidades de um lote de leilão.
+Os dados gerados para uma base nova usam quantidades válidas nas compras e stock
+igual ou superior ao mínimo nos produtos com stock positivo. Como o seed preserva
+registos existentes, bases já inicializadas não são alteradas automaticamente.
 
 Os testes funcionais usam os exemplos inseridos inicialmente. Se forem alterados manualmente, o seed preserva essas alterações e alguns resultados esperados podem deixar de se aplicar.
 Não inserir dados inválidos para testar rejeições: enviar pedidos inválidos à API.

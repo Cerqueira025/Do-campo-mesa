@@ -1,3 +1,4 @@
+import "../products/ProducerProducts.scss";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import Button from "../../components/ui/Button";
 import FormField from "../../components/ui/input/FormField";
@@ -8,9 +9,10 @@ import { useAuth } from "../auth/useAuth";
 import type { ProducerProduct, ProductPage } from "../products/management";
 import { initialPurchaseQuantity } from "../products/purchaseQuantity";
 import { navigate, restoreNavigation } from "../../navigation/navigation";
-import { auctionHref } from "./auction";
+
 import {
   auctionPayload,
+  auctionDateErrors,
   eligibleAuctionProducts,
   type AuctionDraft,
 } from "./creation";
@@ -23,6 +25,7 @@ export default function AuctionForm() {
   const [loaded, setLoaded] = useState(false);
   const [retry, setRetry] = useState(0);
   const [error, setError] = useState("");
+  const [dateErrors, setDateErrors] = useState({ dataInicio: "", dataFim: "" });
   const [busy, setBusy] = useState(false);
   const pending = useRef(false);
   const alert = useRef<HTMLParagraphElement>(null);
@@ -71,7 +74,7 @@ export default function AuctionForm() {
   }, [loading]);
   useEffect(() => {
     if (error) alert.current?.focus();
-  }, [error, busy]);
+  }, [error, busy, loading]);
   useEffect(() => {
     if (focusLine.current === null) return;
     document.getElementById(`auction-product-${focusLine.current}`)?.focus();
@@ -130,8 +133,22 @@ export default function AuctionForm() {
         method: "POST",
         body,
       });
-      navigate(auctionHref(auction._id));
+      navigate(`/produtor/leiloes/${auction._id}?criado=1`);
     } catch (failure) {
+      if (
+        failure instanceof Error &&
+        failure.message ===
+          "Indique um início futuro para agendar e um fim futuro, posterior ao início."
+      ) {
+        const invalidDates = auctionDateErrors(draft);
+        setDateErrors(invalidDates);
+        document
+          .getElementById(
+            invalidDates.dataInicio ? "auction-start" : "auction-end",
+          )
+          ?.focus();
+        return;
+      }
       setError(
         failure instanceof Error
           ? failure.message
@@ -149,21 +166,17 @@ export default function AuctionForm() {
       className="producer-products__panel auction-form"
       data-navigation-ready={!loading}
     >
-      <h1>Novo leilão</h1>
+      <Button
+        className="producer-products__back"
+        href="/produtor/leiloes"
+        variant="cream"
+      >
+        Voltar aos meus leilões
+      </Button>
       <p>
         Escolha um ou vários dos seus produtos. O preço base e as licitações são
         pelo lote completo.
       </p>
-      {error && (
-        <p
-          className="producer-products__error"
-          role="alert"
-          ref={alert}
-          tabIndex={-1}
-        >
-          {error}
-        </p>
-      )}
       {loading ? (
         <LoadingPlaceholder label="A carregar produtos…" />
       ) : !loaded ? (
@@ -274,73 +287,128 @@ export default function AuctionForm() {
                 Adicionar produto
               </Button>
             </fieldset>
-            <div className="auction-form__columns">
-              <FormField
-                id="auction-base"
-                label="Preço base do lote (€)"
-                required
-                inputMode="decimal"
-                value={draft.precoBase}
-                onChange={(event) => change("precoBase", event.target.value)}
-              />
-              <FormField
-                id="auction-increment"
-                label="Incremento mínimo (€)"
-                required
-                inputMode="decimal"
-                value={draft.incremento}
-                onChange={(event) => change("incremento", event.target.value)}
-              />
-            </div>
-            <FormField
-              id="auction-start-mode"
-              label="Início do leilão"
-              unframed
-              compact={false}
-            >
-              <Select
-                id="auction-start-mode"
-                value={draft.inicio}
-                onValueChange={(value) =>
-                  change("inicio", value as AuctionDraft["inicio"])
-                }
-                options={[
-                  { value: "agora", label: "Começar agora" },
-                  { value: "agendado", label: "Agendar" },
-                ]}
-              />
-            </FormField>
-            <div className="auction-form__columns">
-              {draft.inicio === "agendado" && (
+            <fieldset className="producer-products__fields">
+              <legend>Valores do lote</legend>
+              <div className="auction-form__columns">
                 <FormField
-                  id="auction-start"
-                  label="Data e hora de início"
-                  type="datetime-local"
+                  id="auction-base"
+                  label="Preço base do lote (€)"
                   required
-                  value={draft.dataInicio}
-                  onChange={(event) => change("dataInicio", event.target.value)}
+                  inputMode="decimal"
+                  value={draft.precoBase}
+                  onChange={(event) => change("precoBase", event.target.value)}
                 />
-              )}
+                <FormField
+                  id="auction-increment"
+                  label="Incremento mínimo (€)"
+                  required
+                  inputMode="decimal"
+                  value={draft.incremento}
+                  onChange={(event) => change("incremento", event.target.value)}
+                />
+              </div>
+            </fieldset>
+            <fieldset className="producer-products__fields">
+              <legend>Datas do leilão</legend>
               <FormField
-                id="auction-end"
-                label="Data e hora de fim"
-                type="datetime-local"
-                required
-                value={draft.dataFim}
-                onChange={(event) => change("dataFim", event.target.value)}
-              />
-            </div>
+                id="auction-start-mode"
+                label="Início do leilão"
+                unframed
+                compact={false}
+              >
+                <Select
+                  id="auction-start-mode"
+                  value={draft.inicio}
+                  onValueChange={(value) => {
+                    change("inicio", value as AuctionDraft["inicio"]);
+                    setDateErrors({ dataInicio: "", dataFim: "" });
+                  }}
+                  options={[
+                    { value: "agora", label: "Começar agora" },
+                    { value: "agendado", label: "Agendar" },
+                  ]}
+                />
+              </FormField>
+              <div className="auction-form__columns">
+                {draft.inicio === "agendado" && (
+                  <div>
+                    <FormField
+                      id="auction-start"
+                      label="Data e hora de início"
+                      type="datetime-local"
+                      required
+                      aria-invalid={Boolean(dateErrors.dataInicio)}
+                      aria-describedby={
+                        dateErrors.dataInicio
+                          ? "auction-start-error"
+                          : undefined
+                      }
+                      value={draft.dataInicio}
+                      onChange={(event) => {
+                        change("dataInicio", event.target.value);
+                        setDateErrors({ dataInicio: "", dataFim: "" });
+                      }}
+                    />
+                    {dateErrors.dataInicio && (
+                      <p
+                        id="auction-start-error"
+                        role="alert"
+                        className="producer-products__error"
+                      >
+                        {dateErrors.dataInicio}
+                      </p>
+                    )}
+                  </div>
+                )}
+                <div>
+                  <FormField
+                    id="auction-end"
+                    label="Data e hora de fim"
+                    type="datetime-local"
+                    required
+                    aria-invalid={Boolean(dateErrors.dataFim)}
+                    aria-describedby={
+                      dateErrors.dataFim ? "auction-end-error" : undefined
+                    }
+                    value={draft.dataFim}
+                    onChange={(event) => {
+                      change("dataFim", event.target.value);
+                      setDateErrors((value) => ({ ...value, dataFim: "" }));
+                    }}
+                  />
+                  {dateErrors.dataFim && (
+                    <p
+                      id="auction-end-error"
+                      role="alert"
+                      className="producer-products__error"
+                    >
+                      {dateErrors.dataFim}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </fieldset>
             <p>
               As datas usam a sua hora local. O stock é validado ao criar e
               reservado quando o leilão começa. Se já não estiver disponível, o
               leilão será cancelado.
             </p>
+            {error && (
+              <p
+                className="producer-products__error"
+                role="alert"
+                ref={alert}
+                tabIndex={-1}
+              >
+                {error}
+              </p>
+            )}
             <div className="producer-products__actions">
               <Button type="submit">
                 {busy ? "A criar leilão…" : "Criar leilão"}
               </Button>
               {!busy && (
-                <Button variant="cream" href="/produtor/produtos">
+                <Button variant="cream" href="/produtor/leiloes">
                   Cancelar
                 </Button>
               )}
@@ -348,10 +416,23 @@ export default function AuctionForm() {
           </fieldset>
         </form>
       )}
+      {error && (!loaded || !products.length) && (
+        <p
+          role="alert"
+          ref={alert}
+          tabIndex={-1}
+          className="producer-products__error"
+        >
+          {error}
+        </p>
+      )}
       {!busy && (!loaded || !products.length) && (
-        <Button href="/produtor/produtos" variant="cream">
-          Gerir produtos
-        </Button>
+        <div className="producer-products__actions">
+          <Button href="/produtor/produtos" variant="cream">
+            Gerir produtos
+          </Button>
+          <Button href="/produtor/produtos/novo">Novo produto</Button>
+        </div>
       )}
     </section>
   );

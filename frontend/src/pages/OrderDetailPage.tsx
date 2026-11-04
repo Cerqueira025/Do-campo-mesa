@@ -21,7 +21,12 @@ export default function OrderDetailPage({
   embedded?: boolean;
   backUrl?: string;
 }) {
-  if (embedded && id) return <OrderDetail key={id} id={id} backUrl={backUrl} />;
+  if (embedded && id)
+    return (
+      <div className="order-content">
+        <OrderDetail key={id} id={id} backUrl={backUrl} />
+      </div>
+    );
   return id ? (
     <OrderLayout title="Detalhe da encomenda">
       <OrderDetail key={id} id={id} />

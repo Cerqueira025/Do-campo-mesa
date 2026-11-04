@@ -10,9 +10,11 @@ import "./AuthPage.scss";
 
 export default function ProtectedRoute({
   roles = [],
+  approvedProducer = false,
   children,
 }: {
   roles?: Role[];
+  approvedProducer?: boolean;
   children: ReactNode;
 }) {
   const { estado, utilizador, erro, atualizar, sair } = useAuth();
@@ -53,14 +55,23 @@ export default function ProtectedRoute({
         </div>
       </main>
     );
-  if (roles.length && (!utilizador || !roles.includes(utilizador.papel)))
+  if (
+    (roles.length && (!utilizador || !roles.includes(utilizador.papel))) ||
+    (approvedProducer &&
+      (utilizador?.papel !== "produtor" || utilizador.validacao !== "aceite"))
+  )
     return (
       <main className="auth-page">
         <AppHeader />
         <div className="page-content" id="main-content" tabIndex={-1}>
           <section className="auth-panel">
             <h1>Sem permissão</h1>
-            <p>A sua conta não tem acesso a esta página.</p>
+            <p>
+              {approvedProducer
+                ? "A gestão de produtos e a criação de leilões exigem uma conta de produtor aprovada."
+                : "A sua conta não tem acesso a esta página."}
+            </p>
+            {approvedProducer && <Button href="/conta">A minha conta</Button>}
             <Button href="/">Voltar ao catálogo</Button>
           </section>
         </div>

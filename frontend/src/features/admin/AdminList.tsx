@@ -27,6 +27,7 @@ import {
   type AdminListResponse,
 } from "./admin";
 import { useAdminData } from "./useAdminData";
+import AdminStatus from "./AdminStatus";
 
 const states = {
   avaliacoes: ["publicada", "denunciada", "oculta"],
@@ -43,28 +44,54 @@ function recordFacts(
       return [
         ["Email", item.email],
         ["Localidade", item.perfilProdutor?.localidade],
-        ["Pedido", adminDate(item.createdAt)],
+        ["Data do pedido", adminDate(item.createdAt)],
       ];
     case "utilizadores":
       return [
         ["Email", item.email],
         ["Papel", item.papel],
-        ["Aprovação", item.perfilProdutor?.validacao ?? "—"],
+        ["Aprovação", <AdminStatus value={item.perfilProdutor?.validacao} />],
         ["Registo", adminDate(item.createdAt)],
       ];
     case "produtos":
       return [
         ["Produtor", referenceName(item.produtorId)],
         ["Categoria", item.categoria],
-        ["Preço", `${adminMoney(item.preco)}/${item.unidade}`],
-        ["Stock", item.stock],
-        ["Publicação", item.publicado ? "Publicado" : "Despublicado"],
-        ["Bloqueio", item.bloqueado ? "Bloqueado" : "Sem bloqueio"],
-        ["Visibilidade pública", item.visivel ? "Visível" : "Indisponível"],
+        [
+          "Preço e stock",
+          <div className="admin-page__cell-lines">
+            <span>
+              Preço: {adminMoney(item.preco)}/{item.unidade}
+            </span>
+            <span>
+              Stock: {item.stock} {item.unidade}
+            </span>
+          </div>,
+        ],
+        [
+          "Publicação e visibilidade",
+          <div className="admin-page__cell-lines">
+            <span>
+              Publicação:{" "}
+              <AdminStatus
+                value={item.publicado ? "Publicado" : "Despublicado"}
+              />
+            </span>
+            <span>
+              Bloqueio:{" "}
+              <AdminStatus
+                value={item.bloqueado ? "Bloqueado" : "Sem bloqueio"}
+              />
+            </span>
+            <span>
+              Visibilidade:{" "}
+              <AdminStatus value={item.visivel ? "Visível" : "Indisponível"} />
+            </span>
+          </div>,
+        ],
       ];
     case "avaliacoes":
       return [
-        ["Nota", `${item.classificacao}/5`],
         ["Denúncias", item.totalDenuncias ?? 0],
         ["Autor", referenceName(item.autorId)],
         ["Alvo", referenceName(item.produtoId ?? item.produtorId)],
@@ -79,7 +106,6 @@ function recordFacts(
           ),
         ],
         ["Data", adminDate(item.createdAt)],
-        ["Estado", item.estado],
         [
           "Última decisão",
           item.ultimaDecisao
@@ -89,21 +115,41 @@ function recordFacts(
       ];
     case "encomendas":
       return [
-        ["Comprador", referenceName(item.compradorId)],
-        ["Produtor", referenceName(item.produtorId)],
+        [
+          "Comprador e produtor",
+          <div className="admin-page__cell-lines">
+            <span>Comprador: {referenceName(item.compradorId)}</span>
+            <span>Produtor: {referenceName(item.produtorId)}</span>
+          </div>,
+        ],
         ["Data", adminDate(item.createdAt)],
         ["Total", adminMoney(item.total)],
-        ["Estado", item.estado],
+        ["Estado", <AdminStatus value={item.estado} />],
         ["Origem", item.leilaoId ? "Leilão" : "Catálogo"],
       ];
     case "leiloes":
       return [
         ["Produtor", referenceName(item.produtorId)],
-        ["Início", adminDate(item.dataInicio)],
-        ["Fim", adminDate(item.dataFim)],
+        [
+          "Início e fim",
+          <div className="admin-page__cell-lines">
+            <span>Início: {adminDate(item.dataInicio)}</span>
+            <span>Fim: {adminDate(item.dataFim)}</span>
+          </div>,
+        ],
         ["Valor atual", adminMoney(item.licitacaoAtual?.valor)],
-        ["Estado", item.estado],
-        ["Visibilidade pública", item.visivel ? "Visível" : "Indisponível"],
+        [
+          "Estado e visibilidade",
+          <div className="admin-page__cell-lines">
+            <span>
+              Estado: <AdminStatus value={item.estado} />
+            </span>
+            <span>
+              Visibilidade:{" "}
+              <AdminStatus value={item.visivel ? "Visível" : "Indisponível"} />
+            </span>
+          </div>,
+        ],
       ];
   }
 }
@@ -145,6 +191,19 @@ export default function AdminList({ section }: { section: AdminSection }) {
     });
   }
   const page = Number(params.get("page"));
+  const filtered = [...params].some(
+    ([key, value]) =>
+      value &&
+      !["page", "limit"].includes(key) &&
+      !(section === "produtores" && ["papel", "validacao"].includes(key)),
+  );
+  function clearFilters() {
+    clearTimeout(searchTimer.current);
+    setDraft({ location, value: "" });
+    const destination = `/admin/${section}${section === "leiloes" ? "?estado=" : ""}`;
+    if (location !== destination)
+      navigate(destination, { preserveScroll: true });
+  }
   useEffect(() => {
     if (!data || error || data.page === page) return;
     const query = new URLSearchParams(search);
@@ -174,7 +233,10 @@ export default function AdminList({ section }: { section: AdminSection }) {
     );
   }
   const options = (values: string[]) =>
-    values.map((value) => ({ value, label: value }));
+    values.map((value) => ({
+      value,
+      label: value.charAt(0).toUpperCase() + value.slice(1),
+    }));
   const columns = data?.items[0]
     ? recordFacts(section, data.items[0]).map(([label]) => label)
     : [];
@@ -197,90 +259,107 @@ export default function AdminList({ section }: { section: AdminSection }) {
   }
   return (
     <>
-      <div className="admin-page__toolbar">
-        <SearchBar
-          label={`Pesquisar ${title.toLowerCase()}`}
-          placeholder={`Pesquisar ${title.toLowerCase()}`}
-          value={
-            draft.location === location ? draft.value : (params.get("q") ?? "")
-          }
-          onChange={(value) => {
-            const text = value.slice(0, 100);
-            setDraft({ location, value: text });
-            clearTimeout(searchTimer.current);
-            searchTimer.current = setTimeout(
-              () => update("q", text.trim(), 1, true),
-              250,
-            );
-          }}
-        />
-        <Button variant="cream" onClick={refresh}>
-          Atualizar
-        </Button>
-      </div>
-      <div className="admin-page__filters">
-        {section in states &&
-          select(
-            "estado",
-            "Estado",
-            options(states[section as keyof typeof states]),
-          )}
-        {section === "avaliacoes" &&
-          select("alvo", "Tipo de alvo", [
-            { value: "produto", label: "Produto" },
-            { value: "produtor", label: "Produtor" },
-          ])}
-        {section === "utilizadores" && (
-          <>
-            {select(
-              "papel",
-              "Papel",
-              options(["comprador", "produtor", "administrador"]),
+      <section
+        className="admin-page__panel admin-page__query"
+        aria-label="Pesquisa e filtros"
+      >
+        <div className="admin-page__toolbar">
+          <SearchBar
+            label={`Pesquisar ${title.toLowerCase()}`}
+            placeholder={`Pesquisar ${title.toLowerCase()}`}
+            value={
+              draft.location === location
+                ? draft.value
+                : (params.get("q") ?? "")
+            }
+            onChange={(value) => {
+              const text = value.slice(0, 100);
+              setDraft({ location, value: text });
+              clearTimeout(searchTimer.current);
+              searchTimer.current = setTimeout(
+                () => update("q", text.trim(), 1, true),
+                250,
+              );
+            }}
+          />
+        </div>
+        <div className="admin-page__filters">
+          {section in states &&
+            select(
+              "estado",
+              "Estado",
+              options(states[section as keyof typeof states]),
             )}
-            {select(
-              "validacao",
-              "Aprovação do produtor",
-              options(["pendente", "aceite", "rejeitado"]),
-            )}
-          </>
-        )}
-        {section === "produtos" && (
-          <>
-            {select("categoria", "Categoria", options(data?.categorias ?? []))}
-            {select("visibilidade", "Visibilidade", [
-              { value: "publica", label: "Visível publicamente" },
-              { value: "despublicado", label: "Despublicado pelo produtor" },
-              { value: "bloqueado", label: "Bloqueado pelo administrador" },
-              {
-                value: "produtor-indisponivel",
-                label: "Produtor indisponível",
-              },
+          {section === "avaliacoes" &&
+            select("alvo", "Tipo de alvo", [
+              { value: "produto", label: "Produto" },
+              { value: "produtor", label: "Produtor" },
             ])}
-          </>
+          {section === "utilizadores" && (
+            <>
+              {select(
+                "papel",
+                "Papel",
+                options(["comprador", "produtor", "administrador"]),
+              )}
+              {select(
+                "validacao",
+                "Aprovação do produtor",
+                options(["pendente", "aceite", "rejeitado"]),
+              )}
+            </>
+          )}
+          {section === "produtos" && (
+            <>
+              {select(
+                "categoria",
+                "Categoria",
+                options(data?.categorias ?? []),
+              )}
+              {select("visibilidade", "Visibilidade", [
+                { value: "publica", label: "Visível publicamente" },
+                { value: "despublicado", label: "Despublicado pelo produtor" },
+                { value: "bloqueado", label: "Bloqueado pelo administrador" },
+                {
+                  value: "produtor-indisponivel",
+                  label: "Produtor indisponível",
+                },
+              ])}
+            </>
+          )}
+          {section === "encomendas" &&
+            select("origem", "Origem", [
+              { value: "catalogo", label: "Catálogo" },
+              { value: "leilao", label: "Leilão" },
+            ])}
+        </div>
+        {(params.get("produtorId") || params.get("compradorId")) && (
+          <p>
+            Atividade filtrada por utilizador.{" "}
+            <Button
+              variant="cream"
+              onClick={() => {
+                const next = new URLSearchParams(search);
+                next.delete("produtorId");
+                next.delete("compradorId");
+                next.delete("page");
+                navigate(`/admin/${section}${next.size ? `?${next}` : ""}`);
+              }}
+            >
+              Remover filtro de utilizador
+            </Button>
+          </p>
         )}
-        {section === "encomendas" &&
-          select("origem", "Origem", [
-            { value: "catalogo", label: "Catálogo" },
-            { value: "leilao", label: "Leilão" },
-          ])}
-      </div>
-      {(params.get("produtorId") || params.get("compradorId")) && (
-        <p>
-          Atividade filtrada por utilizador.{" "}
+        <div className="admin-page__query-actions">
           <Button
             variant="cream"
-            onClick={() => {
-              const next = new URLSearchParams(search);
-              next.delete("produtorId");
-              next.delete("compradorId");
-              next.delete("page");
-              navigate(`/admin/${section}${next.size ? `?${next}` : ""}`);
-            }}
+            onClick={clearFilters}
+            disabled={!filtered && !draft.value}
           >
-            Remover filtro de utilizador
+            Limpar filtros
           </Button>
-        </p>
-      )}
+        </div>
+      </section>
       <div
         ref={results}
         tabIndex={-1}
@@ -303,22 +382,45 @@ export default function AdminList({ section }: { section: AdminSection }) {
         {data && (
           <>
             <p role="status">
-              A mostrar {data.items.length} de {data.total} registos. Página{" "}
-              {data.page} de {Math.max(1, Math.ceil(data.total / 24))}.
+              {data.total} {data.total === 1 ? "registo" : "registos"} · A
+              mostrar {data.items.length}
             </p>
             {data.items.length === 0 ? (
-              <p className="admin-page__panel">
-                Não há registos para a pesquisa e os filtros selecionados.
-              </p>
+              <div className="admin-page__panel admin-page__empty">
+                <h2>{filtered ? "Sem resultados" : "Sem registos"}</h2>
+                <p>
+                  {filtered
+                    ? "Não há registos para a pesquisa e os filtros selecionados."
+                    : section === "produtores"
+                      ? "Não há pedidos de produtores pendentes."
+                      : "Ainda não há registos nesta lista."}
+                </p>
+                {filtered && (
+                  <Button variant="cream" onClick={clearFilters}>
+                    Limpar filtros
+                  </Button>
+                )}
+              </div>
             ) : (
               <>
                 {section !== "avaliacoes" && (
-                  <div className="admin-page__table">
+                  <div
+                    className="admin-page__table"
+                    role="region"
+                    aria-label={`Tabela de ${title.toLowerCase()}`}
+                    tabIndex={0}
+                  >
                     <table aria-label={title}>
                       <thead>
                         <tr>
                           <th scope="col">
-                            {section === "encomendas" ? "Referência" : "Nome"}
+                            {section === "encomendas"
+                              ? "Referência"
+                              : section === "produtos"
+                                ? "Produto"
+                                : section === "leiloes"
+                                  ? "Lote"
+                                  : "Nome"}
                           </th>
                           {columns.map((column) => (
                             <th scope="col" key={column}>
@@ -382,25 +484,51 @@ export default function AdminList({ section }: { section: AdminSection }) {
                           alt={item.nome ?? "Produto"}
                         />
                       )}
-                      <h2>
-                        <InternalLink
-                          data-navigation-id={`admin-card-${item._id}`}
-                          href={link(item)}
-                        >
-                          {titleOf(item)}
-                        </InternalLink>
-                      </h2>
+                      <div className="admin-page__record-heading">
+                        <h2>
+                          <InternalLink
+                            data-navigation-id={`admin-card-${item._id}`}
+                            href={link(item)}
+                          >
+                            {section === "avaliacoes"
+                              ? `Avaliação de ${referenceName(item.autorId)}`
+                              : titleOf(item)}
+                          </InternalLink>
+                        </h2>
+                        {section === "avaliacoes" && (
+                          <div className="admin-page__review-state">
+                            <AdminStatus value={item.estado} />
+                            <strong>{item.classificacao}/5</strong>
+                          </div>
+                        )}
+                      </div>
                       {item.comentario && (
                         <p className="admin-page__text">{item.comentario}</p>
                       )}
                       <dl className="admin-page__facts">
-                        {recordFacts(section, item).map(([label, value]) => (
-                          <div key={label}>
-                            <dt>{label}</dt>
-                            <dd>{value ?? "—"}</dd>
-                          </div>
-                        ))}
+                        {recordFacts(section, item)
+                          .filter(
+                            ([label]) =>
+                              section !== "avaliacoes" ||
+                              label !== "Última decisão",
+                          )
+                          .map(([label, value]) => (
+                            <div key={label}>
+                              <dt>{label}</dt>
+                              <dd>{value ?? "—"}</dd>
+                            </div>
+                          ))}
                       </dl>
+                      {section === "avaliacoes" && (
+                        <div className="admin-page__review-decision">
+                          <h3>Última decisão</h3>
+                          <p>
+                            {item.ultimaDecisao
+                              ? `${referenceName(item.ultimaDecisao.administradorId)} · ${adminDate(item.ultimaDecisao.data)}`
+                              : "Sem decisão registada"}
+                          </p>
+                        </div>
+                      )}
                       {section === "avaliacoes" &&
                         item.ultimaDecisao?.motivo && (
                           <p className="admin-page__text">
@@ -415,21 +543,26 @@ export default function AdminList({ section }: { section: AdminSection }) {
                 </ul>
               </>
             )}
-            <nav aria-label="Paginação" className="admin-page__actions">
-              <Button
-                variant="cream"
-                disabled={page <= 1}
-                onClick={() => changePage(page - 1)}
-              >
-                Anterior
-              </Button>
-              <Button
-                variant="cream"
-                disabled={page * 24 >= data.total}
-                onClick={() => changePage(page + 1)}
-              >
-                Seguinte
-              </Button>
+            <nav aria-label="Paginação" className="admin-page__pagination">
+              <p>
+                Página {data.page} de {Math.max(1, Math.ceil(data.total / 24))}
+              </p>
+              <div className="admin-page__actions">
+                <Button
+                  variant="cream"
+                  disabled={page <= 1}
+                  onClick={() => changePage(page - 1)}
+                >
+                  Anterior
+                </Button>
+                <Button
+                  variant="cream"
+                  disabled={page * 24 >= data.total}
+                  onClick={() => changePage(page + 1)}
+                >
+                  Seguinte
+                </Button>
+              </div>
             </nav>
           </>
         )}

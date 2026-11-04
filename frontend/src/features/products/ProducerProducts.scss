@@ -1,0 +1,116 @@
+@use "../../styles/abstracts/mixins" as mixins;
+@use "../../components/layout/management-surface" as surface;
+
+.producer-products {
+  &__fields input[type="checkbox"] {
+    accent-color: var(--color-green-900);
+  }
+  &__sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  &__panel {
+    @include surface.management-surface;
+  }
+  &__panel h2 {
+    margin: 0 0 1rem;
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+  }
+  &__panel h3 {
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+  }
+  &__fields,
+  &__checks,
+  &__columns {
+    display: grid;
+    gap: 1rem;
+    min-width: 0;
+  }
+  &__fields {
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+  &__fields > legend {
+    float: none;
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+  }
+  &__checks {
+    border: 1px solid var(--color-green-20);
+    padding: 1rem;
+  }
+  &__checks legend {
+    float: none;
+    width: auto;
+    font-size: 1rem;
+  }
+  &__back {
+    margin-bottom: 1.25rem;
+  }
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+  }
+  &__facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+    gap: 1rem;
+    margin-block: 1.5rem;
+  }
+  &__facts dt {
+    font-weight: 700;
+  }
+  &__facts dd {
+    margin: 0;
+  }
+  &__list {
+    display: grid;
+    gap: 1rem;
+    padding: 0;
+    list-style: none;
+  }
+  &__list > li {
+    display: grid;
+    gap: 1rem;
+  }
+  &__image {
+    display: grid;
+    place-items: center;
+    width: 7rem;
+    height: 7rem;
+    object-fit: cover;
+    border-radius: 0.75rem;
+    background: var(--color-brown-100);
+  }
+  &__error {
+    color: var(--color-error-700);
+    padding-block: 1rem;
+  }
+  &__confirmation {
+    border-top: 1px solid var(--color-green-20);
+    padding-top: 1rem;
+    margin-top: 1rem;
+  }
+  &__note {
+    margin-top: 0.75rem;
+    font-size: 0.875rem;
+  }
+
+  @include mixins.up(tablet) {
+    &__list > li {
+      grid-template-columns: 7rem minmax(0, 1fr);
+    }
+    &__columns {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+}

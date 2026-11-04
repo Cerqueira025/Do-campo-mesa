@@ -10,9 +10,10 @@ Plataforma web para aproximar produtores locais de consumidores e restauração.
 - `backoffice/app/` — backoffice técnico Laravel com diagnóstico de serviços e histórico SQLite.
 - `docs/` — documentação técnica e especificação OpenAPI.
 
-As imagens dos produtos são ficheiros WebP locais do frontend, com variantes de 480 e 960 px.
-O frontend associa-as pelo nome do produto; a API não recebe nem devolve imagens.
-Para acrescentar uma imagem, consulta [as instruções do frontend](frontend/README.md#imagens-dos-produtos).
+Cada produto pode receber uma fotografia através da área do produtor. A API valida o
+upload e guarda variantes WebP de 480 e 960 px no disco local. Produtos antigos sem
+upload mantêm as imagens do frontend associadas pelo nome.
+Consulta [as instruções do frontend](frontend/README.md#imagens-dos-produtos).
 
 ## Quick Start
 
@@ -321,7 +322,7 @@ Os testes usam a base de demonstração configurada em `MONGODB_DB_NAME`. Antes
 e depois da execução, a limpeza remove apenas contas de teste `bruno-test-*`
 e documentos com o marcador `BRUNO_AUTOTEST_`; devolve também ao stock as
 quantidades reservadas pelas encomendas e leilões de teste. A remoção de cada
-leilão e a devolução das suas reservas são transacionais; históricos e reservas
+encomenda comum ou leilão e a devolução das suas reservas são transacionais; históricos e reservas
 já libertadas não devolvem stock novamente. Não usar estes marcadores
 em dados próprios. A execução pode alterar dados da base de demonstração
 durante o teste, pelo que convém não a usar simultaneamente.
@@ -396,6 +397,41 @@ inclui um ciclo de registo, aprovação e consulta com um produtor de teste, rem
 pela limpeza normal da coleção.
 
 ## Navegação e fluidez
+
+A SPA inclui login em `/login`, conta em `/conta` e gestão de produtos em
+`/produtor/produtos`, exclusiva de produtores aprovados. Permite criar, editar,
+apagar, publicar/despublicar e alterar preço/stock. Novos produtos começam
+despublicados, com opção de publicar ao guardar. Depois de criar, a edição abre
+com uma secção para carregar, substituir ou remover a fotografia, separadamente
+dos restantes dados. São aceites JPEG, PNG e WebP estáticos até 5 MiB e 25 milhões
+de píxeis; a API valida o conteúdo, corrige a orientação e remove metadados.
+
+Qualquer produtor autenticado, incluindo pendente ou rejeitado, pode editar a
+descrição, localidade, morada e coordenadas em `/produtor/perfil`, acessível pela
+conta. `GET` e `PATCH /api/producers/me` consultam e atualizam estes dados sem
+alterar a aprovação. A morada permanece privada.
+
+`PUT /api/products/:id/photo` recebe o ficheiro binário e `DELETE` no mesmo
+endereço remove a fotografia. Ambas as operações exigem o proprietário aprovado,
+incluindo quando o produto está despublicado ou bloqueado. Os ficheiros ficam em
+`api/uploads/products`, fora do Git, e são servidos em `/api/uploads/products/`.
+São recursos públicos por URL, tal como as imagens antigas; não incluem dados do
+perfil. Preserva esta pasta entre reinícios, reinstalações e cópias do projeto,
+juntamente com a base de dados. Não existe sincronização ou backup automático.
+O armazenamento é local, sem integração Cloud.
+
+O campo `fotografia` contém um UUID gerado pela API: se ausente, mantém a imagem
+antiga pelo nome; se `null`, apresenta “Imagem indisponível”. O cliente não pode
+definir este campo através do JSON de criação ou edição do produto. Substituir,
+remover e apagar o produto limpa os ficheiros anteriores após sucesso na base
+de dados. Falhas de limpeza ficam registadas nos logs da API.
+
+As consultas autenticadas `GET /api/products/mine` e `/mine/:id` incluem produtos
+próprios despublicados e bloqueados. Publicar não remove bloqueios administrativos.
+Produtos com qualquer leilão associado não podem ser apagados; stock e unidade
+não podem mudar enquanto o produto tiver um leilão ativo. A criação de leilões e
+a eliminação de produtos são serializadas por transações MongoDB. Nesta versão,
+o modelo de leilões ainda não implementa reservas automáticas de stock.
 
 Catálogo, produtos e leilões usam navegação interna sem recarregar a aplicação.
 O regresso recupera a lista, os filtros, o scroll e o foco, atualizando os resultados em segundo plano.
@@ -527,10 +563,11 @@ Consulta [a preparação, os endereços e os testes do backoffice](backoffice/ap
 - [Auditoria de 2 de novembro](docs/auditoria-2026-11-02.md): diagnóstico histórico,
   com nota sobre alterações posteriores; não é uma validação da versão atual.
 
-A interface do produtor inclui conta e acompanhamento de encomendas; a gestão
-de produtos e a criação de leilões estão disponíveis pela API, sem formulários
-equivalentes no frontend. As imagens são locais; não existe storage Cloud integrado.
+A interface do produtor inclui conta, edição do perfil da exploração, acompanhamento de encomendas, gestão
+de produtos com upload de fotografia e criação de leilões com um produto ou cabaz. Produtores aprovados
+acedem ao formulário pela conta ou pela gestão de produtos. As imagens são locais;
+não existe storage Cloud integrado.
 O repositório não inclui configuração de alojamento de produção. A execução local
 sem infraestrutura Cloud foi acordada com o professor; o backoffice assinala o
-armazenamento como não implementado. O relatório final e o vídeo não estão
+armazenamento Cloud como não implementado. O relatório final e o vídeo não estão
 identificados na documentação atual.

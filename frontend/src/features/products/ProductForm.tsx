@@ -1,3 +1,4 @@
+import "./ProducerProducts.scss";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useAuth } from "../auth/useAuth";
 import Button from "../../components/ui/Button";
@@ -7,7 +8,7 @@ import LoadingPlaceholder from "../../components/ui/LoadingPlaceholder";
 import { navigate, restoreNavigation } from "../../navigation/navigation";
 import { seasons } from "../home/catalogFilters";
 import { invalidateCatalogCache } from "../home/catalogCache";
-import ProductPhoto from "./ProductPhoto";
+import ProductPhoto, { ProductPhotoSelection } from "./ProductPhoto";
 import {
   productDraft,
   productPayload,
@@ -23,6 +24,9 @@ export default function ProductForm({ id }: { id?: string }) {
   const [loaded, setLoaded] = useState(!id);
   const [retry, setRetry] = useState(0);
   const [busy, setBusy] = useState(false);
+  const [photo, setPhoto] = useState<File>();
+  const [photoValid, setPhotoValid] = useState(true);
+  const [created, setCreated] = useState<ProducerProduct>();
   const [photoBusy, setPhotoBusy] = useState(false);
   const pending = useRef(false);
   const [error, setError] = useState("");
@@ -58,7 +62,7 @@ export default function ProductForm({ id }: { id?: string }) {
   }, [loading]);
   useEffect(() => {
     if (error) alert.current?.focus();
-  }, [error]);
+  }, [error, loading]);
   function change<K extends keyof ProductDraft>(
     key: K,
     value: ProductDraft[K],
@@ -67,29 +71,32 @@ export default function ProductForm({ id }: { id?: string }) {
   }
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (pending.current || photoBusy) return;
+    if (pending.current || photoBusy || !photoValid) return;
     setError("");
     try {
-      const body = productPayload(draft, original);
-      if (!Object.keys(body).length) {
-        navigate("/produtor/produtos");
+      const body = created ? {} : productPayload(draft, original);
+      if (id && !Object.keys(body).length) {
+        navigate(`/produtor/produtos/${id}`);
         return;
       }
       pending.current = true;
       setBusy(true);
-      const saved = await request<ProducerProduct>(
-        `/products${id ? `/${id}` : ""}`,
-        {
+      const saved =
+        created ??
+        (await request<ProducerProduct>(`/products${id ? `/${id}` : ""}`, {
           method: id ? "PUT" : "POST",
           body,
-        },
-      );
+        }));
+      if (!id) setCreated(saved);
       invalidateCatalogCache();
-      navigate(
-        id
-          ? "/produtor/produtos?guardado=1"
-          : `/produtor/produtos/${saved._id}/editar?criado=1`,
-      );
+      if (!id && photo) {
+        await request(`/products/${saved._id}/photo`, {
+          method: "PUT",
+          body: photo,
+        });
+        invalidateCatalogCache();
+      }
+      navigate(`/produtor/produtos/${saved._id}?guardado=1`);
     } catch (failure) {
       setError(
         failure instanceof Error
@@ -112,13 +119,13 @@ export default function ProductForm({ id }: { id?: string }) {
       className="producer-products__panel"
       data-navigation-ready={!loading}
     >
-      <h1>{id ? "Editar produto" : "Novo produto"}</h1>
-      {id &&
-        new URLSearchParams(window.location.search).get("criado") === "1" && (
-          <p role="status">
-            Produto criado. Já pode adicionar a fotografia abaixo.
-          </p>
-        )}
+      <Button
+        className="producer-products__back"
+        href="/produtor/produtos"
+        variant="cream"
+      >
+        Voltar aos meus produtos
+      </Button>
       {error && (
         <p
           className="producer-products__error"
@@ -149,131 +156,187 @@ export default function ProductForm({ id }: { id?: string }) {
               bloqueio.
             </p>
           )}
+          {created && (
+            <p role="status">
+              O produto foi criado. Falta enviar a fotografia. Pode repetir o
+              envio ou consultar o produto sem fotografia.
+            </p>
+          )}
           <form onSubmit={submit} aria-busy={busy}>
             <fieldset
               className="producer-products__fields"
               disabled={busy || photoBusy}
             >
-              <legend>Dados do produto</legend>
-              <FormField
-                id="product-name"
-                label="Nome"
-                required
-                value={draft.nome}
-                onChange={(event) => change("nome", event.target.value)}
-              />
-              <FormField id="product-description" label="Descrição">
-                <textarea
-                  id="product-description"
-                  required
-                  rows={4}
-                  value={draft.descricao}
-                  onChange={(event) => change("descricao", event.target.value)}
-                />
-              </FormField>
-              <FormField
-                id="product-category"
-                label="Categoria"
-                required
-                value={draft.categoria}
-                onChange={(event) => change("categoria", event.target.value)}
-              />
-              <div className="producer-products__columns">
+              <legend className="producer-products__sr-only">
+                Formulário do produto
+              </legend>
+              <fieldset
+                className="producer-products__fields"
+                disabled={Boolean(created)}
+              >
+                <legend>Dados do produto</legend>
                 <FormField
-                  id="product-price"
-                  label="Preço (€ por unidade)"
-                  inputMode="decimal"
+                  id="product-name"
+                  label="Nome"
                   required
-                  value={draft.preco}
-                  onChange={(event) => change("preco", event.target.value)}
+                  value={draft.nome}
+                  onChange={(event) => change("nome", event.target.value)}
                 />
-                <FormField
-                  id="product-unit"
-                  label="Unidade"
-                  unframed
-                  compact={false}
-                >
-                  <Select
-                    id="product-unit"
-                    value={draft.unidade}
-                    onValueChange={(value) =>
-                      change("unidade", value as ProductDraft["unidade"])
+                <FormField id="product-description" label="Descrição">
+                  <textarea
+                    id="product-description"
+                    required
+                    rows={4}
+                    value={draft.descricao}
+                    onChange={(event) =>
+                      change("descricao", event.target.value)
                     }
-                    options={["kg", "g", "l", "unidade"].map((unit) => ({
-                      value: unit,
-                      label: unit,
-                    }))}
                   />
                 </FormField>
                 <FormField
-                  id="product-stock"
-                  label="Stock disponível"
-                  inputMode="decimal"
+                  id="product-category"
+                  label="Categoria"
                   required
-                  value={draft.stock}
-                  onChange={(event) => change("stock", event.target.value)}
+                  value={draft.categoria}
+                  onChange={(event) => change("categoria", event.target.value)}
                 />
-              </div>
-              <fieldset className="producer-products__checks">
-                <legend>Épocas de produção (opcional)</legend>
-                {seasonOptions.map((season) => (
-                  <label key={season.value}>
-                    <input
-                      type="checkbox"
-                      checked={draft.epoca.includes(season.value)}
-                      onChange={(event) =>
-                        change(
-                          "epoca",
-                          event.target.checked
-                            ? [...draft.epoca, season.value]
-                            : draft.epoca.filter(
-                                (value) => value !== season.value,
-                              ),
-                        )
-                      }
-                    />{" "}
-                    {season.label}
-                  </label>
-                ))}
               </fieldset>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={draft.biologico}
+              <fieldset
+                className="producer-products__fields"
+                disabled={Boolean(created)}
+              >
+                <legend>Preço e stock</legend>
+                <div className="producer-products__columns">
+                  <FormField
+                    id="product-price"
+                    label="Preço (€ por unidade)"
+                    inputMode="decimal"
+                    required
+                    value={draft.preco}
+                    onChange={(event) => change("preco", event.target.value)}
+                  />
+                  <FormField
+                    id="product-unit"
+                    label="Unidade"
+                    unframed
+                    compact={false}
+                  >
+                    <Select
+                      id="product-unit"
+                      value={draft.unidade}
+                      onValueChange={(value) =>
+                        change("unidade", value as ProductDraft["unidade"])
+                      }
+                      options={["kg", "g", "l", "unidade"].map((unit) => ({
+                        value: unit,
+                        label: unit,
+                      }))}
+                    />
+                  </FormField>
+                  <FormField
+                    id="product-stock"
+                    label="Stock disponível"
+                    inputMode="decimal"
+                    required
+                    value={draft.stock}
+                    onChange={(event) => change("stock", event.target.value)}
+                  />
+                </div>
+              </fieldset>
+              <fieldset
+                className="producer-products__fields"
+                disabled={Boolean(created)}
+              >
+                <legend>Características e validade</legend>
+                <fieldset className="producer-products__checks">
+                  <legend>Épocas de produção (opcional)</legend>
+                  {seasonOptions.map((season) => (
+                    <label key={season.value}>
+                      <input
+                        type="checkbox"
+                        checked={draft.epoca.includes(season.value)}
+                        onChange={(event) =>
+                          change(
+                            "epoca",
+                            event.target.checked
+                              ? [...draft.epoca, season.value]
+                              : draft.epoca.filter(
+                                  (value) => value !== season.value,
+                                ),
+                          )
+                        }
+                      />{" "}
+                      {season.label}
+                    </label>
+                  ))}
+                </fieldset>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={draft.biologico}
+                    onChange={(event) =>
+                      change("biologico", event.target.checked)
+                    }
+                  />{" "}
+                  Produto biológico
+                </label>
+                <FormField
+                  id="product-validity"
+                  label="Data de validade (opcional)"
+                  type="date"
+                  value={draft.dataValidade}
                   onChange={(event) =>
-                    change("biologico", event.target.checked)
+                    change("dataValidade", event.target.value)
                   }
-                />{" "}
-                Produto biológico
-              </label>
-              <FormField
-                id="product-validity"
-                label="Data de validade (opcional)"
-                type="date"
-                value={draft.dataValidade}
-                onChange={(event) => change("dataValidade", event.target.value)}
-              />
-              <label>
-                <input
-                  type="checkbox"
-                  checked={draft.publicado}
-                  onChange={(event) =>
-                    change("publicado", event.target.checked)
-                  }
-                />{" "}
-                Publicar no catálogo
-              </label>
-              <p>
-                Despublicar torna também os leilões associados indisponíveis
-                publicamente.
-              </p>
+                />
+              </fieldset>
+              {!id && (
+                <fieldset className="producer-products__fields">
+                  <legend>Fotografia (opcional)</legend>
+                  <ProductPhotoSelection
+                    onSelect={setPhoto}
+                    onValidity={setPhotoValid}
+                  />
+                </fieldset>
+              )}
+              <fieldset
+                className="producer-products__fields"
+                disabled={Boolean(created)}
+              >
+                <legend>Publicação</legend>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={draft.publicado}
+                    onChange={(event) =>
+                      change("publicado", event.target.checked)
+                    }
+                  />{" "}
+                  Publicar no catálogo
+                </label>
+                <p>
+                  Despublicar torna também os leilões associados indisponíveis
+                  publicamente.
+                </p>
+              </fieldset>
               <div className="producer-products__actions">
-                <Button type="submit">
-                  {busy ? "A guardar…" : "Guardar produto"}
+                <Button type="submit" disabled={!photoValid}>
+                  {busy
+                    ? "A guardar…"
+                    : created
+                      ? "Repetir envio da fotografia"
+                      : "Guardar produto"}
                 </Button>
                 {!busy && !photoBusy && (
-                  <Button href="/produtor/produtos" variant="cream">
-                    Cancelar
+                  <Button
+                    href={
+                      created
+                        ? `/produtor/produtos/${created._id}`
+                        : "/produtor/produtos"
+                    }
+                    variant="cream"
+                  >
+                    {created ? "Consultar produto sem fotografia" : "Cancelar"}
                   </Button>
                 )}
               </div>

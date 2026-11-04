@@ -1,17 +1,17 @@
-.select--form {
-  --select-background: var(--color-stone-50);
+.select--form,
+.select--filter {
   --select-radius: 20px;
-  --select-height: 64px;
+  --select-height: 50px;
   --select-menu-padding: 8px;
   --select-option-padding: 14px 16px;
 }
 
+.select--form {
+  --select-background: var(--color-stone-50);
+}
+
 .select--filter {
   --select-background: var(--color-white);
-  --select-radius: 12px;
-  --select-height: 48px;
-  --select-menu-padding: 6px;
-  --select-option-padding: 10px 12px;
 }
 
 .select {

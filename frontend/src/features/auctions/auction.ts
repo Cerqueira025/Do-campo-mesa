@@ -2,7 +2,7 @@ export interface Auction {
   _id: string;
   produtorId?: { _id: string; nome: string };
   produtos: {
-    produtoId: { nome: string };
+    produtoId: { nome: string; fotografia?: string | null };
     quantidade: number;
     unidade: string;
   }[];

@@ -1,10 +1,140 @@
-.auth-details {
-  display: grid;
-  gap: 16px;
-  dt {
+@use "../styles/abstracts/mixins" as mixins;
+@use "../components/layout/management-surface" as surface;
+
+.account-layout {
+  min-height: 100vh;
+  background: var(--color-stone-50);
+  color: var(--color-green-950);
+
+  &__inner {
+    max-width: 1492px;
+    margin-inline: auto;
+    padding-block: 1.5rem 4rem;
+  }
+  &__heading {
+    margin-bottom: 2rem;
+  }
+  &__heading h1 {
+    margin: 0;
+    font-size: var(--font-size-2xl);
     font-weight: 700;
   }
-  dd {
-    margin: 4px 0 0;
+  @include mixins.up(desktop) {
+    &__inner {
+      padding-block: 2rem 5rem;
+    }
+    &__heading {
+      margin-bottom: 2.5rem;
+    }
+    &__heading h1 {
+      font-size: var(--font-size-3xl);
+    }
+  }
+}
+
+.account-page {
+  &,
+  &__summary {
+    display: grid;
+    gap: 1.5rem;
+    min-width: 0;
+  }
+  &__panel:not(&__panel--managed) {
+    border-radius: 1.25rem;
+    background: var(--color-white);
+    overflow-wrap: anywhere;
+    padding: 1.5rem;
+    border: 1px solid var(--color-green-20);
+  }
+  &__panel--managed {
+    @include surface.management-surface;
+  }
+  &__panel h2 {
+    margin: 0 0 1.5rem;
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+  }
+  &__facts {
+    display: grid;
+    gap: 1.25rem;
+    margin: 0 0 1.75rem;
+    font-size: var(--font-size-md);
+  }
+  &__facts > div {
+    min-width: 0;
+  }
+  &__facts dt {
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+  }
+  &__facts dd {
+    margin: 0;
+    padding: 0.65rem 1rem;
+    border: 1px solid var(--color-green-900);
+    border-radius: 0.875rem;
+    background: var(--color-stone-50);
+  }
+  &__role {
+    text-transform: capitalize;
+  }
+  &__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.65rem 1rem;
+    border-radius: 2rem;
+    background: var(--color-brown-100);
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+  }
+  &__badge--approved {
+    background: var(--color-green-100);
+  }
+  &__badge svg {
+    color: var(--color-green-500);
+  }
+  &__approval p {
+    margin-block: 1rem 1.75rem;
+    font-size: var(--font-size-md);
+  }
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  .button {
+    min-height: 3rem;
+    padding-inline: 1.5rem;
+    font-size: var(--font-size-md);
+  }
+  @include mixins.up(tablet) {
+    &__facts {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    &__summary {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @include mixins.up(desktop) {
+    &__panel:not(&__panel--managed) h2 {
+      font-size: var(--font-size-2xl);
+    }
+  }
+  @include mixins.up(wide) {
+    &__panel:not(&__panel--managed) {
+      padding: 1.75rem;
+    }
+    &__facts {
+      gap: 2rem;
+    }
+    &__facts,
+    &__approval p {
+      font-size: var(--font-size-lg);
+    }
+    .button {
+      font-size: var(--font-size-xl);
+      min-height: 3.75rem;
+      padding-inline: 1.75rem;
+    }
   }
 }

@@ -100,7 +100,7 @@ test("Cria um lote com um produto e abre o detalhe, sem enviar campos de stock",
   const before = Date.now();
   submit();
   await waitFor(() =>
-    expect(navigate).toHaveBeenCalledWith(`/leiloes/${auctionId}`),
+    expect(navigate).toHaveBeenCalledWith(`/produtor/leiloes/${auctionId}?criado=1`),
   );
   const [path, options] = request.mock.calls.at(-1)!;
   expect(path).toBe("/auctions");
@@ -283,7 +283,7 @@ test("Valida campos, stock e agendamento antes de enviar e aceita preço base ze
     target: { value: "2000-01-01T12:00" },
   });
   submit();
-  expect(screen.getByRole("alert").textContent).toContain("início futuro");
+  expect(screen.getByRole("alert").textContent).toContain("início futura");
   expect(request).toHaveBeenCalledTimes(1);
   fireEvent.change(screen.getByLabelText("Data e hora de início"), {
     target: { value: "2099-01-01T11:00" },
@@ -325,7 +325,7 @@ test("A rota exige login, papel de produtor e aprovação antes de carregar prod
   expect(request).toHaveBeenCalledTimes(1);
 });
 
-test("O produtor encontra o acesso na conta e na gestão dos produtos", async () => {
+test("A conta separa leilões da gestão dos produtos", async () => {
   const request = vi.fn().mockResolvedValue(page([]));
   const view = render(
     <AuthContext.Provider value={authValue({ utilizador: producer, request })}>
@@ -333,15 +333,31 @@ test("O produtor encontra o acesso na conta e na gestão dos produtos", async ()
     </AuthContext.Provider>,
   );
   expect(
-    screen.getByRole("link", { name: "Novo leilão" }).getAttribute("href"),
-  ).toBe("/produtor/leiloes/novo");
+    screen.getByRole("link", { name: "Os meus leilões" }).getAttribute("href"),
+  ).toBe("/produtor/leiloes");
   view.rerender(
     <AuthContext.Provider value={authValue({ utilizador: producer, request })}>
       <ProducerProducts />
     </AuthContext.Provider>,
   );
-  expect(
-    screen.getByRole("link", { name: "Novo leilão" }).getAttribute("href"),
-  ).toBe("/produtor/leiloes/novo");
+  expect(screen.queryByRole("link", { name: "Novo leilão" })).toBeNull();
   await screen.findByText(/Ainda não tem produtos/);
+});
+
+test("Datas inválidas mostram erro junto ao campo e recebem foco", async () => {
+  const request = await form();
+  fill();
+  const end = screen.getByLabelText("Data e hora de fim");
+  fireEvent.change(end, { target: { value: "2000-01-01T12:00" } });
+  submit();
+  expect(screen.getByText("Escolha uma data e hora de fim futura.")).toBeTruthy();
+  expect(end.getAttribute("aria-invalid")).toBe("true");
+  expect(end.getAttribute("aria-describedby")).toBe("auction-end-error");
+  expect(document.activeElement).toBe(end);
+  choose("Início do leilão", "Agendar");
+  fireEvent.change(screen.getByLabelText("Data e hora de início"), { target: { value: "2099-01-01T15:00" } });
+  fireEvent.change(end, { target: { value: "2099-01-01T14:00" } });
+  submit();
+  expect(screen.getByText("O fim deve ser posterior ao início do leilão.")).toBeTruthy();
+  expect(request).toHaveBeenCalledTimes(1);
 });

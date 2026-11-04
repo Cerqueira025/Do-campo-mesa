@@ -49,3 +49,25 @@ test("Cliente preserva respostas JSON e erros HTTP", async (t) => {
       error.status === 403 && error.message === "Sem permissão.",
   );
 });
+
+test("Cliente envia Blob binário com MIME e autorização sem serializar JSON", async (t) => {
+  const file = new Blob(["imagem"], { type: "image/png" });
+  t.mock.method(globalThis, "fetch", async (url, options) => {
+    assert.equal(String(url), "/api/products/1/photo");
+    assert.equal(options?.body, file);
+    assert.deepEqual(options?.headers, {
+      Accept: "application/json",
+      "Content-Type": "image/png",
+      Authorization: "Bearer token",
+    });
+    return Response.json({ fotografia: "id" });
+  });
+  assert.deepEqual(
+    await api("/products/1/photo", {
+      method: "PUT",
+      token: "token",
+      body: file,
+    }),
+    { fotografia: "id" },
+  );
+});

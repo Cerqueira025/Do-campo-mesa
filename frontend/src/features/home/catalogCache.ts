@@ -8,6 +8,7 @@ export interface CatalogResponse {
 const queries = new Map<string, CatalogResponse>();
 export function invalidateCatalogCache() {
   queries.clear();
+  options = null;
 }
 let options: FilterOptions | null = null;
 

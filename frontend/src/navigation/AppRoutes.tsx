@@ -24,9 +24,64 @@ import AccountPage from "../pages/AccountPage";
 import ProtectedRoute from "../features/auth/ProtectedRoute";
 import AdminPage from "../features/admin/AdminPage";
 import BackofficeEntry from "../features/admin/BackofficeEntry";
+import ProducerArea, {
+  type ProducerSection,
+} from "../features/products/ProducerArea";
+import { useAuth } from "../features/auth/useAuth";
+import ProducerProducts from "../features/products/ProducerProducts";
+import ProducerProductDetail from "../features/products/ProducerProductDetail";
+import ProducerAuctions from "../features/auctions/ProducerAuctions";
+import ProductForm from "../features/products/ProductForm";
+import AuctionForm from "../features/auctions/AuctionForm";
+import ProducerProfile from "../features/producers/ProducerProfile";
 
-function resolvePage(pathname: string, location: string) {
+function resolvePage(pathname: string, location: string, embedded: boolean) {
+  const ownProductId = /^\/produtor\/produtos\/([a-f\d]{24})\/?$/i.exec(
+    pathname,
+  )?.[1];
+  const ownAuctionId = /^\/produtor\/leiloes\/([a-f\d]{24})\/?$/i.exec(
+    pathname,
+  )?.[1];
+  if (ownProductId || ownAuctionId || pathname === "/produtor/leiloes")
+    return (
+      <ProtectedRoute roles={["produtor"]} approvedProducer>
+        {ownProductId ? (
+          <ProducerProductDetail key={location} id={ownProductId} />
+        ) : (
+          <ProducerAuctions key={location} id={ownAuctionId} />
+        )}
+      </ProtectedRoute>
+    );
+  const editId = /^\/produtor\/produtos\/([a-f\d]{24})\/editar\/?$/i.exec(
+    pathname,
+  )?.[1];
+  if (
+    pathname === "/produtor/produtos" ||
+    pathname === "/produtor/produtos/novo" ||
+    editId
+  )
+    return (
+      <ProtectedRoute roles={["produtor"]} approvedProducer>
+        {pathname === "/produtor/produtos" ? (
+          <ProducerProducts key={location} />
+        ) : (
+          <ProductForm key={pathname} id={editId} />
+        )}
+      </ProtectedRoute>
+    );
   switch (pathname) {
+    case "/produtor/perfil":
+      return (
+        <ProtectedRoute roles={["produtor"]}>
+          <ProducerProfile />
+        </ProtectedRoute>
+      );
+    case "/produtor/leiloes/novo":
+      return (
+        <ProtectedRoute roles={["produtor"]} approvedProducer>
+          <AuctionForm />
+        </ProtectedRoute>
+      );
     case "/":
       return <HomePage />;
     case "/login":
@@ -52,13 +107,13 @@ function resolvePage(pathname: string, location: string) {
     case "/produtor/encomendas":
       return (
         <ProtectedRoute roles={["produtor"]}>
-          <OrdersPage producer />
+          <OrdersPage producer embedded={embedded} />
         </ProtectedRoute>
       );
     case "/conta":
       return (
         <ProtectedRoute>
-          <AccountPage />
+          <AccountPage embedded={embedded} />
         </ProtectedRoute>
       );
   }
@@ -78,7 +133,15 @@ function resolvePage(pathname: string, location: string) {
   if (orderId)
     return (
       <ProtectedRoute roles={["comprador", "produtor"]}>
-        <OrderDetailPage id={orderId} />
+        {embedded ? (
+          <OrderDetailPage
+            id={orderId}
+            embedded
+            backUrl="/produtor/encomendas"
+          />
+        ) : (
+          <OrderDetailPage id={orderId} />
+        )}
       </ProtectedRoute>
     );
   const auctionId = auctionIdFromPath(pathname);
@@ -90,7 +153,59 @@ function resolvePage(pathname: string, location: string) {
   return <NotFoundPage />;
 }
 
+function producerPageFromPath(pathname: string): {
+  title: string;
+  section: ProducerSection;
+  approved?: boolean;
+} | null {
+  if (pathname === "/conta")
+    return { title: "A minha conta", section: "account" };
+  if (pathname === "/produtor/perfil")
+    return { title: "Perfil da exploração", section: "profile" };
+  if (pathname === "/produtor/encomendas" || orderIdFromPath(pathname))
+    return {
+      title:
+        pathname === "/produtor/encomendas"
+          ? "Encomendas recebidas"
+          : "Detalhe da encomenda",
+      section: "orders",
+    };
+  if (
+    pathname === "/produtor/leiloes" ||
+    /^\/produtor\/leiloes\/([a-f\d]{24})\/?$/i.test(pathname)
+  )
+    return {
+      title:
+        pathname === "/produtor/leiloes"
+          ? "Os meus leilões"
+          : "Detalhe do leilão",
+      section: "auction",
+      approved: true,
+    };
+  if (/^\/produtor\/produtos\/([a-f\d]{24})\/?$/i.test(pathname))
+    return { title: "Detalhe do produto", section: "products", approved: true };
+  if (pathname === "/produtor/leiloes/novo")
+    return { title: "Novo leilão", section: "auction", approved: true };
+  if (
+    pathname === "/produtor/produtos" ||
+    pathname === "/produtor/produtos/novo" ||
+    /^\/produtor\/produtos\/([a-f\d]{24})\/editar\/?$/i.test(pathname)
+  )
+    return {
+      title:
+        pathname === "/produtor/produtos"
+          ? "Os meus produtos"
+          : pathname.endsWith("/novo")
+            ? "Novo produto"
+            : "Editar produto",
+      section: "products",
+      approved: true,
+    };
+  return null;
+}
+
 function AppRoutes() {
+  const { utilizador, estado } = useAuth();
   const location = useLocation();
   const pathname = location.split(/[?#]/)[0];
   useLayoutEffect(() => {
@@ -101,11 +216,24 @@ function AppRoutes() {
       !document.querySelector('[data-navigation-ready="false"]'),
     );
   }, [location]);
-  const page = resolvePage(pathname, location);
+  const producerPage =
+    utilizador?.papel === "produtor" ? producerPageFromPath(pathname) : null;
+  const embedded = Boolean(
+    producerPage &&
+    estado === "autenticado" &&
+    (!producerPage.approved || utilizador?.validacao === "aceite"),
+  );
+  const page = resolvePage(pathname, location, embedded);
   return (
     <>
       <NavigationAnnouncer />
-      {page}
+      {producerPage && embedded ? (
+        <ProducerArea title={producerPage.title} section={producerPage.section}>
+          {page}
+        </ProducerArea>
+      ) : (
+        page
+      )}
     </>
   );
 }

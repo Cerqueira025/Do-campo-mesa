@@ -12,8 +12,10 @@ import { priceFormatter } from "../features/products/product";
 
 export default function OrdersPage({
   producer = false,
+  embedded = false,
 }: {
   producer?: boolean;
+  embedded?: boolean;
 }) {
   const { data, error, refresh } = useOrderPolling<Order[]>("/orders");
   const [filter, setFilter] = useState("");
@@ -21,6 +23,7 @@ export default function OrdersPage({
   const orders = data?.filter((order) => !filter || order.estado === filter);
   return (
     <OrderLayout
+      embedded={embedded}
       title={producer ? "Encomendas recebidas" : "As minhas encomendas"}
     >
       {!producer && confirmadas.length > 0 && (

@@ -1,0 +1,17 @@
+.product-photo {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--color-green-20);
+
+  &__preview {
+    display: grid;
+    place-items: center;
+    width: min(100%, 20rem);
+    aspect-ratio: 1;
+    height: auto;
+    object-fit: cover;
+    margin-block: 1rem;
+    border-radius: 0.75rem;
+    background: var(--color-brown-100);
+  }
+}

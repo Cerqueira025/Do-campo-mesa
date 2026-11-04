@@ -44,28 +44,41 @@ O Sass atual emite avisos de depreciação provenientes dos imports e funções 
 
 ### Imagens dos produtos
 
-As imagens dos produtos ficam em `src/assets/` e são incluídas no build do frontend.
-Cada produto conhecido tem variantes WebP quadradas de 480 e 960 px, com transparência.
-Para acrescentar um produto, cria as duas variantes e associa o nome em `src/features/products/product.ts`.
-Produtos sem associação apresentam “Imagem indisponível”. A API não recebe nem devolve imagens.
+O formulário de edição permite carregar, substituir e remover uma fotografia por
+produto, com pré-visualização e gravação separada dos restantes dados. Depois de
+criar um produto, a aplicação abre a edição para permitir adicionar a fotografia.
+O upload é binário e autenticado; aceita JPEG, PNG e WebP estáticos até 5 MiB e
+25 milhões de píxeis. A API valida o conteúdo, corrige a orientação, remove
+metadados e guarda variantes WebP de 480 e 960 px em `api/uploads/products`.
+Esta pasta está fora do Git e deve ser preservada juntamente com a base de dados.
+As variantes são servidas publicamente em `/api/uploads/products/`; não há storage Cloud.
+
+As imagens antigas de `src/assets/` continuam incluídas no build. Quando o produto
+não tem o campo `fotografia`, `productImages` mantém a associação pelo nome em
+`src/features/products/product.ts`. Um UUID nesse campo identifica o upload e
+mantém a fotografia mesmo após renomear o produto; `null` representa remoção
+explícita. Produtos sem imagem apresentam “Imagem indisponível”.
 
 ### Endereços e alojamento
 
 As rotas são resolvidas em `src/navigation/AppRoutes.tsx`. A navegação interna usa a History API, preservando o endereço real dos links, abertura noutro separador e cliques com modificadores. O parâmetro `regresso` conserva o endereço do catálogo e os seus filtros; a cache em memória permite restaurar lista, scroll e foco.
 
-| Rotas                                                   | Acesso e função                                                                                           |
-| ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `/`, `/produtos/:id`, `/produtores/:id`, `/leiloes/:id` | Catálogo, produtos, perfis e leilões públicos.                                                            |
-| `/login`, `/registo`, `/recuperar-password`             | Entrada, registo e recuperação de demonstração; ver [limites da autenticação](../README.md#autenticação). |
-| `/conta`                                                | Conta autenticada e estado de aprovação do produtor.                                                      |
-| `/carrinho`                                             | Visitantes e compradores; artigos agrupados por produtor.                                                 |
-| `/finalizar-encomenda`, `/encomendas`                   | Finalização e acompanhamento por compradores.                                                             |
-| `/produtor/encomendas`                                  | Acompanhamento e avanço de estado pelo produtor.                                                          |
-| `/encomendas/:id`                                       | Detalhe protegido de uma encomenda do comprador ou produtor.                                              |
-| `/admin` e subrotas                                     | Resumo, listas, detalhes e moderação por administradores.                                                 |
-| `/admin/backoffice`                                     | Passo de entrada no Laravel, iniciado pelo botão «Serviços e sistema».                                    |
+| Rotas                                                                            | Acesso e função                                                                                           |
+| -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `/`, `/produtos/:id`, `/produtores/:id`, `/leiloes/:id`                          | Catálogo, produtos, perfis e leilões públicos.                                                            |
+| `/login`, `/registo`, `/recuperar-password`                                      | Entrada, registo e recuperação de demonstração; ver [limites da autenticação](../README.md#autenticação). |
+| `/conta`                                                                         | Conta autenticada e estado de aprovação do produtor.                                                      |
+| `/carrinho`                                                                      | Visitantes e compradores; artigos agrupados por produtor.                                                 |
+| `/finalizar-encomenda`, `/encomendas`                                            | Finalização e acompanhamento por compradores.                                                             |
+| `/produtor/encomendas`                                                           | Acompanhamento e avanço de estado pelo produtor.                                                          |
+| `/produtor/perfil`                                                               | Consulta e edição do próprio perfil por qualquer produtor, incluindo pendentes e rejeitados.              |
+| `/produtor/produtos`, `/produtor/produtos/novo`, `/produtor/produtos/:id/editar` | Gestão dos produtos próprios por produtores aprovados.                                                    |
+| `/produtor/leiloes/novo`                                                         | Criação de leilões com um produto ou cabaz por produtores aprovados.                                      |
+| `/encomendas/:id`                                                                | Detalhe protegido de uma encomenda do comprador ou produtor.                                              |
+| `/admin` e subrotas                                                              | Resumo, listas, detalhes e moderação por administradores.                                                 |
+| `/admin/backoffice`                                                              | Passo de entrada no Laravel, iniciado pelo botão «Serviços e sistema».                                    |
 
-O catálogo tem paginação de 24 produtos e filtros na URL. Compras podem incluir vários produtores, gerando uma encomenda por produtor. Leilões usam Socket.IO para lances e notificações, com consultas periódicas à API para recuperar falhas de ligação. A gestão de produtos e a criação de leilões ainda não têm formulários no frontend; estão disponíveis pela API.
+O catálogo tem paginação de 24 produtos e filtros na URL. Compras podem incluir vários produtores, gerando uma encomenda por produtor. Leilões usam Socket.IO para lances e notificações, com consultas periódicas à API para recuperar falhas de ligação. Produtores aprovados podem gerir produtos e criar leilões pela interface. O formulário de leilões permite um ou vários produtos publicados, desbloqueados e com stock, com início imediato ou agendado na hora local. O preço base e o incremento aplicam-se ao lote completo. A criação valida o stock; a reserva ocorre no início, pelo ciclo existente no servidor.
 
 O Vite serve `index.html` nos acessos diretos às rotas da SPA, tanto em desenvolvimento como em preview. A configuração encaminha `/api` e `/socket.io` para a API na porta 3000; o preview herda estes proxies. Em produção, o servidor que serve `dist` deve encaminhar caminhos que não correspondam a ficheiros para `index.html`, preservando o encaminhamento de `/api` e `/socket.io` (com WebSockets) para a mesma API. Este repositório não contém configuração de alojamento de produção.
 
@@ -102,3 +115,42 @@ Os testes de interação usam Vitest, React Testing Library e jsdom, com respost
 da API simuladas; não precisam de servidor nem de base de dados. Cobrem checkout,
 carrinho, sessão, páginas protegidas e atualização de encomendas. O workflow
 `.github/workflows/frontend.yml` executa ambos os grupos através de `npm test`.
+
+### Gestão de produtos
+
+Produtores aprovados acedem pela conta a `/produtor/produtos`,
+`/produtor/produtos/novo` e `/produtor/produtos/:id/editar`.
+A lista privada inclui produtos despublicados e bloqueados, com 24 produtos por página.
+O formulário envia apenas os campos alterados, aceita preços com vírgula ou ponto
+(convertidos em cêntimos), stock zero ou fracionado e validade opcional.
+Novos produtos começam despublicados. Publicar não remove bloqueios administrativos.
+Alterações confirmadas invalidam os resultados e as opções de filtros do catálogo.
+A eliminação exige confirmação e recusa produtos com leilões associados.
+Reservas de stock impedem alterações de stock ou unidade. A fotografia pode ser
+alterada em produtos despublicados ou bloqueados; isso não remove o bloqueio.
+
+### Perfil da exploração
+
+O acesso «Editar perfil da exploração» na conta abre `/produtor/perfil`.
+O formulário consulta `GET /api/producers/me` e envia apenas as alterações por
+`PATCH`, mantendo a aprovação atual. A descrição é opcional; localidade, morada,
+latitude e longitude são obrigatórias. Alterar as coordenadas envia sempre o par.
+A morada só aparece nesta consulta privada. Guardar invalida a cache do catálogo
+e das opções de filtros, para refletir a nova localização.
+
+## Layout das áreas de gestão
+
+`ManagementLayout`, em `src/components/layout/`, partilha o cabeçalho, identificação
+da área, menu e coluna principal entre produtor e administração. `ProducerArea`
+e `AdminLayout` configuram os links e a seleção; as permissões continuam nas áreas
+e nas rotas existentes. O menu fica fora de `main`, com um único `h1` no conteúdo.
+
+Ambas as áreas usam largura máxima de 1280 px, margem lateral de 24 px e menu de
+256 px a partir de 1024 px. Em ecrãs menores, o menu começa recolhido e abre acima
+do conteúdo. Acompanha o breakpoint até uma escolha explícita, depois conserva-a
+por área durante navegação e remontagens, apenas em memória até recarregar.
+
+O mixin `management-surface` uniformiza os painéis sem alterar a organização de
+listas, tabelas e formulários. Os estilos dos produtos pertencem a
+`ProducerProducts.scss`; encomendas integradas usam `order-content`, sem depender
+da administração. A conta autónoma mantém os seus próprios estilos.
