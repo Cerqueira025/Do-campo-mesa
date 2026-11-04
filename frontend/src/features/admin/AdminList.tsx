@@ -8,6 +8,7 @@ import {
 import Button from "../../components/ui/Button";
 import SearchBar from "../../components/ui/input/SearchBar";
 import FormField from "../../components/ui/input/FormField";
+import Select from "../../components/ui/input/Select";
 import LoadingPlaceholder from "../../components/ui/LoadingPlaceholder";
 import ImageWithFallback from "../../components/ui/ImageWithFallback";
 import InternalLink from "../../navigation/InternalLink";
@@ -162,19 +163,13 @@ export default function AdminList({ section }: { section: AdminSection }) {
   ) {
     const id = `admin-${section}-${name}`;
     return (
-      <FormField key={name} id={id} label={label}>
-        <select
+      <FormField key={name} id={id} label={label} unframed compact={false}>
+        <Select
           id={id}
           value={params.get(name) ?? ""}
-          onChange={(event) => update(name, event.target.value)}
-        >
-          <option value="">Todos</option>
-          {options.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+          onValueChange={(value) => update(name, value)}
+          options={[{ value: "", label: "Todos" }, ...options]}
+        />
       </FormField>
     );
   }
@@ -348,6 +343,7 @@ export default function AdminList({ section }: { section: AdminSection }) {
                                     className="admin-page__image"
                                     {...productImages({
                                       nome: item.nome ?? "",
+                                      fotografia: item.fotografia,
                                     })}
                                     alt={item.nome ?? "Produto"}
                                   />
@@ -379,7 +375,10 @@ export default function AdminList({ section }: { section: AdminSection }) {
                       {section === "produtos" && (
                         <ImageWithFallback
                           className="admin-page__image"
-                          {...productImages({ nome: item.nome ?? "" })}
+                          {...productImages({
+                            nome: item.nome ?? "",
+                            fotografia: item.fotografia,
+                          })}
                           alt={item.nome ?? "Produto"}
                         />
                       )}

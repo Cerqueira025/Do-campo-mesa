@@ -14,6 +14,7 @@ type FormFieldProps = Omit<
   label: string;
   icon?: IconDefinition;
   unframed?: boolean;
+  compact?: boolean;
   labelPosition?: "above" | "beside";
   hint?: string;
   children?: ReactNode;
@@ -24,6 +25,7 @@ export default function FormField({
   label,
   icon,
   unframed = false,
+  compact = unframed,
   labelPosition = "above",
   hint,
   children,
@@ -39,9 +41,9 @@ export default function FormField({
 
   return (
     <div
-      className={`form-field${unframed ? " form-field--unframed" : ""}${labelPosition === "beside" ? " form-field--beside" : ""}`}
+      className={`form-field${compact ? " form-field--compact" : ""}${labelPosition === "beside" ? " form-field--beside" : ""}`}
     >
-      <label className="form-field__label" htmlFor={id}>
+      <label id={`${id}-label`} className="form-field__label" htmlFor={id}>
         {label}
       </label>
       <div className={unframed ? undefined : "form-field__control"}>
@@ -56,6 +58,7 @@ export default function FormField({
           <Input
             {...props}
             id={id}
+            className={password ? "form-field__input--password" : undefined}
             type={password && visible ? "text" : type}
             aria-describedby={describedBy}
           />

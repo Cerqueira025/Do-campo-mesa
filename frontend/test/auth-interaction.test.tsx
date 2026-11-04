@@ -12,6 +12,7 @@ import { AuthContext } from "../src/features/auth/authContext";
 import { useAuth } from "../src/features/auth/useAuth";
 import ProtectedRoute from "../src/features/auth/ProtectedRoute";
 import LoginPage from "../src/pages/auth/LoginPage";
+import RegisterPage from "../src/pages/auth/RegisterPage";
 import { storeSession, storedToken } from "../src/features/auth/sessionStorage";
 import { navigate } from "../src/navigation/navigation";
 import { authValue } from "./fixtures";
@@ -105,6 +106,57 @@ test("O login real regressa à página pedida depois de validar as credenciais",
   expect(storedToken()).toBe(token);
 });
 
+test("O seletor de registo alterna os campos de produtor e submete o papel escolhido", async () => {
+  window.history.replaceState(null, "", "/registo?papel=produtor");
+  const fetch = vi.fn().mockResolvedValue(Response.json({}));
+  vi.stubGlobal("fetch", fetch);
+  const auth = authValue({ estado: "anonimo", utilizador: null, token: null });
+  render(
+    <AuthContext.Provider value={auth}>
+      <RegisterPage />
+    </AuthContext.Provider>,
+  );
+  const role = screen.getByRole("combobox", { name: "Tipo de conta" });
+  expect(role.textContent).toBe("Produtor");
+  expect(screen.getByLabelText("Localidade")).toBeTruthy();
+  fireEvent.click(role);
+  fireEvent.click(screen.getByRole("option", { name: "Comprador" }));
+  expect(screen.queryByLabelText("Localidade")).toBeNull();
+  fireEvent.click(role);
+  fireEvent.click(screen.getByRole("option", { name: "Produtor" }));
+  for (const [label, value] of [
+    ["Nome", "Produtor de teste"],
+    ["Email", "produtor@example.test"],
+    ["Password", "password123"],
+    ["Confirmar password", "password123"],
+    ["Localidade", "Braga"],
+    ["Morada", "Rua da Horta"],
+    ["Latitude", "41.55"],
+    ["Longitude", "-8.42"],
+  ])
+    fireEvent.change(screen.getByLabelText(label, { exact: true }), {
+      target: { value },
+    });
+  const form = screen
+    .getByRole("button", { name: "Criar conta" })
+    .closest("form")!;
+  expect(new FormData(form).get("papel")).toBe("produtor");
+  fireEvent.submit(form);
+  await waitFor(() =>
+    expect(auth.entrar).toHaveBeenCalledWith(
+      "produtor@example.test",
+      "password123",
+    ),
+  );
+  expect(JSON.parse(fetch.mock.calls[0][1].body)).toMatchObject({
+    papel: "produtor",
+    perfilProdutor: {
+      localidade: "Braga",
+      coordenadas: { latitude: 41.55, longitude: -8.42 },
+    },
+  });
+});
+
 test("Termina a sessão e remove o token quando chega a expiração", async () => {
   vi.useFakeTimers();
   vi.setSystemTime(new Date("2026-01-01T12:00:00Z"));
@@ -145,4 +197,26 @@ test("Uma resposta 401 invalida a sessão guardada sem revelar conteúdo privado
   await waitFor(() => expect(storedToken()).toBeNull());
   expect(screen.queryByText("Conteúdo privado")).toBeNull();
   expect(navigate).toHaveBeenCalled();
+});
+
+test("A gestão de produtos exige aprovação atual do produtor", () => {
+  const auth = authValue();
+  const page = (validacao: "pendente" | "rejeitado" | "aceite") => (
+    <AuthContext.Provider
+      value={{
+        ...auth,
+        utilizador: { ...auth.utilizador!, papel: "produtor", validacao },
+      }}
+    >
+      <ProtectedRoute roles={["produtor"]} approvedProducer>
+        <p>Gestão de produtos</p>
+      </ProtectedRoute>
+    </AuthContext.Provider>
+  );
+  const view = render(page("pendente"));
+  expect(screen.queryByText("Gestão de produtos")).toBeNull();
+  view.rerender(page("rejeitado"));
+  expect(screen.queryByText("Gestão de produtos")).toBeNull();
+  view.rerender(page("aceite"));
+  expect(screen.getByText("Gestão de produtos")).toBeTruthy();
 });

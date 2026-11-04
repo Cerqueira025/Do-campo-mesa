@@ -4,6 +4,7 @@ import Button from "../components/ui/Button";
 import CartLink from "../components/ui/CartLink";
 import LoadingPlaceholder from "../components/ui/LoadingPlaceholder";
 import FormField from "../components/ui/input/FormField";
+import Select from "../components/ui/input/Select";
 import { useCart } from "../features/cart/cartContext";
 import { cartTotal, groupCart, validProduct } from "../features/cart/cart";
 import { useAuth } from "../features/auth/useAuth";
@@ -245,20 +246,22 @@ export default function CheckoutPage() {
               <FormField
                 id="delivery-type"
                 label="Como pretende receber os produtos?"
+                unframed
+                compact={false}
               >
-                <select
+                <Select
                   id="delivery-type"
                   value={tipo}
                   disabled={busy}
-                  onChange={(event) =>
-                    setTipo(event.target.value as typeof tipo)
-                  }
-                >
-                  <option value="levantamento">
-                    Levantamento junto de cada produtor
-                  </option>
-                  <option value="entrega">Entrega na morada indicada</option>
-                </select>
+                  onValueChange={(value) => setTipo(value as typeof tipo)}
+                  options={[
+                    {
+                      value: "levantamento",
+                      label: "Levantamento junto de cada produtor",
+                    },
+                    { value: "entrega", label: "Entrega na morada indicada" },
+                  ]}
+                />
               </FormField>
               {tipo === "entrega" && (
                 <FormField

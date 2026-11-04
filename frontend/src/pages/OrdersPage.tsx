@@ -2,6 +2,7 @@ import { useState } from "react";
 import Button from "../components/ui/Button";
 import LoadingPlaceholder from "../components/ui/LoadingPlaceholder";
 import FormField from "../components/ui/input/FormField";
+import Select from "../components/ui/input/Select";
 import InternalLink from "../navigation/InternalLink";
 import { useCart } from "../features/cart/cartContext";
 import OrderLayout from "../features/orders/OrderLayout";
@@ -41,19 +42,21 @@ export default function OrdersPage({
         </section>
       )}
       <div className="order-page__form">
-        <FormField id="order-filter" label="Filtrar por estado">
-          <select
+        <FormField
+          id="order-filter"
+          label="Filtrar por estado"
+          unframed
+          compact={false}
+        >
+          <Select
             id="order-filter"
             value={filter}
-            onChange={(event) => setFilter(event.target.value)}
-          >
-            <option value="">Todos os estados</option>
-            {orderStates.map((state) => (
-              <option key={state} value={state}>
-                {state}
-              </option>
-            ))}
-          </select>
+            onValueChange={setFilter}
+            options={[
+              { value: "", label: "Todos os estados" },
+              ...orderStates.map((state) => ({ value: state, label: state })),
+            ]}
+          />
         </FormField>
       </div>
       {error && (

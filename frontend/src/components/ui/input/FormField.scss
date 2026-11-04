@@ -9,11 +9,12 @@
     font-weight: 700;
   }
   &__control {
+    position: relative;
     display: flex;
     align-items: center;
-    gap: 4px;
-    min-height: 64px;
-    padding-inline: 8px;
+    gap: 15px;
+    min-height: 50px;
+    padding: 12px 6px;
     border: 1px solid var(--color-green-900);
     border-radius: 20px;
     background: var(--color-stone-50);
@@ -23,17 +24,23 @@
     outline-offset: 3px;
   }
   &__control > input,
-  &__control > select,
   &__control > textarea {
+    flex: 1;
     width: 100%;
     min-width: 0;
-    padding: 16px 10px;
     border: 0;
     border-radius: inherit;
     color: var(--color-green-950);
     background: transparent;
     font: inherit;
     outline: none;
+  }
+  &__control > .form-field__input--password {
+    padding-right: 44px;
+  }
+  &__control > .icon-button {
+    position: absolute;
+    right: 6px;
   }
   &__control > textarea {
     resize: vertical;
@@ -49,7 +56,7 @@
     font-size: var(--font-size-xs);
     line-height: 1.5;
   }
-  &--unframed {
+  &--compact {
     gap: 4px;
 
     .form-field__label {

@@ -8,6 +8,7 @@ import {
   faStarHalfStroke,
 } from "@fortawesome/free-solid-svg-icons";
 import Button from "../../../components/ui/Button";
+import Select from "../../../components/ui/input/Select";
 import {
   ratingOptions,
   seasons,
@@ -199,33 +200,31 @@ function ProductFilters({
         {selectFields.map((field) => (
           <div className="product-filters__section" key={field.key}>
             <label
+              id={`${id}-${field.key}-label`}
               className="product-filters__label"
               htmlFor={`${id}-${field.key}`}
             >
               {field.label}
             </label>
-            <select
+            <Select
               id={`${id}-${field.key}`}
-              className="form-select product-filters__select"
+              variant="filter"
               value={value[field.key]}
               disabled={!options}
-              onChange={(event) =>
-                onChange({ ...value, [field.key]: event.currentTarget.value })
+              onValueChange={(nextValue) =>
+                onChange({ ...value, [field.key]: nextValue })
               }
-            >
-              <option value="">{field.all}</option>
-              {value[field.key] &&
+              options={[
+                { value: "", label: field.all },
+                ...(value[field.key] &&
                 !field.options.some(
                   (option) => option.value === value[field.key],
-                ) && (
-                  <option value={value[field.key]}>{value[field.key]}</option>
-                )}
-              {field.options.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+                )
+                  ? [{ value: value[field.key], label: value[field.key] }]
+                  : []),
+                ...field.options,
+              ]}
+            />
           </div>
         ))}
         {optionsError ? (

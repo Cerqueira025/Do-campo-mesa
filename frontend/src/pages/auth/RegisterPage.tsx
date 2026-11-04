@@ -9,6 +9,7 @@ import Button from "../../components/ui/Button";
 import InternalLink from "../../navigation/InternalLink";
 import AuthLayout from "../../features/auth/components/AuthLayout";
 import FormField from "../../components/ui/input/FormField";
+import Select from "../../components/ui/input/Select";
 import { useAuthRedirect } from "../../features/auth/useAuthRedirect";
 import {
   authHref,
@@ -113,16 +114,22 @@ export default function RegisterPage() {
               minLength={2}
               maxLength={100}
             />
-            <FormField id="register-role" label="Tipo de conta">
-              <select
+            <FormField
+              id="register-role"
+              label="Tipo de conta"
+              unframed
+              compact={false}
+            >
+              <Select
                 id="register-role"
                 name="papel"
                 value={role}
-                onChange={(event) => setRole(event.target.value as typeof role)}
-              >
-                <option value="comprador">Comprador</option>
-                <option value="produtor">Produtor</option>
-              </select>
+                onValueChange={(value) => setRole(value as typeof role)}
+                options={[
+                  { value: "comprador", label: "Comprador" },
+                  { value: "produtor", label: "Produtor" },
+                ]}
+              />
             </FormField>
             <FormField
               id="register-email"

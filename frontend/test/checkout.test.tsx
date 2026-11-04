@@ -80,11 +80,13 @@ test("Atualiza o preço e o total antes de confirmar a encomenda", async () => {
 
 test("Exige morada para entrega e envia a morada sem espaços nas extremidades", async () => {
   const { request, form } = await checkout();
-  fireEvent.change(
-    screen.getByLabelText("Como pretende receber os produtos?"),
-    {
-      target: { value: "entrega" },
-    },
+  fireEvent.click(
+    screen.getByRole("combobox", {
+      name: "Como pretende receber os produtos?",
+    }),
+  );
+  fireEvent.click(
+    screen.getByRole("option", { name: "Entrega na morada indicada" }),
   );
   fireEvent.submit(form);
   expect(screen.getByRole("alert").textContent).toContain("Indique a morada");
