@@ -9,6 +9,7 @@ import backofficeRoutes from "./routes/backoffice.js";
 import swaggerUi from "swagger-ui-express";
 import { readFileSync } from "node:fs";
 import adminRoutes from "./routes/admin.js";
+import { productPhotoDirectory } from "./services/productPhotos.js";
 
 const app = express();
 
@@ -27,6 +28,18 @@ app.get("/api/health", (_request, response) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use(
+  "/api/uploads/products",
+  express.static(productPhotoDirectory, {
+    index: false,
+    dotfiles: "deny",
+    maxAge: "1y",
+    immutable: true,
+    setHeaders(response) {
+      response.setHeader("X-Content-Type-Options", "nosniff");
+    },
+  }),
+);
 app.use("/api/products", productRoutes);
 app.use("/api/producers", producerRoutes);
 app.use("/api/orders", orderRoutes);

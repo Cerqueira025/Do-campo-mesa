@@ -279,7 +279,7 @@ export function seedData(passwordHash, now = new Date()) {
       unidade,
       preco,
       descricao: `${nome} da exploração funcional ${i + 1}.`,
-      stock: i % 10 === 8 ? 0 : i % 10 === 9 ? 0.5 : 40 + i,
+      stock: i % 10 === 8 ? 0 : unidade === "g" ? 100 + i : 40 + i,
       epoca: [
         ["primavera"],
         ["verao"],
@@ -302,7 +302,7 @@ export function seedData(passwordHash, now = new Date()) {
       group * 10 + pair * 2 + 2,
     );
     const linhas = selected.map((product, j) => ({
-      ...line(product, j ? 1.25 : 0.5),
+      ...line(product, product.unidade === "g" ? 100 : j ? 1.5 : 0.5),
       precoUnitario: product.preco + 1,
     }));
     orders.push({

@@ -182,6 +182,10 @@ test("Resumo conta todos os registos e usa o estado efetivo para leilões ativos
     assert.ok(filter.dataFim.$gt);
     return 3;
   });
+  t.mock.method(Review, "countDocuments", async (filter) => {
+    assert.deepEqual(filter, { estado: "denunciada" });
+    return 5;
+  });
   assert.deepEqual(await call("/admin/summary"), {
     status: 200,
     body: {
@@ -189,8 +193,27 @@ test("Resumo conta todos os registos e usa o estado efetivo para leilões ativos
       orders: { entregue: 7 },
       pendingProducers: 2,
       activeAuctions: 3,
+      reportedReviews: 5,
     },
   });
+});
+
+test("Resumo conta avaliações denunciadas, exclui publicadas e ocultas e devolve zero", async (t) => {
+  authorize(t);
+  t.mock.method(User, "aggregate", async () => []);
+  t.mock.method(Order, "aggregate", async () => []);
+  t.mock.method(User, "countDocuments", async () => 0);
+  t.mock.method(Auction, "countDocuments", async () => 0);
+  let reviews = ["publicada", "denunciada", "oculta", "denunciada"];
+  t.mock.method(Review, "countDocuments", async (filter) => {
+    assert.deepEqual(filter, { estado: "denunciada" });
+    return reviews.filter((estado) => estado === filter.estado).length;
+  });
+  assert.equal((await call("/admin/summary")).body.reportedReviews, 2);
+  reviews = ["publicada", "oculta"];
+  assert.equal((await call("/admin/summary")).body.reportedReviews, 0);
+  reviews = [];
+  assert.equal((await call("/admin/summary")).body.reportedReviews, 0);
 });
 
 test("Listagem pesquisa texto literal, filtra papéis, pagina no servidor e ordena pendentes primeiro", async (t) => {

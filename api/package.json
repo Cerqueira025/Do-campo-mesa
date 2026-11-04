@@ -19,6 +19,7 @@
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.11.1",
+    "sharp": "^0.35.5",
     "socket.io": "^4.8.4",
     "socket.io-client": "^4.8.4",
     "swagger-ui-express": "^5.0.1",

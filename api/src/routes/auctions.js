@@ -6,7 +6,7 @@ import Order from "../models/Order.js";
 import User from "../models/User.js";
 import { requireApprovedProducer, requireAuth } from "../middleware/auth.js";
 import { requireObjectBody } from "../middleware/requestBody.js";
-import { auctionStateFilter } from "../domain/auction.js";
+import { auctionState, auctionStateFilter } from "../domain/auction.js";
 import { validPurchaseQuantity } from "../domain/purchaseQuantity.js";
 import {
   findPublicAuction,
@@ -30,7 +30,7 @@ router.get("/", async (request, response, next) => {
     }
     const auctions = await Auction.find(auctionStateFilter(estado, now))
       .sort({ dataFim: 1 })
-      .populate({ ...publicProduct, select: "nome produtorId" })
+      .populate({ ...publicProduct, select: "nome fotografia produtorId" })
       .populate({ ...publicProducer, select: "nome perfilProdutor.localidade" })
       .lean();
     response.json(
@@ -39,6 +39,50 @@ router.get("/", async (request, response, next) => {
   } catch (error) {
     next(error);
   }
+});
+
+const managementFields = "lote produtos precoBase incremento dataInicio dataFim estado reservaStock motivoCancelamento licitacaoAtual.valor createdAt";
+const managementPopulate = { path: "produtos.produtoId", select: "nome" };
+const managementAuction = (auction, now) => ({
+  _id: auction._id,
+  lote: auction.lote,
+  produtos: auction.produtos.map((line) => ({ produtoId: line.produtoId ? { _id: line.produtoId._id, nome: line.produtoId.nome } : null, quantidade: line.quantidade, unidade: line.unidade })),
+  precoBase: auction.precoBase,
+  incremento: auction.incremento,
+  dataInicio: auction.dataInicio,
+  dataFim: auction.dataFim,
+  estado: auctionState(auction, now),
+  reservaStock: auction.reservaStock,
+  ...(auction.motivoCancelamento ? { motivoCancelamento: auction.motivoCancelamento } : {}),
+  licitacaoAtual: { valor: auction.licitacaoAtual.valor },
+});
+
+router.get("/mine", requireAuth("produtor"), requireApprovedProducer, async (request, response, next) => {
+  try {
+    const { page = "1", limit = "24" } = request.query;
+    const pageNumber = Number(page), limitNumber = Number(limit);
+    const skip = (pageNumber - 1) * limitNumber;
+    if ([page, limit].some((value) => typeof value !== "string" || !/^\d+$/.test(value)) ||
+      !Number.isSafeInteger(pageNumber) || pageNumber < 1 || !Number.isSafeInteger(skip) || limitNumber < 1 || limitNumber > 100)
+      return response.status(400).json({ erro: "Paginação inválida." });
+    const filter = { produtorId: request.user.id };
+    const [items, total] = await Promise.all([
+      Auction.find(filter).select(managementFields).sort({ createdAt: -1, _id: 1 }).skip(skip).limit(limitNumber).populate(managementPopulate).lean(),
+      Auction.countDocuments(filter),
+    ]);
+    const now = Date.now();
+    response.set("Cache-Control", "no-store").json({ items: items.map((item) => managementAuction(item, now)), page: pageNumber, limit: limitNumber, total });
+  } catch (error) { next(error); }
+});
+
+router.get("/mine/:id", requireAuth("produtor"), requireApprovedProducer, async (request, response, next) => {
+  try {
+    if (!mongoose.isObjectIdOrHexString(request.params.id))
+      return response.status(404).json({ erro: "Leilão não encontrado." });
+    const auction = await Auction.findOne({ _id: request.params.id, produtorId: request.user.id }).select(managementFields).populate(managementPopulate).lean();
+    if (!auction) return response.status(404).json({ erro: "Leilão não encontrado." });
+    response.set("Cache-Control", "no-store").json(managementAuction(auction, Date.now()));
+  } catch (error) { next(error); }
 });
 
 router.get("/:id", async (request, response, next) => {
@@ -50,7 +94,10 @@ router.get("/:id", async (request, response, next) => {
     if (!result)
       return response.status(404).json({ erro: "Leilão não encontrado." });
     if (result.estado !== "terminado") return response.json(result);
-    const currentBid = result.licitacaoAtual ?? { valor: result.precoBase, compradorId: null };
+    const currentBid = result.licitacaoAtual ?? {
+      valor: result.precoBase,
+      compradorId: null,
+    };
     const winnerId = currentBid.compradorId;
     const [order, winner] = winnerId
       ? await Promise.all([

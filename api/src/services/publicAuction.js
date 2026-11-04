@@ -31,7 +31,10 @@ export function publicAuction(auction, now) {
 
 export async function findPublicAuction(id, now = Date.now()) {
   const auction = await Auction.findById(id)
-    .populate({ ...publicProduct, select: "nome descricao unidade produtorId" })
+    .populate({
+      ...publicProduct,
+      select: "nome descricao unidade fotografia produtorId",
+    })
     .populate({
       ...publicProducer,
       select: "nome perfilProdutor.descricao perfilProdutor.localidade",
