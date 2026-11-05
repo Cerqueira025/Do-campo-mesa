@@ -8,11 +8,11 @@ import "./RelatedProducts.scss";
 
 export default function RelatedProducts({
   id,
-  category,
+  producerId,
   returnUrl,
 }: {
   id: string;
-  category: string;
+  producerId: string;
   returnUrl: string;
 }) {
   const { adicionar, canBuy, message } = useCart();
@@ -35,7 +35,7 @@ export default function RelatedProducts({
     const controller = new AbortController();
     async function load() {
       try {
-        const params = new URLSearchParams({ categoria: category, limit: "4" });
+        const params = new URLSearchParams({ produtorId: producerId, limit: "7" });
         const response = await fetch(`/api/products?${params}`, {
           signal: controller.signal,
         });
@@ -43,9 +43,7 @@ export default function RelatedProducts({
         const data = (await response.json()) as { items: ApiProduct[] };
         if (!Array.isArray(data.items)) throw new Error("Resposta inválida");
         if (!controller.signal.aborted) {
-          setProducts(
-            data.items.filter((product) => product._id !== id).slice(0, 3),
-          );
+          setProducts(data.items.filter((product) => product._id !== id).slice(0, 6));
           setStatus("success");
         }
       } catch {
@@ -54,7 +52,7 @@ export default function RelatedProducts({
     }
     void load();
     return () => controller.abort();
-  }, [id, category, retry]);
+  }, [id, producerId, retry]);
 
   if (status === "success" && products.length === 0) return null;
   return (

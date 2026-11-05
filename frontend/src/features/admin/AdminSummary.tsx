@@ -2,6 +2,8 @@ import type { ReactNode } from "react";
 import Button from "../../components/ui/Button";
 import LoadingPlaceholder from "../../components/ui/LoadingPlaceholder";
 import InternalLink from "../../navigation/InternalLink";
+import OrderStatus from "../orders/OrderStatus";
+import { orderStates } from "../orders/order";
 import type { AdminSummary as SummaryData } from "./admin";
 import { useAdminData } from "./useAdminData";
 
@@ -31,7 +33,7 @@ function Distribution({
 }: {
   title: string;
   counts: Record<string, number>;
-  items: [string, string][];
+  items: [string, ReactNode][];
   base: string;
 }) {
   return (
@@ -166,12 +168,10 @@ export default function AdminSummary() {
             <Distribution
               title="Encomendas por estado"
               counts={data.orders}
-              items={[
-                ["pendente", "Pendentes"],
-                ["confirmada", "Confirmadas"],
-                ["pronta", "Prontas"],
-                ["entregue", "Entregues"],
-              ]}
+              items={orderStates.map((state) => [
+                state,
+                <OrderStatus state={state} />,
+              ])}
               base="/admin/encomendas?estado="
             />
           </div>

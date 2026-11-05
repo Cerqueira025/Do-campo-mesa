@@ -27,6 +27,7 @@ import BackofficeEntry from "../features/admin/BackofficeEntry";
 import ProducerArea, {
   type ProducerSection,
 } from "../features/products/ProducerArea";
+import BuyerArea from "../features/account/BuyerArea";
 import { useAuth } from "../features/auth/useAuth";
 import ProducerProducts from "../features/products/ProducerProducts";
 import ProducerProductDetail from "../features/products/ProducerProductDetail";
@@ -101,7 +102,7 @@ function resolvePage(pathname: string, location: string, embedded: boolean) {
     case "/encomendas":
       return (
         <ProtectedRoute roles={["comprador"]}>
-          <OrdersPage />
+          <OrdersPage embedded={embedded} />
         </ProtectedRoute>
       );
     case "/produtor/encomendas":
@@ -134,11 +135,7 @@ function resolvePage(pathname: string, location: string, embedded: boolean) {
     return (
       <ProtectedRoute roles={["comprador", "produtor"]}>
         {embedded ? (
-          <OrderDetailPage
-            id={orderId}
-            embedded
-            backUrl="/produtor/encomendas"
-          />
+          <OrderDetailPage id={orderId} embedded />
         ) : (
           <OrderDetailPage id={orderId} />
         )}
@@ -151,6 +148,19 @@ function resolvePage(pathname: string, location: string, embedded: boolean) {
   const producerId = producerIdFromPath(pathname);
   if (producerId) return <ProducerDetailPage key={pathname} id={producerId} />;
   return <NotFoundPage />;
+}
+
+function buyerPageFromPath(pathname: string): {
+  title: string;
+  section: "account" | "orders";
+} | null {
+  if (pathname === "/conta")
+    return { title: "A minha conta", section: "account" };
+  if (pathname === "/encomendas")
+    return { title: "As minhas encomendas", section: "orders" };
+  if (orderIdFromPath(pathname))
+    return { title: "Detalhe da encomenda", section: "orders" };
+  return null;
 }
 
 function producerPageFromPath(pathname: string): {
@@ -185,7 +195,7 @@ function producerPageFromPath(pathname: string): {
   if (/^\/produtor\/produtos\/([a-f\d]{24})\/?$/i.test(pathname))
     return { title: "Detalhe do produto", section: "products", approved: true };
   if (pathname === "/produtor/leiloes/novo")
-    return { title: "Novo leilão", section: "auction", approved: true };
+    return { title: "Novo leilão", section: "auction-create", approved: true };
   if (
     pathname === "/produtor/produtos" ||
     pathname === "/produtor/produtos/novo" ||
@@ -198,7 +208,8 @@ function producerPageFromPath(pathname: string): {
           : pathname.endsWith("/novo")
             ? "Novo produto"
             : "Editar produto",
-      section: "products",
+      section:
+        pathname === "/produtor/produtos/novo" ? "product-create" : "products",
       approved: true,
     };
   return null;
@@ -218,10 +229,13 @@ function AppRoutes() {
   }, [location]);
   const producerPage =
     utilizador?.papel === "produtor" ? producerPageFromPath(pathname) : null;
+  const buyerPage =
+    utilizador?.papel === "comprador" ? buyerPageFromPath(pathname) : null;
   const embedded = Boolean(
-    producerPage &&
     estado === "autenticado" &&
-    (!producerPage.approved || utilizador?.validacao === "aceite"),
+    (buyerPage ||
+      (producerPage &&
+        (!producerPage.approved || utilizador?.validacao === "aceite"))),
   );
   const page = resolvePage(pathname, location, embedded);
   return (
@@ -231,6 +245,10 @@ function AppRoutes() {
         <ProducerArea title={producerPage.title} section={producerPage.section}>
           {page}
         </ProducerArea>
+      ) : buyerPage && embedded ? (
+        <BuyerArea title={buyerPage.title} section={buyerPage.section}>
+          {page}
+        </BuyerArea>
       ) : (
         page
       )}

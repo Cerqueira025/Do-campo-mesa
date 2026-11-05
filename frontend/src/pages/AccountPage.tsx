@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { faCircleCheck } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Button from "../components/ui/Button";
-import CartLink from "../components/ui/CartLink";
 import { useAuth } from "../features/auth/useAuth";
 import AppHeader from "../components/layout/AppHeader";
 import ProducerRating from "../features/reviews/ProducerRating";
@@ -37,7 +36,7 @@ export default function AccountPage({
   const content = (
     <div className="account-page">
       <section
-        className={`account-page__panel${isProducer ? " account-page__panel--managed" : ""}`}
+        className={`account-page__panel${isProducer || embedded ? " account-page__panel--managed" : ""}`}
         aria-labelledby="account-details-title"
       >
         <h2 id="account-details-title">Dados da conta</h2>
@@ -59,12 +58,6 @@ export default function AccountPage({
           <Button href={`/produtores/${utilizador.id}`} variant="cream">
             Ver perfil público
           </Button>
-        )}
-        {utilizador.papel === "comprador" && (
-          <div className="account-page__actions">
-            <CartLink />
-            <Button href="/encomendas">As minhas encomendas</Button>
-          </div>
         )}
         {utilizador.papel === "administrador" && (
           <Button href="/admin">Administração</Button>

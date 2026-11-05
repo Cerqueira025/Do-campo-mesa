@@ -6,6 +6,7 @@ import Select from "../components/ui/input/Select";
 import InternalLink from "../navigation/InternalLink";
 import { useCart } from "../features/cart/cartContext";
 import OrderLayout from "../features/orders/OrderLayout";
+import OrderStatus from "../features/orders/OrderStatus";
 import { orderDate, orderStates, type Order } from "../features/orders/order";
 import { useOrderPolling } from "../features/orders/useOrderPolling";
 import { priceFormatter } from "../features/products/product";
@@ -109,7 +110,9 @@ export default function OrdersPage({
               </div>
               <div>
                 <dt>Estado</dt>
-                <dd>{order.estado}</dd>
+                <dd>
+                  <OrderStatus state={order.estado} />
+                </dd>
               </div>
               <div>
                 <dt>Total</dt>

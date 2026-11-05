@@ -23,7 +23,7 @@
 
   &__image {
     position: absolute;
-    top: 50px;
+    top: 25px;
     width: 320px;
     height: auto;
   }
@@ -122,11 +122,10 @@
 
   &__metrics {
     display: flex;
+    flex-direction: column;
     flex-wrap: wrap;
-    align-items: center;
+    align-items: flex-start;
     gap: 8px;
-    margin: 0 0 12px;
-    padding-right: calc(30% + 60px);
 
     dt {
       display: flex;
@@ -156,7 +155,6 @@
   &__countdown {
     min-width: min-content;
     max-width: 100%;
-    flex: 1 1 100px;
   }
 
   &__bid dt svg {

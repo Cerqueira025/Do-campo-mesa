@@ -15,6 +15,7 @@ import {
 import { useAdminData } from "./useAdminData";
 import DecisionPanel from "./DecisionPanel";
 import AdminStatus from "./AdminStatus";
+import AdminOrderStatus from "./AdminOrderStatus";
 
 function Facts({ items }: { items: [string, ReactNode][] }) {
   return (
@@ -76,10 +77,14 @@ export default function AdminDetail({
           <section className="admin-page__panel admin-page__detail-info">
             <div className="admin-page__detail-heading">
               <h2>{item.nome || item.lote || "Avaliação"}</h2>
-              {(item.estado || item.perfilProdutor) && (
-                <AdminStatus
-                  value={item.estado || item.perfilProdutor?.validacao}
-                />
+              {section === "encomendas" ? (
+                <AdminOrderStatus value={item.estado} />
+              ) : (
+                (item.estado || item.perfilProdutor) && (
+                  <AdminStatus
+                    value={item.estado || item.perfilProdutor?.validacao}
+                  />
+                )
               )}
               {section === "produtos" && (
                 <AdminStatus

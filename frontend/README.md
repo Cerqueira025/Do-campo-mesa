@@ -154,3 +154,8 @@ O mixin `management-surface` uniformiza os painéis sem alterar a organização 
 listas, tabelas e formulários. Os estilos dos produtos pertencem a
 `ProducerProducts.scss`; encomendas integradas usam `order-content`, sem depender
 da administração. A conta autónoma mantém os seus próprios estilos.
+
+O menu do produtor organiza-se em Gerir exploração (conta, perfil e encomendas),
+Produtos (Os meus produtos e Novo produto) e Leilões (Os meus leilões e Novo leilão).
+Os dois últimos grupos só aparecem para produtores aprovados. Os links de criação
+ficam ativos nos respetivos formulários; detalhes e edição mantêm a listagem ativa.

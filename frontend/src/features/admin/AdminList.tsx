@@ -28,6 +28,7 @@ import {
 } from "./admin";
 import { useAdminData } from "./useAdminData";
 import AdminStatus from "./AdminStatus";
+import AdminOrderStatus from "./AdminOrderStatus";
 
 const states = {
   avaliacoes: ["publicada", "denunciada", "oculta"],
@@ -124,7 +125,7 @@ function recordFacts(
         ],
         ["Data", adminDate(item.createdAt)],
         ["Total", adminMoney(item.total)],
-        ["Estado", <AdminStatus value={item.estado} />],
+        ["Estado", <AdminOrderStatus value={item.estado} />],
         ["Origem", item.leilaoId ? "Leilão" : "Catálogo"],
       ];
     case "leiloes":

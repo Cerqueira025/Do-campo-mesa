@@ -7,6 +7,7 @@ import { ApiError } from "../api/client";
 import { useAuth } from "../features/auth/useAuth";
 import OrderLayout from "../features/orders/OrderLayout";
 import OrderReviews from "../features/orders/OrderReviews";
+import OrderStatus from "../features/orders/OrderStatus";
 import { orderDate, orderStates, type Order } from "../features/orders/order";
 import { useOrderPolling } from "../features/orders/useOrderPolling";
 import { priceFormatter } from "../features/products/product";
@@ -186,7 +187,9 @@ function OrderDetail({ id, backUrl }: { id: string; backUrl?: string }) {
                 .
               </p>
             )}
-            <h3>Estado: {order.estado}</h3>
+            <h3>
+              Estado: <OrderStatus state={order.estado} />
+            </h3>
             <ol
               className="order-page__timeline"
               aria-label="Progressão da encomenda"

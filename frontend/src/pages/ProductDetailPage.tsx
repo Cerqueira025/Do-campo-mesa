@@ -348,7 +348,7 @@ export default function ProductDetailPage({ id }: { id: string | null }) {
                 <RelatedProducts
                   key={`related-${product._id}`}
                   id={product._id}
-                  category={product.categoria}
+                  producerId={product.produtorId._id}
                   returnUrl={returnUrl}
                 />
               </div>

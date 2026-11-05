@@ -79,6 +79,10 @@ test("Secções e formulários mudam só o painel e preservam o menu e o cabeça
   const header = screen.getByRole("banner");
   const menu = screen.getByRole("navigation", { name: "Gerir exploração" });
   expect(screen.getByRole("main").contains(menu)).toBe(false);
+  expect(within(menu).getAllByRole("link")).toHaveLength(7);
+  for (const group of ["Gerir exploração", "Produtos", "Leilões"]) {
+    expect(within(menu).getByText(group)).toBeTruthy();
+  }
   const toggle = screen.getByRole("button", {
     name: "Fechar menu da exploração",
   });
@@ -87,6 +91,8 @@ test("Secções e formulários mudam só o painel e preservam o menu e o cabeça
     ["Encomendas recebidas", "/produtor/encomendas", "Encomendas recebidas"],
     ["Os meus produtos", "/produtor/produtos", "Os meus produtos"],
     ["Os meus leilões", "/produtor/leiloes", "Os meus leilões"],
+    ["Novo produto", "/produtor/produtos/novo", "Novo produto"],
+    ["Novo leilão", "/produtor/leiloes/novo", "Novo leilão"],
     ["A minha conta", "/conta", "Dados da conta"],
   ]) {
     fireEvent.click(within(menu).getByRole("link", { name: label }));
@@ -170,6 +176,14 @@ test.each(["pendente", "rejeitado"] as const)(
   async (validacao) => {
     const request = mount("/produtor/produtos", validacao);
     await screen.findByRole("heading", { name: "Sem permissão" });
+    for (const path of [
+      "/produtor/produtos/novo",
+      "/produtor/leiloes",
+      "/produtor/leiloes/novo",
+    ]) {
+      act(() => navigate(path));
+      await screen.findByRole("heading", { name: "Sem permissão" });
+    }
     expect(request).not.toHaveBeenCalled();
     expect(screen.getAllByRole("banner")).toHaveLength(1);
     expect(
@@ -199,35 +213,65 @@ test.each(["pendente", "rejeitado"] as const)(
   },
 );
 
-test.each(["comprador", "administrador"] as const)(
-  "Conta de %s mantém apresentação autónoma",
-  (papel) => {
-    window.history.replaceState(null, "", "/conta");
-    render(
-      <AuthContext.Provider
-        value={authValue({
-          utilizador: {
-            id: papel,
-            nome: "Conta",
-            email: "conta@example.test",
-            papel,
-          },
-        })}
-      >
-        <AppRoutes />
-      </AuthContext.Provider>,
-    );
-    expect(
-      screen.getByRole("heading", { name: "A minha conta", level: 1 }),
-    ).toBeTruthy();
-    expect(
-      screen.queryByRole("navigation", { name: "Gerir exploração" }),
-    ).toBeNull();
-    expect(
-      within(screen.getByRole("main")).getByRole("link", {
-        name: papel === "comprador" ? "As minhas encomendas" : "Administração",
-      }),
-    ).toBeTruthy();
-    expect(document.querySelector(".management-layout")).toBeNull();
-  },
-);
+test("Conta de administrador mantém apresentação autónoma", () => {
+  window.history.replaceState(null, "", "/conta");
+  render(
+    <AuthContext.Provider
+      value={authValue({
+        utilizador: {
+          id: "administrador",
+          nome: "Conta",
+          email: "conta@example.test",
+          papel: "administrador",
+        },
+      })}
+    >
+      <AppRoutes />
+    </AuthContext.Provider>,
+  );
+  expect(
+    screen.getByRole("heading", { name: "A minha conta", level: 1 }),
+  ).toBeTruthy();
+  expect(
+    screen.queryByRole("navigation", { name: "Gerir exploração" }),
+  ).toBeNull();
+  expect(
+    within(screen.getByRole("main")).getByRole("link", {
+      name: "Administração",
+    }),
+  ).toBeTruthy();
+  expect(document.querySelector(".management-layout")).toBeNull();
+});
+
+test.each([
+  ["/produtor/produtos/novo", "Novo produto"],
+  ["/produtor/leiloes/novo", "Novo leilão"],
+  [`/produtor/produtos/${product._id}`, "Os meus produtos"],
+  [`/produtor/produtos/${product._id}/editar`, "Os meus produtos"],
+  [`/produtor/leiloes/${product._id}`, "Os meus leilões"],
+])("Acesso direto a %s seleciona apenas %s", async (path, label) => {
+  mount(path);
+  await screen.findByRole("heading", { level: 1 });
+  const open = screen.queryByRole("button", {
+    name: "Abrir menu da exploração",
+  });
+  if (open) fireEvent.click(open);
+  selected(screen.getByRole("navigation", { name: "Gerir exploração" }), label);
+});
+
+test("Histórico entre listagem e criação conserva seleção e menu", async () => {
+  mount("/produtor/produtos");
+  const menu = screen.getByRole("navigation", { name: "Gerir exploração" });
+  fireEvent.click(within(menu).getByRole("link", { name: "Novo produto" }));
+  await screen.findByRole("heading", { level: 1, name: "Novo produto" });
+  selected(menu, "Novo produto");
+  act(() => window.history.back());
+  await screen.findByRole("heading", { level: 1, name: "Os meus produtos" });
+  selected(menu, "Os meus produtos");
+  act(() => window.history.forward());
+  await screen.findByRole("heading", { level: 1, name: "Novo produto" });
+  selected(menu, "Novo produto");
+  expect(screen.getByRole("navigation", { name: "Gerir exploração" })).toBe(
+    menu,
+  );
+});
