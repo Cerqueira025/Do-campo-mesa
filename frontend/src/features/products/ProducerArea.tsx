@@ -6,6 +6,7 @@ import { useAuth } from "../auth/useAuth";
 import "./ProducerArea.scss";
 
 export type ProducerSection =
+  | "summary"
   | "account"
   | "profile"
   | "orders"
@@ -22,6 +23,7 @@ const groups: {
   {
     title: "Gerir exploração",
     items: [
+      { section: "summary", href: "/produtor", label: "Resumo" },
       { section: "account", href: "/conta", label: "A minha conta" },
       {
         section: "profile",

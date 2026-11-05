@@ -10,6 +10,9 @@ import { beforeEach, expect, test, vi } from "vitest";
 import AppRoutes from "../src/navigation/AppRoutes";
 import { navigate } from "../src/navigation/navigation";
 import { AuthContext } from "../src/features/auth/authContext";
+import type { Order } from "../src/features/orders/order";
+import type { ProductPage } from "../src/features/products/management";
+import { priceFormatter } from "../src/features/products/product";
 import { authValue, product } from "./fixtures";
 
 vi.mock("../src/features/cart/cartContext", () => ({
@@ -45,17 +48,20 @@ beforeEach(() => {
 function mount(
   path = "/conta",
   validacao: "aceite" | "pendente" | "rejeitado" = "aceite",
+  stockPage?: (url: string) => ProductPage,
 ) {
   window.history.replaceState(null, "", path);
   const request = vi.fn(async (url: string) => {
     if (url === "/producers/me") return profile;
+    if (url.endsWith("limit=100"))
+      return stockPage?.(url) ?? { items: [], total: 0, page: 1, limit: 100 };
     if (url.startsWith("/products/mine?"))
       return { items: [], total: 0, page: 1, limit: 24 };
     if (url.startsWith("/products/mine/"))
       return { ...product, publicado: false, bloqueado: false };
     if (url.startsWith("/auctions/mine?"))
       return { items: [], total: 0, page: 1, limit: 24 };
-    if (url === "/orders") return [];
+    if (url === "/orders") return [] as Order[];
     throw new Error("Pedido indisponível");
   });
   render(
@@ -79,7 +85,7 @@ test("Secções e formulários mudam só o painel e preservam o menu e o cabeça
   const header = screen.getByRole("banner");
   const menu = screen.getByRole("navigation", { name: "Gerir exploração" });
   expect(screen.getByRole("main").contains(menu)).toBe(false);
-  expect(within(menu).getAllByRole("link")).toHaveLength(7);
+  expect(within(menu).getAllByRole("link")).toHaveLength(8);
   for (const group of ["Gerir exploração", "Produtos", "Leilões"]) {
     expect(within(menu).getByText(group)).toBeTruthy();
   }
@@ -87,6 +93,7 @@ test("Secções e formulários mudam só o painel e preservam o menu e o cabeça
     name: "Fechar menu da exploração",
   });
   for (const [label, path, heading] of [
+    ["Resumo", "/produtor", "Resumo"],
     ["Editar perfil da exploração", "/produtor/perfil", "Perfil da exploração"],
     ["Encomendas recebidas", "/produtor/encomendas", "Encomendas recebidas"],
     ["Os meus produtos", "/produtor/produtos", "Os meus produtos"],
@@ -202,7 +209,7 @@ test.each(["pendente", "rejeitado"] as const)(
     });
     if (open) fireEvent.click(open);
     const menu = screen.getByRole("navigation", { name: "Gerir exploração" });
-    expect(within(menu).getAllByRole("link")).toHaveLength(3);
+    expect(within(menu).getAllByRole("link")).toHaveLength(4);
     expect(
       within(menu).queryByRole("link", { name: "Os meus produtos" }),
     ).toBeNull();
@@ -274,4 +281,109 @@ test("Histórico entre listagem e criação conserva seleção e menu", async ()
   expect(screen.getByRole("navigation", { name: "Gerir exploração" })).toBe(
     menu,
   );
+});
+
+test("Resumo mostra carregamento, erro recuperável e encomendas recentes", async () => {
+  const request = mount("/produtor");
+  expect(screen.getByText("A carregar vendas…")).toBeTruthy();
+  request.mockRejectedValueOnce(new Error("Ligação indisponível"));
+  const sales = await screen.findByRole("heading", { name: "Vendas do mês" });
+  expect(sales.parentElement?.textContent).toContain(priceFormatter.format(0));
+  expect(screen.getByText("Sem vendas no mês anterior")).toBeTruthy();
+  expect(screen.getByText("Ainda não há encomendas.")).toBeTruthy();
+
+  act(() => document.dispatchEvent(new Event("visibilitychange")));
+  await screen.findByRole("alert");
+  const order: Order = {
+    _id: product._id,
+    compradorId: { _id: "comprador", nome: "Maria" },
+    produtorId: { _id: producer.id, nome: producer.nome },
+    createdAt: new Date().toISOString(),
+    estado: "pronta",
+    linhas: [],
+    total: 1250,
+  };
+  request.mockResolvedValueOnce([order]);
+  fireEvent.click(screen.getByRole("button", { name: "Tentar novamente" }));
+  await screen.findByText("Maria");
+  const detail = screen.getByRole("link", { name: `Encomenda ${order._id}` });
+  expect(detail.getAttribute("href")).toBe(`/encomendas/${order._id}`);
+  expect(screen.getByRole("link", { name: "Ver todas" }).getAttribute("href")).toBe(
+    "/produtor/encomendas",
+  );
+  expect(sales.parentElement?.textContent).toContain(priceFormatter.format(0));
+
+  request.mockResolvedValueOnce([
+    { ...order, estado: "entregue", dataEntrega: new Date().toISOString() },
+  ]);
+  act(() => document.dispatchEvent(new Event("visibilitychange")));
+  await waitFor(() =>
+    expect(sales.parentElement?.textContent).toContain(priceFormatter.format(12.5)),
+  );
+});
+
+test.each(["comprador", "visitante"] as const)(
+  "Resumo não carrega encomendas para %s",
+  async (viewer) => {
+    window.history.replaceState(null, "", "/produtor");
+    const request = vi.fn();
+    const auth = authValue({ request });
+    render(
+      <AuthContext.Provider
+        value={
+          viewer === "visitante"
+            ? { ...auth, estado: "anonimo", token: null, utilizador: null }
+            : auth
+        }
+      >
+        <AppRoutes />
+      </AuthContext.Provider>,
+    );
+    if (viewer === "visitante") {
+      await waitFor(() => expect(window.location.pathname).toBe("/login"));
+    } else {
+      await screen.findByRole("heading", { name: "Sem permissão" });
+    }
+    expect(request).not.toHaveBeenCalled();
+  },
+);
+
+test("Resumo permite mudar o período e recuperar avisos de stock de várias páginas", async () => {
+  let failed = false;
+  const available = {
+    ...product,
+    publicado: true,
+    bloqueado: false,
+    createdAt: "",
+    updatedAt: "",
+  } as ProductPage["items"][number];
+  const request = mount("/produtor", "aceite", (url) => {
+    if (!failed) {
+      failed = true;
+      throw new Error("Stock indisponível");
+    }
+    const page = url.includes("page=1&") ? 1 : 2;
+    const items = page === 1
+      ? [
+          { ...available, _id: "limite", nome: "No limite", stock: 5 },
+          { ...available, _id: "acima", nome: "Acima do limite", stock: 6 },
+          { ...available, _id: "bloqueado", nome: "Bloqueado", stock: 1, bloqueado: true },
+        ]
+      : [{ ...available, nome: "Esgotado", stock: 0 }];
+    return { items, total: 101, page, limit: 100 };
+  });
+  const initial = await screen.findByRole("button", { name: "6 meses", pressed: true });
+  expect(initial).toBeTruthy();
+  const monthly = screen.getByRole("button", { name: "Mês", pressed: false });
+  fireEvent.click(monthly);
+  expect(monthly.getAttribute("aria-pressed")).toBe("true");
+  expect(screen.getByText("Por valor vendido · Mês")).toBeTruthy();
+  expect(screen.getByText("Ver valores do gráfico")).toBeTruthy();
+  fireEvent.click(await screen.findByRole("button", { name: "Voltar a consultar stock" }));
+  const stock = (await screen.findByRole("heading", { name: "Stock baixo" })).parentElement!;
+  await within(stock).findByRole("link", { name: "Esgotado" });
+  expect(within(stock).getAllByRole("link").map((link) => link.textContent)).toEqual([
+    "Esgotado", "No limite", "Ver produtos",
+  ]);
+  expect(request).toHaveBeenCalledWith("/products/mine?page=2&limit=100", expect.anything());
 });

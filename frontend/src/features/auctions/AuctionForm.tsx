@@ -1,6 +1,9 @@
 import "../products/ProducerProducts.scss";
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { faTrash } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Button from "../../components/ui/Button";
+import IconButton from "../../components/ui/IconButton";
 import FormField from "../../components/ui/input/FormField";
 import Select from "../../components/ui/input/Select";
 import QuantityInput from "../../components/ui/input/QuantityInput";
@@ -166,13 +169,6 @@ export default function AuctionForm() {
       className="producer-products__panel auction-form"
       data-navigation-ready={!loading}
     >
-      <Button
-        className="producer-products__back"
-        href="/produtor/leiloes"
-        variant="cream"
-      >
-        Voltar aos meus leilões
-      </Button>
       <p>
         Escolha um ou vários dos seus produtos. O preço base e as licitações são
         pelo lote completo.
@@ -220,26 +216,37 @@ export default function AuctionForm() {
                       unframed
                       compact={false}
                     >
-                      <Select
-                        id={`auction-product-${line.key}`}
-                        required
-                        value={line.produtoId}
-                        onValueChange={(value) =>
-                          selectProduct(line.key, value)
-                        }
-                        options={[
-                          { value: "", label: "Selecione um produto" },
-                          ...products
-                            .filter(
-                              (p) =>
-                                p._id === line.produtoId ||
-                                !draft.produtos.some(
-                                  (other) => other.produtoId === p._id,
-                                ),
-                            )
-                            .map((p) => ({ value: p._id, label: p.nome })),
-                        ]}
-                      />
+                      <div className="auction-form__product-control">
+                        <Select
+                          id={`auction-product-${line.key}`}
+                          required
+                          value={line.produtoId}
+                          onValueChange={(value) =>
+                            selectProduct(line.key, value)
+                          }
+                          options={[
+                            { value: "", label: "Selecione um produto" },
+                            ...products
+                              .filter(
+                                (p) =>
+                                  p._id === line.produtoId ||
+                                  !draft.produtos.some(
+                                    (other) => other.produtoId === p._id,
+                                  ),
+                              )
+                              .map((p) => ({ value: p._id, label: p.nome })),
+                          ]}
+                        />
+                        <IconButton
+                          variant="dark"
+                          disabled={draft.produtos.length === 1}
+                          onClick={() => removeLine(line.key)}
+                          aria-label={`Remover produto ${index + 1}`}
+                          icon={
+                            <FontAwesomeIcon icon={faTrash} aria-hidden="true" />
+                          }
+                        />
+                      </div>
                     </FormField>
                     {product && (
                       <FormField
@@ -268,14 +275,6 @@ export default function AuctionForm() {
                         />
                       </FormField>
                     )}
-                    <Button
-                      variant="cream"
-                      disabled={draft.produtos.length === 1}
-                      onClick={() => removeLine(line.key)}
-                      aria-label={`Remover produto ${index + 1}`}
-                    >
-                      Remover
-                    </Button>
                   </fieldset>
                 );
               })}

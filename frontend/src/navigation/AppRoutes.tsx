@@ -27,6 +27,7 @@ import BackofficeEntry from "../features/admin/BackofficeEntry";
 import ProducerArea, {
   type ProducerSection,
 } from "../features/products/ProducerArea";
+import ProducerSummary from "../features/orders/ProducerSummary";
 import BuyerArea from "../features/account/BuyerArea";
 import { useAuth } from "../features/auth/useAuth";
 import ProducerProducts from "../features/products/ProducerProducts";
@@ -105,6 +106,12 @@ function resolvePage(pathname: string, location: string, embedded: boolean) {
           <OrdersPage embedded={embedded} />
         </ProtectedRoute>
       );
+    case "/produtor":
+      return (
+        <ProtectedRoute roles={["produtor"]}>
+          <ProducerSummary embedded={embedded} />
+        </ProtectedRoute>
+      );
     case "/produtor/encomendas":
       return (
         <ProtectedRoute roles={["produtor"]}>
@@ -168,6 +175,8 @@ function producerPageFromPath(pathname: string): {
   section: ProducerSection;
   approved?: boolean;
 } | null {
+  if (pathname === "/produtor")
+    return { title: "Resumo", section: "summary" };
   if (pathname === "/conta")
     return { title: "A minha conta", section: "account" };
   if (pathname === "/produtor/perfil")
