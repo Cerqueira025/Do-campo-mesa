@@ -1,0 +1,53 @@
+.producer-order-row > :is(h2, h3).producer-order-row__heading {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+}
+
+.producer-order-row__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.producer-order-row__icon {
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex: 0 0 2.5rem;
+  place-items: center;
+  border-radius: 0.5rem;
+  background: var(--color-green-100);
+}
+
+.producer-order-row__total {
+  display: inline-block;
+  background: var(--color-green-800);
+  border-radius: 0.25rem;
+  color: var(--color-white);
+  padding: 0.125rem 0.5rem;
+}
+
+.producer-order-row__facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr));
+  gap: 0.5rem 1rem;
+  margin: 0;
+  padding-top: 0.5rem;
+
+  div {
+    display: grid;
+    gap: 0.25rem;
+  }
+
+  dt {
+    font-size: var(--font-size-xs);
+  }
+
+  dd {
+    font-weight: 600;
+    margin: 0;
+  }
+}

@@ -1,14 +1,11 @@
 import { useState } from "react";
-import { faBasketShopping } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Button from "../../components/ui/Button";
 import LoadingPlaceholder from "../../components/ui/LoadingPlaceholder";
-import InternalLink from "../../navigation/InternalLink";
 import { useAuth } from "../auth/useAuth";
 import { priceFormatter } from "../products/product";
 import OrderLayout from "./OrderLayout";
-import OrderStatus from "./OrderStatus";
-import { orderDate, type Order } from "./order";
+import type { Order } from "./order";
+import ProducerOrderRow from "./ProducerOrderRow";
 import ProducerLowStock from "./ProducerLowStock";
 import ProducerSalesChart from "./ProducerSalesChart";
 import { producerSales, salesPeriods, type SalesPeriod } from "./producerSales";
@@ -67,7 +64,7 @@ export default function ProducerSummary({ embedded }: { embedded: boolean }) {
                 </p>
                 <p>Conta encomendas entregues no mês.</p>
               </div>
-              <ProducerSalesChart series={sales.series} />
+              <ProducerSalesChart key={period} series={sales.series} />
             </div>
           </section>
         )}
@@ -114,52 +111,7 @@ export default function ProducerSummary({ embedded }: { embedded: boolean }) {
               <ul className="producer-summary__list">
                 {sales.recent.map((order) => (
                   <li className="producer-summary__recent" key={order._id}>
-                    <div className="producer-summary__recent-identity">
-                      <InternalLink
-                        className="producer-summary__order-link order-page__link"
-                        href={`/encomendas/${order._id}`}
-                        aria-label={`Encomenda ${order._id}`}
-                      >
-                        <FontAwesomeIcon
-                          icon={faBasketShopping}
-                          aria-hidden="true"
-                        />
-                      </InternalLink>
-                      <h3>
-                        <InternalLink
-                          className="order-page__link"
-                          href={`/encomendas/${order._id}`}
-                        >
-                          Encomenda {order._id}
-                        </InternalLink>
-                      </h3>
-                    </div>
-                    <dl className="producer-summary__order">
-                      <div>
-                        <dt>Comprador</dt>
-                        <dd>
-                          {order.compradorId?.nome || "Comprador indisponível"}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>Data</dt>
-                        <dd>{orderDate(order.createdAt)}</dd>
-                      </div>
-                      <div>
-                        <dt>Total</dt>
-                        <dd>
-                          <div className="producer-summary__order-total">
-                            {priceFormatter.format(order.total / 100)}
-                          </div>
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>Estado</dt>
-                        <dd>
-                          <OrderStatus state={order.estado} />
-                        </dd>
-                      </div>
-                    </dl>
+                    <ProducerOrderRow order={order} heading="h3" />
                   </li>
                 ))}
               </ul>

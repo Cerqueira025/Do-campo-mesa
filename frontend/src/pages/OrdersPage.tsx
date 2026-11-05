@@ -7,6 +7,7 @@ import InternalLink from "../navigation/InternalLink";
 import { useCart } from "../features/cart/cartContext";
 import OrderLayout from "../features/orders/OrderLayout";
 import OrderStatus from "../features/orders/OrderStatus";
+import ProducerOrderRow from "../features/orders/ProducerOrderRow";
 import { orderDate, orderStates, type Order } from "../features/orders/order";
 import { useOrderPolling } from "../features/orders/useOrderPolling";
 import { priceFormatter } from "../features/products/product";
@@ -81,7 +82,14 @@ export default function OrdersPage({
         </div>
       )}
       <ul className="order-page__list">
-        {orders?.map((order) => (
+        {orders?.map((order) => producer ? (
+          <li className="order-page__panel" key={order._id}>
+            <ProducerOrderRow order={order} heading="h2" />
+            {order.leilaoId && !order.entrega && (
+              <p>A aguardar a modalidade do vencedor.</p>
+            )}
+          </li>
+        ) : (
           <li className="order-page__panel" key={order._id}>
             <h2>
               <InternalLink
@@ -92,16 +100,10 @@ export default function OrdersPage({
               </InternalLink>
             </h2>
             <p>
-              {producer
-                ? order.compradorId?.nome || "Comprador indisponível"
-                : order.produtorId?.nome || "Produtor indisponível"}
+              {order.produtorId?.nome || "Produtor indisponível"}
             </p>
             {order.leilaoId && !order.entrega && (
-              <p>
-                {producer
-                  ? "A aguardar a modalidade do vencedor."
-                  : "Escolha como receber o lote no detalhe da encomenda."}
-              </p>
+              <p>Escolha como receber o lote no detalhe da encomenda.</p>
             )}
             <dl className="order-page__facts">
               <div>

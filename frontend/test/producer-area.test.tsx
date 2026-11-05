@@ -378,7 +378,8 @@ test("Resumo permite mudar o período e recuperar avisos de stock de várias pá
   fireEvent.click(monthly);
   expect(monthly.getAttribute("aria-pressed")).toBe("true");
   expect(screen.getByText("Por valor vendido · Mês")).toBeTruthy();
-  expect(screen.getByText("Ver valores do gráfico")).toBeTruthy();
+  const chart = screen.getByRole("slider", { name: "Período no gráfico de vendas" });
+  expect(chart.getAttribute("aria-valuetext")).toContain(priceFormatter.format(0));
   fireEvent.click(await screen.findByRole("button", { name: "Voltar a consultar stock" }));
   const stock = (await screen.findByRole("heading", { name: "Stock baixo" })).parentElement!;
   await within(stock).findByRole("link", { name: "Esgotado" });
