@@ -61,7 +61,7 @@ Ao abrir **Serviços**, o JavaScript inicia um POST com proteção CSRF. O botã
 - MongoDB: `ping` real pela ligação existente da API.
 - Socket.io: ligação WebSocket temporária e evento `diagnostico` com confirmação, sem entrar em salas de leilões.
 - Swagger: página `/api-docs/` e YAML legível com os campos `openapi` e `paths` em `/api-docs/openapi.yaml`; o diagnóstico não valida integralmente o contrato OpenAPI.
-- Armazenamento: **Não implementado**; não há simulação de serviço Cloud.
+- Armazenamento Cloud: **Não implementado**. As fotografias dos produtos são guardadas localmente.
 
 Cada teste tem um orçamento máximo de cinco segundos. A falha em obter o diagnóstico pela API produz **Não foi possível verificar** para os serviços dependentes. Os testes comprovam as capacidades indicadas, não o funcionamento completo dos fluxos de negócio. Não existem ações de reinício ou configuração dos serviços.
 

@@ -18,7 +18,7 @@ if (form) {
         },
         credentials: "same-origin",
       });
-      if (response.redirected || [401, 403, 503].includes(response.status)) {
+      if (response.redirected || [401, 403].includes(response.status)) {
         window.location.assign(
           response.redirected ? response.url : "/servicos",
         );
@@ -29,23 +29,7 @@ if (form) {
         throw new Error(
           data.message || "Não foi possível concluir a verificação.",
         );
-      const page = await fetch("/servicos", {
-        headers: { "X-Requested-With": "XMLHttpRequest" },
-        credentials: "same-origin",
-      });
-      if (!page.ok || page.redirected) {
-        window.location.assign("/servicos");
-        return;
-      }
-      const parsed = new DOMParser().parseFromString(
-        await page.text(),
-        "text/html",
-      );
-      document
-        .querySelector("[data-check-results]")
-        .replaceChildren(
-          ...parsed.querySelector("[data-check-results]").childNodes,
-        );
+      document.querySelector("[data-check-results]").innerHTML = data.html;
       message.textContent = data.message;
     } catch (error) {
       message.textContent =

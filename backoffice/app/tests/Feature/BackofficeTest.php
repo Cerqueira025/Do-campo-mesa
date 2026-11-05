@@ -88,8 +88,15 @@ class BackofficeTest extends TestCase
     {
         ServiceCheck::factory()->create(['message' => 'HISTORICO_PRIVADO']);
         Http::fake(['*/api/auth/eu' => Http::failedConnection()]);
-        $this->withSession($this->sessionData())->get('/historico')->assertStatus(503)->assertDontSee('HISTORICO_PRIVADO')->assertSessionHas('backoffice');
-        $this->postJson('/servicos/verificar')->assertStatus(503);
+        $this->withSession($this->sessionData())->get('/historico?service=api')
+            ->assertStatus(503)
+            ->assertSee('A validação da sessão está temporariamente indisponível.')
+            ->assertSee(route('history', ['service' => 'api']))
+            ->assertDontSee('HISTORICO_PRIVADO')
+            ->assertSessionHas('backoffice');
+        $this->postJson('/servicos/verificar')->assertStatus(503)
+            ->assertJsonPath('message', 'A validação da sessão está temporariamente indisponível. Tente novamente dentro de instantes.')
+            ->assertJsonMissingPath('html');
         $this->assertDatabaseCount('service_checks', 1);
     }
 
@@ -106,12 +113,34 @@ class BackofficeTest extends TestCase
     {
         $this->fakeServices();
         ServiceCheck::factory()->create(['checked_at' => now()->subDays(31)]);
-        ServiceCheck::factory()->create(['checked_at' => now()->subDays(29)]);
-        $this->withSession($this->sessionData())->postJson('/servicos/verificar')->assertOk();
+        ServiceCheck::factory()->create(['checked_at' => now()->subDays(29), 'service' => 'storage', 'status' => 'not_implemented', 'message' => 'Mensagem histórica']);
+        $response = $this->withSession($this->sessionData())->postJson('/servicos/verificar')->assertOk();
+        $html = $response->json('html');
+        $this->assertSame(5, substr_count($html, '<article '));
+        $this->assertStringContainsString('Armazenamento Cloud', $html);
+        $this->assertStringContainsString('Não implementado', $html);
+        $this->assertStringContainsString('As fotografias dos produtos são guardadas localmente.', $html);
+        $this->get('/historico?service=storage&status=not_implemented')->assertOk()->assertSee('2 resultados')->assertSee('Mensagem histórica');
         $this->assertDatabaseCount('service_checks', 6);
         $this->assertDatabaseHas('service_checks', ['service' => 'storage', 'status' => 'not_implemented']);
         $this->assertDatabaseHas('service_checks', ['service' => 'swagger', 'status' => 'ok']);
         $this->assertSame(1, ServiceCheck::where('checked_at', '>=', now()->subMinute())->distinct()->count('run_id'));
+    }
+
+    public function test_check_returns_its_own_cards_when_another_run_is_newer(): void
+    {
+        $this->fakeServices();
+        ServiceCheck::created(function (ServiceCheck $check): void {
+            if ($check->service === 'storage') {
+                ServiceCheck::factory()->make(['checked_at' => now()->addSecond(), 'message' => 'Resultado de outra execução'])->saveQuietly();
+            }
+        });
+
+        $html = $this->withSession($this->sessionData())->postJson('/servicos/verificar')->assertOk()->json('html');
+
+        $this->assertSame(5, substr_count($html, '<article '));
+        $this->assertStringNotContainsString('Resultado de outra execução', $html);
+        $this->get('/servicos')->assertOk()->assertSee('Resultado de outra execução');
     }
 
     public function test_dependency_failure_is_unknown_and_bad_service_responses_are_failures(): void
@@ -127,6 +156,35 @@ class BackofficeTest extends TestCase
         $this->assertDatabaseHas('service_checks', ['service' => 'api', 'status' => 'failure']);
         $this->assertDatabaseHas('service_checks', ['service' => 'mongodb', 'status' => 'unknown']);
         $this->assertDatabaseHas('service_checks', ['service' => 'swagger', 'status' => 'failure']);
+    }
+
+    public function test_recent_median_uses_up_to_twenty_successful_timings_in_the_last_thirty_days(): void
+    {
+        $this->fakeServices();
+        ServiceCheck::factory()->count(20)->create(['checked_at' => now()->subDays(2), 'duration_ms' => 900]);
+        ServiceCheck::factory()->count(19)->create(['checked_at' => now()->subDay(), 'duration_ms' => 40]);
+        ServiceCheck::factory()->create(['checked_at' => now()->subMinute(), 'status' => 'failure', 'duration_ms' => 5000]);
+        ServiceCheck::factory()->create(['checked_at' => now()->subDays(31), 'service' => 'mongodb', 'duration_ms' => 5000]);
+
+        $this->withSession($this->sessionData())->get('/servicos')->assertOk()->assertSee('40 ms (20 medições)');
+        $html = $this->postJson('/servicos/verificar')->assertOk()->json('html');
+        $this->assertStringContainsString('40 ms (20 medições)', $html);
+        $this->assertStringContainsString('2 ms (1 medição)', $html);
+        $this->assertSame(4, substr_count($html, 'Mediana recente'));
+        $this->assertSame(1, substr_count($html, 'Evolução da duração'));
+        $this->assertMatchesRegularExpression('/'.str_repeat('40, ', 19).'\d+"/', $html);
+    }
+
+    public function test_chart_shows_a_rounded_scale_and_highlights_the_latest_measurement(): void
+    {
+        $template = '<x-service-timing-chart :durations="$durations" />';
+
+        $this->blade($template, ['durations' => [3, 3, 28]])
+            ->assertSeeInOrder(['40 ms', '30 ms', '20 ms', '10 ms', '0 ms'])
+            ->assertSee('Mais recente · 28 ms');
+        $this->blade($template, ['durations' => [0, 0]])
+            ->assertSeeInOrder(['4 ms', '3 ms', '2 ms', '1 ms', '0 ms'])
+            ->assertSee('Mais recente · 0 ms');
     }
 
     public function test_history_filters_and_paginates_without_triggering_checks(): void
@@ -164,7 +222,7 @@ class BackofficeTest extends TestCase
         $this->mock(ServiceMonitor::class, function ($mock): void {
             $mock->shouldReceive('run')->once()->andThrow(new \RuntimeException('private details'));
         });
-        $this->withSession($this->sessionData())->postJson('/servicos/verificar')->assertStatus(500)->assertJson(['message' => 'Não foi possível guardar a verificação. Os resultados não foram conservados.'])->assertDontSee('private details');
+        $this->withSession($this->sessionData())->postJson('/servicos/verificar')->assertStatus(500)->assertJson(['message' => 'Não foi possível guardar a verificação. Os resultados não foram conservados.'])->assertJsonMissingPath('html')->assertDontSee('private details');
         $this->assertDatabaseCount('service_checks', 0);
     }
 

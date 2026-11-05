@@ -9,7 +9,7 @@ class ServiceCheck extends Model
 {
     use HasFactory;
 
-    public const SERVICES = ['api' => 'API', 'mongodb' => 'MongoDB', 'socketio' => 'Socket.io', 'swagger' => 'Swagger UI', 'storage' => 'Armazenamento'];
+    public const SERVICES = ['api' => 'API', 'mongodb' => 'MongoDB', 'socketio' => 'Socket.io', 'swagger' => 'Swagger UI', 'storage' => 'Armazenamento Cloud'];
 
     public const STATUSES = ['ok' => 'Operacional', 'failure' => 'Falha', 'unknown' => 'Não foi possível verificar', 'not_implemented' => 'Não implementado'];
 

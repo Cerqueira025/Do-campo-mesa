@@ -9,14 +9,21 @@
 </head>
 <body>
 <a class="skip-link" href="#conteudo">Saltar para o conteúdo</a>
-<div class="shell">
-    <header class="header">
-        <a class="brand" href="{{ config('backoffice.site_url') }}/admin">Do Campo à Mesa</a>
-        <span>Serviços e sistema</span>
+<header class="header">
+    <div class="shell header__inner">
+        <a class="brand" href="{{ config('backoffice.site_url') }}/admin">
+            <span class="brand__mark" aria-hidden="true"></span>
+            <span>
+                <strong>Do Campo à Mesa</strong>
+                <span class="brand__subtitle">Serviços e sistema</span>
+            </span>
+        </a>
         @if(request()->attributes->has('administrator'))
-            <span>{{ request()->attributes->get('administrator') }}</span>
+            <span class="header__account">{{ request()->attributes->get('administrator') }}</span>
         @endif
-    </header>
+    </div>
+</header>
+<div class="shell">
     <nav class="navigation" aria-label="Backoffice">
         <a href="{{ route('services') }}" @if(request()->routeIs('services')) aria-current="page" @endif>Serviços</a>
         <a href="{{ route('history') }}" @if(request()->routeIs('history')) aria-current="page" @endif>Histórico</a>

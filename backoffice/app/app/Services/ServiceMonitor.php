@@ -54,16 +54,14 @@ class ServiceMonitor
                 throw new \RuntimeException;
             }
         });
-        $results[] = $this->result('storage', 'not_implemented', 'O projeto não tem um serviço de armazenamento de imagens integrado.', null);
+        $results[] = $this->result('storage', 'not_implemented', 'As fotografias dos produtos são guardadas localmente.', null);
         $runId = (string) Str::uuid();
-        DB::transaction(function () use ($results, $runId): void {
-            ServiceCheck::where('checked_at', '<', now()->subDays(30))->delete();
-            foreach ($results as $result) {
-                ServiceCheck::create(['run_id' => $runId, ...$result]);
-            }
-        });
 
-        return $results;
+        return DB::transaction(function () use ($results, $runId): array {
+            ServiceCheck::where('checked_at', '<', now()->subDays(30))->delete();
+
+            return array_map(fn (array $result): ServiceCheck => ServiceCheck::create(['run_id' => $runId, ...$result]), $results);
+        });
     }
 
     private function check(string $service, callable $operation): array

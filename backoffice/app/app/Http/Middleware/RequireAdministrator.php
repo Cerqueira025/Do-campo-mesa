@@ -23,7 +23,7 @@ class RequireAdministrator
         try {
             $response = $this->api->client($session['token'])->get('/api/auth/eu');
         } catch (ConnectionException) {
-            return $this->unavailable();
+            return $this->unavailable($request);
         }
         if (in_array($response->status(), [401, 403]) || ($response->successful() && $response->json('papel') !== 'administrador')) {
             $request->session()->invalidate();
@@ -32,7 +32,7 @@ class RequireAdministrator
             return response()->view('error', ['message' => 'A sessão terminou ou a conta já não tem permissão.', 'retry' => route('entry.start')], 403);
         }
         if (! $response->successful() || ! is_string($response->json('nome'))) {
-            return $this->unavailable();
+            return $this->unavailable($request);
         }
         $request->attributes->set('administrator', $response->json('nome'));
         $result = $next($request);
@@ -41,8 +41,13 @@ class RequireAdministrator
         return $result;
     }
 
-    private function unavailable(): Response
+    private function unavailable(Request $request): Response
     {
-        return response()->view('error', ['message' => 'Não foi possível confirmar a sessão na API. O acesso está temporariamente bloqueado.', 'retry' => route('services')], 503)->header('Cache-Control', 'no-store');
+        $message = 'A validação da sessão está temporariamente indisponível. Tente novamente dentro de instantes.';
+        $response = $request->expectsJson()
+            ? response()->json(['message' => $message], 503)
+            : response()->view('error', ['message' => $message, 'retry' => $request->fullUrl()], 503);
+
+        return $response->header('Cache-Control', 'no-store');
     }
 }
