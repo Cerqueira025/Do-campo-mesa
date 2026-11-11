@@ -367,6 +367,8 @@ Os testes normais usam persistência simulada. Dois testes de MongoDB real estã
 
 Não é correto concluir, a partir dos 197 testes que passaram, que a concorrência real foi validada nesta execução. É necessário preparar um ambiente isolado de testes e produzir a evidência exigida para o desafio central.
 
+**Seguimento de 11 de novembro de 2026:** a [validação com MongoDB real](operacoes-locais.md#validar-leilões-com-mongodb-real) confirmou a concorrência entre dois compradores por WebSocket, o histórico e estado partilhados e, num subteste separado, a criação de uma única encomenda no fecho. A entrega das notificações privadas de fecho não foi verificada nesta execução.
+
 **Evidência:** `api/test/socket-auctions.test.js`, `auction-stock-integration.test.js`, `review-reports-integration.test.js`, `api/src/scripts/test-api.js`.
 **Requisito:** enunciado, página 7; guia, páginas 79, 90 e 91.
 

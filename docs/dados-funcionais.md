@@ -1,6 +1,6 @@
 # Dados funcionais MongoDB
 
-Configurar `api/.env` conforme o [README principal](../README.md#base-de-dados-mongodb).
+Configurar `api/.env` conforme o [README principal](../README.md#2-configurar-a-base-de-dados-mongodb).
 Executar dentro de `api/`: `npm test`, `npm run db:init` e `npm run db:seed`.
 O comando usa a BD configurada em `MONGODB_DB_NAME`; não apaga nem atualiza documentos existentes.
 Uma segunda execução de um seed concluído insere zero documentos. Não executar em simultâneo com alterações aos dados ou com Bruno.
