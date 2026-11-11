@@ -232,36 +232,6 @@ paths:
           $ref: "#/components/responses/PayloadTooLarge"
         "500":
           $ref: "#/components/responses/InternalError"
-  /auth/recuperar-password:
-    post:
-      tags: [Autenticação]
-      summary: Substitui a password pelo email na demonstração universitária
-      description:
-        Fluxo simplificado, sem autenticação, envio de email ou token de recuperação. Conhecer o email permite
-        alterar a password da conta. Não é adequado para utilização pública real. Altera apenas o hash da password; os
-        JWT já emitidos continuam válidos até expirar.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/PasswordResetInput"
-      responses:
-        "200":
-          description: Password atualizada, sem devolver dados da conta ou sessão
-          content:
-            application/json:
-              schema:
-                type: object
-                required: [mensagem]
-                properties:
-                  mensagem: { type: string, example: Palavra-passe atualizada. }
-        "400": { $ref: "#/components/responses/BadRequest" }
-        "404": { $ref: "#/components/responses/NotFound" }
-        "413":
-          $ref: "#/components/responses/PayloadTooLarge"
-        "500":
-          $ref: "#/components/responses/InternalError"
   /auth/eu:
     get:
       tags: [Autenticação]
@@ -2951,21 +2921,6 @@ components:
         email: produtor@example.test
         password: CampoMesaDemo123!
       description: Exemplo de conta fictícia do seed. Ajustar a password se SEED_PASSWORD tiver sido alterada na criação da conta.
-    PasswordResetInput:
-      type: object
-      required:
-        - email
-        - password
-      properties:
-        email:
-          type: string
-          format: email
-        password:
-          type: string
-          format: password
-          minLength: 8
-          maxLength: 72
-          description: Máximo de 72 bytes em UTF-8.
     OrderCreateInput:
       type: object
       required:

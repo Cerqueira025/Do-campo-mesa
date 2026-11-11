@@ -65,6 +65,22 @@ test("Entrada exige administrador atual e valida o identificador antes da escrit
     403,
   );
 });
+test("Um código emitido antes da redefinição não pode iniciar sessão", async (t) => {
+  t.mock.method(BackofficeCode, "findOneAndDelete", async () => ({
+    userId: id,
+    tokenExpiresAt: Math.floor(Date.now() / 1000) + 60,
+  }));
+  t.mock.method(User, "findById", () => ({
+    select: async () => ({ ...user(), sessionVersion: 1 }),
+  }));
+  const result = await post(
+    "/internal/backoffice/exchange",
+    { code: "c".repeat(64), state },
+    { "X-Backoffice-Secret": integration },
+  );
+  assert.equal(result.status, 401);
+});
+
 test("Código guardado apenas como hash e JWT trocado conserva a expiração original", async (t) => {
   authorize(t);
   let entry;
@@ -163,7 +179,9 @@ test("Uma conta removida ou com papel alterado não recebe autenticação Larave
     userId: id,
     tokenExpiresAt: Math.floor(Date.now() / 1000) + 60,
   }));
-  t.mock.method(User, "findById", async () => user("comprador"));
+  t.mock.method(User, "findById", () => ({
+    select: async () => user("comprador"),
+  }));
   assert.equal(
     (
       await post(

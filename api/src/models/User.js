@@ -35,6 +35,7 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       match: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
     },
+    sessionVersion: { type: Number, default: 0, select: false },
     passwordHash: {
       type: String,
       required: true,

@@ -5,6 +5,7 @@ const schema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, required: true },
   state: { type: String, required: true },
   expiresAt: { type: Date, required: true, expires: 0 },
+  sessionVersion: { type: Number, default: 0 },
   tokenExpiresAt: { type: Number, required: true },
 });
 

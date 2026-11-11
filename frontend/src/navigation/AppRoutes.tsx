@@ -19,7 +19,6 @@ import { initializeNavigation, restoreNavigation } from "./navigation";
 import NavigationAnnouncer from "./NavigationAnnouncer";
 import LoginPage from "../pages/auth/LoginPage";
 import RegisterPage from "../pages/auth/RegisterPage";
-import ResetPasswordPage from "../pages/auth/ResetPasswordPage";
 import AccountPage from "../pages/AccountPage";
 import ProtectedRoute from "../features/auth/ProtectedRoute";
 import AdminPage from "../features/admin/AdminPage";
@@ -90,8 +89,6 @@ function resolvePage(pathname: string, location: string, embedded: boolean) {
       return <LoginPage key={location} />;
     case "/registo":
       return <RegisterPage key={location} />;
-    case "/recuperar-password":
-      return <ResetPasswordPage key={location} />;
     case "/carrinho":
       return <CartPage />;
     case "/finalizar-encomenda":

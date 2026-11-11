@@ -31,8 +31,9 @@ export function registerSockets(io) {
         typeof claims.exp !== "number"
       )
         throw new Error("Token inválido.");
-      const user = await User.findById(claims.id).select("nome papel");
-      if (!user) throw new Error("Conta indisponível.");
+      const user = await User.findById(claims.id).select("nome papel +sessionVersion");
+      if (!user || (claims.sessionVersion ?? 0) !== (user.sessionVersion ?? 0))
+        throw new Error("Sessão indisponível.");
       socket.data.user = {
         id: String(user._id),
         nome: user.nome,

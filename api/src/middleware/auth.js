@@ -28,12 +28,14 @@ export function requireAuth(...roles) {
 
     try {
       const user = await User.findById(claims.id).select(
-        "nome email papel perfilProdutor.validacao",
+        "nome email papel perfilProdutor.validacao +sessionVersion",
       );
       if (!user)
         return response
           .status(401)
           .json({ erro: "A conta já não está disponível." });
+      if ((claims.sessionVersion ?? 0) !== (user.sessionVersion ?? 0))
+        return response.status(401).json({ erro: "Sessão revogada." });
       if (roles.length && !roles.includes(user.papel)) {
         return response
           .status(403)

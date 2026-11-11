@@ -34,6 +34,7 @@ router.post(
       state: req.body.state,
       expiresAt,
       tokenExpiresAt: claims.exp,
+      sessionVersion: claims.sessionVersion ?? 0,
     });
     res.set("Cache-Control", "no-store").status(201).json({ code, expiresAt });
   },
@@ -71,11 +72,18 @@ router.post(
       return res
         .status(401)
         .json({ erro: "Entrada expirada ou já utilizada." });
-    const user = await User.findById(entry.userId);
+    const user = await User.findById(entry.userId).select("+sessionVersion");
     if (!user || user.papel !== "administrador")
       return res.status(403).json({ erro: "Sem permissão." });
+    if ((entry.sessionVersion ?? 0) !== (user.sessionVersion ?? 0))
+      return res.status(401).json({ erro: "Sessão revogada." });
     const token = jwt.sign(
-      { id: user.id, papel: user.papel, exp: entry.tokenExpiresAt },
+      {
+        id: user.id,
+        papel: user.papel,
+        exp: entry.tokenExpiresAt,
+        sessionVersion: user.sessionVersion ?? 0,
+      },
       process.env.JWT_SECRET,
       { algorithm: "HS256" },
     );

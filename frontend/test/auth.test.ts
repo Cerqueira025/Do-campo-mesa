@@ -16,7 +16,6 @@ import {
   login,
   register,
   currentUser,
-  resetPassword,
 } from "../src/features/auth/authService.ts";
 
 test("Cliente envia JWT e JSON e distingue 401, 403 e falhas de rede", async (t) => {
@@ -183,39 +182,16 @@ test("Confirmação de password e ligações entre formulários preservam o regr
   );
   assert.equal(passwordError("curta", "curta")?.includes("8 caracteres"), true);
   const url = new URL(
-    authHref("/recuperar-password", {
+    authHref("/registo", {
       email: " maria@example.test ",
       regresso: "/admin/produtores",
     }),
     "https://campo-mesa.local",
   );
-  assert.equal(url.pathname, "/recuperar-password");
+  assert.equal(url.pathname, "/registo");
   assert.equal(url.searchParams.get("email"), "maria@example.test");
   assert.equal(url.searchParams.get("regresso"), "/admin/produtores");
   assert.equal(authHref("/login", { regresso: "//external.test" }), "/login");
-  assert.equal(
-    authHref("/registo", { regresso: "/recuperar-password" }),
-    "/registo",
-  );
-  assert.equal(safeReturnPath("/recuperar-password?email=teste"), null);
-});
-
-test("Recuperação envia só email e nova password, sem criar uma sessão", async (t) => {
-  t.mock.method(globalThis, "fetch", async (url, options) => {
-    assert.equal(url, "/api/auth/recuperar-password");
-    assert.equal(options?.method, "POST");
-    assert.deepEqual(JSON.parse(options?.body as string), {
-      email: "maria@example.test",
-      password: "NovaPassword123!",
-    });
-    assert.equal(
-      (options?.headers as Record<string, string>).Authorization,
-      undefined,
-    );
-    return Response.json({ mensagem: "Palavra-passe atualizada." });
-  });
-  assert.deepEqual(
-    await resetPassword("maria@example.test", "NovaPassword123!"),
-    { mensagem: "Palavra-passe atualizada." },
-  );
+  assert.equal(authHref("/registo", { regresso: "/login" }), "/registo");
+  assert.equal(safeReturnPath("/login?email=teste"), null);
 });

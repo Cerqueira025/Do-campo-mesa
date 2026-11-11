@@ -17,7 +17,7 @@ Os estilos específicos ficam junto do componente, em ficheiros `.scss`. Usa `@u
 
 ### Autenticação
 
-- `src/pages/auth/` — páginas do fluxo de autenticação: `LoginPage`, `RegisterPage` e `ResetPasswordPage`.
+- `src/pages/auth/` — páginas do fluxo de autenticação: `LoginPage` e `RegisterPage`.
 - `src/pages/` — páginas da conta, catálogo, encomendas e autenticação.
 - `src/features/admin/` — estrutura, navegação, listas e detalhes administrativos; ver [administração](../docs/administracao.md).
 - `src/features/auth/components/` — `AuthLayout`, com os respetivos estilos. A navegação da sessão integra `src/components/layout/AppHeader.tsx`.
@@ -66,7 +66,7 @@ As rotas são resolvidas em `src/navigation/AppRoutes.tsx`. A navegação intern
 | Rotas                                                                            | Acesso e função                                                                                           |
 | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
 | `/`, `/produtos/:id`, `/produtores/:id`, `/leiloes/:id`                          | Catálogo, produtos, perfis e leilões públicos.                                                            |
-| `/login`, `/registo`, `/recuperar-password`                                      | Entrada, registo e recuperação de demonstração; ver [limites da autenticação](../README.md#autenticação). |
+| `/login`, `/registo`                                      | Entrada e registo. |
 | `/conta`                                                                         | Conta autenticada e estado de aprovação do produtor.                                                      |
 | `/carrinho`                                                                      | Visitantes e compradores; artigos agrupados por produtor.                                                 |
 | `/finalizar-encomenda`, `/encomendas`                                            | Finalização e acompanhamento por compradores.                                                             |

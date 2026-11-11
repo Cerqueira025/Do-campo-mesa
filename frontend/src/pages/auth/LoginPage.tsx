@@ -80,11 +80,6 @@ export default function LoginPage() {
           </Button>
         </fieldset>
         <div className="auth-form__links">
-          <InternalLink
-            href={authHref("/recuperar-password", { email, regresso })}
-          >
-            Esqueceu a password?
-          </InternalLink>
           <p>
             Ainda não tem conta?{" "}
             <InternalLink href={authHref("/registo", { email, regresso })}>

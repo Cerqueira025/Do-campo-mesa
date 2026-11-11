@@ -87,6 +87,7 @@ test("O login real regressa à página pedida depois de validar as credenciais",
       <LoginPage />
     </AuthProvider>,
   );
+  expect(screen.queryByRole("link", { name: /esqueceu/i })).toBeNull();
   fireEvent.change(screen.getByLabelText("Email"), {
     target: { value: "maria@example.test" },
   });

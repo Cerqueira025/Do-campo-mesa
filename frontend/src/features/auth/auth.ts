@@ -31,7 +31,7 @@ export function safeReturnPath(value: string | null): string | null {
     const url = new URL(value, "https://campo-mesa.local");
     if (
       url.origin !== "https://campo-mesa.local" ||
-      /^\/(login|registo|recuperar-password)(\/|$)/.test(url.pathname)
+      /^\/(login|registo)(\/|$)/.test(url.pathname)
     )
       return null;
     return url.pathname + url.search + url.hash;
@@ -53,7 +53,7 @@ export function passwordError(
 }
 
 export function authHref(
-  path: "/login" | "/registo" | "/recuperar-password",
+  path: "/login" | "/registo",
   {
     email = "",
     regresso = null,
