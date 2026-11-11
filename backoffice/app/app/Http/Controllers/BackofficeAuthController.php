@@ -10,6 +10,9 @@ use Symfony\Component\HttpFoundation\Response;
 
 class BackofficeAuthController extends Controller
 {
+    /**
+     * Inicia a entrada no backoffice e encaminha o utilizador para o site.
+     */
     public function start(Request $request): RedirectResponse
     {
         $state = bin2hex(random_bytes(32));
@@ -18,6 +21,9 @@ class BackofficeAuthController extends Controller
         return redirect()->away(rtrim(config('backoffice.site_url'), '/').'/admin/backoffice?state='.$state);
     }
 
+    /**
+     * Valida o código de entrada e cria uma sessão autenticada de administrador.
+     */
     public function exchange(Request $request, MarketplaceApi $api): Response
     {
         $entry = $request->session()->pull('entry');
@@ -41,6 +47,9 @@ class BackofficeAuthController extends Controller
         return redirect()->route('services');
     }
 
+    /**
+     * Termina a sessão do backoffice e regressa à administração do site.
+     */
     public function logout(Request $request): RedirectResponse
     {
         $request->session()->invalidate();
