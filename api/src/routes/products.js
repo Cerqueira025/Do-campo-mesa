@@ -382,7 +382,7 @@ router.get("/filters", async (_request, response, next) => {
 router.get("/:id", async (request, response, next) => {
   try {
     if (!mongoose.isValidObjectId(request.params.id))
-      return response.status(404).json({ erro: "Produto não encontrado." });
+      return response.status(400).json({ erro: "ID de produto inválido." });
     const product = await Product.findOne({
       _id: request.params.id,
       publicado: true,

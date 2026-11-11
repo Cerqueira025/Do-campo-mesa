@@ -88,9 +88,12 @@ for (const reason of [
   });
 }
 
-test("ID inválido é rejeitado sem consultar MongoDB", async (t) => {
+test("ID inválido devolve 400 sem consultar MongoDB", async (t) => {
   t.mock.method(Product, "findOne", () => {
     throw new Error("Não consultar.");
   });
-  assert.equal((await invoke("invalid")).status, 404);
+  assert.deepEqual(await invoke("invalid"), {
+    status: 400,
+    body: { erro: "ID de produto inválido." },
+  });
 });
