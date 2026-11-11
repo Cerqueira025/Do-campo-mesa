@@ -39,6 +39,24 @@ const profile = {
   morada: "Rua da Horta",
   coordenadas: { latitude: 41, longitude: -8 },
 };
+const auction = {
+  _id: product._id,
+  lote: "Cabaz de verão",
+  estado: "cancelado",
+  visivel: false,
+  produtos: [
+    {
+      produtoId: { _id: product._id, nome: product.nome },
+      quantidade: 2,
+      unidade: "kg",
+    },
+  ],
+  dataInicio: "2026-11-01T10:00:00Z",
+  dataFim: "2026-11-04T10:00:00Z",
+  precoBase: 500,
+  incremento: 100,
+  licitacaoAtual: { valor: 600 },
+};
 
 beforeEach(() => {
   document.title = "Do campo à mesa";
@@ -59,7 +77,20 @@ function mount(
       return { items: [], total: 0, page: 1, limit: 24 };
     if (url.startsWith("/products/mine/"))
       return { ...product, publicado: false, bloqueado: false };
+    if (
+      url.startsWith("/auctions/mine?") &&
+      url.includes("visibilidade=indisponivel")
+    )
+      return {
+        items: [auction],
+        total: 25,
+        page: Number(new URLSearchParams(url.split("?")[1]).get("page")),
+        limit: 24,
+      };
     if (url.startsWith("/auctions/mine?"))
+      return { items: [], total: 0, page: 1, limit: 24 };
+    if (url === `/auctions/mine/${auction._id}`) return auction;
+    if (url === `/auctions/mine/${auction._id}/bids?page=1`)
       return { items: [], total: 0, page: 1, limit: 24 };
     if (url === "/orders") return [] as Order[];
     throw new Error("Pedido indisponível");
@@ -175,6 +206,54 @@ test("Acesso direto e histórico mantêm a seleção e a instância do layout", 
   expect(screen.getByRole("banner")).toBe(header);
   expect(screen.getByRole("navigation", { name: "Gerir exploração" })).toBe(
     menu,
+  );
+});
+
+test("Filtros de leilões preservam foco, paginação e regresso do detalhe", async () => {
+  const request = mount("/produtor/leiloes");
+  const main = screen.getByRole("main");
+  expect(
+    within(main)
+      .getByRole("link", { name: "Novo leilão" })
+      .getAttribute("href"),
+  ).toBe("/produtor/leiloes/novo");
+  const state = screen.getByRole("button", { name: "Cancelados" });
+  state.focus();
+  fireEvent.click(state);
+  await screen.findByText(
+    "Nenhum leilão corresponde aos filtros selecionados.",
+  );
+  expect(document.activeElement).toBe(state);
+  expect(state.getAttribute("aria-pressed")).toBe("true");
+
+  const visibility = screen.getByRole("checkbox", {
+    name: "Indisponíveis publicamente",
+  });
+  visibility.focus();
+  fireEvent.click(visibility);
+  await screen.findByText("Indisponível publicamente");
+  expect(document.activeElement).toBe(visibility);
+  expect(request.mock.calls.at(-1)?.[0]).toBe(
+    "/auctions/mine?page=1&limit=24&estado=cancelado&visibilidade=indisponivel",
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: "Seguinte" }));
+  const link = await screen.findByRole("link", {
+    name: `Consultar leilão ${auction.lote}`,
+  });
+  expect(new URLSearchParams(window.location.search).get("page")).toBe("2");
+  fireEvent.click(link);
+  await screen.findByRole("heading", { name: "Detalhe do leilão" });
+  fireEvent.click(
+    screen.getByRole("link", { name: "Voltar aos meus leilões" }),
+  );
+  await screen.findByText("Indisponível publicamente");
+  expect(window.location.search).toBe(
+    "?estado=cancelado&visibilidade=indisponivel&page=2",
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Todos" }));
+  await waitFor(() =>
+    expect(window.location.search).toBe("?visibilidade=indisponivel"),
   );
 });
 

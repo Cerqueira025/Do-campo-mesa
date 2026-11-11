@@ -1,6 +1,7 @@
 import { Router } from "express";
 import mongoose from "mongoose";
 import Auction from "../models/Auction.js";
+import Bid from "../models/Bid.js";
 import Product from "../models/Product.js";
 import Order from "../models/Order.js";
 import User from "../models/User.js";
@@ -9,6 +10,7 @@ import { requireObjectBody } from "../middleware/requestBody.js";
 import { auctionState, auctionStateFilter } from "../domain/auction.js";
 import { validPurchaseQuantity } from "../domain/purchaseQuantity.js";
 import {
+  auctionProductsBelongTo,
   findPublicAuction,
   publicAuction,
   publicProduct,
@@ -16,16 +18,31 @@ import {
 } from "../services/publicAuction.js";
 
 const router = Router();
+const auctionStates = ["agendado", "ativo", "terminado", "cancelado"];
+
+function managementPagination({ page = "1", limit = "24" }) {
+  const pageNumber = Number(page);
+  const limitNumber = Number(limit);
+  const skip = (pageNumber - 1) * limitNumber;
+  if (
+    [page, limit].some(
+      (value) => typeof value !== "string" || !/^\d+$/.test(value),
+    ) ||
+    !Number.isSafeInteger(pageNumber) ||
+    pageNumber < 1 ||
+    !Number.isSafeInteger(skip) ||
+    limitNumber < 1 ||
+    limitNumber > 100
+  )
+    return null;
+  return { page: pageNumber, limit: limitNumber, skip };
+}
 
 router.get("/", async (request, response, next) => {
   try {
     const now = Date.now();
     const { estado } = request.query;
-    if (
-      estado !== undefined &&
-      (typeof estado !== "string" ||
-        !["agendado", "ativo", "terminado", "cancelado"].includes(estado))
-    ) {
+    if (estado !== undefined && !auctionStates.includes(estado)) {
       return response.status(400).json({ erro: "Estado de leilão inválido." });
     }
     const auctions = await Auction.find(auctionStateFilter(estado, now))
@@ -41,49 +58,177 @@ router.get("/", async (request, response, next) => {
   }
 });
 
-const managementFields = "lote produtos precoBase incremento dataInicio dataFim estado reservaStock motivoCancelamento licitacaoAtual.valor createdAt";
-const managementPopulate = { path: "produtos.produtoId", select: "nome" };
-const managementAuction = (auction, now) => ({
+const managementFields =
+  "lote produtos precoBase incremento dataInicio dataFim estado reservaStock motivoCancelamento licitacaoAtual.valor createdAt";
+const managementPopulate = {
+  path: "produtos.produtoId",
+  select: "nome produtorId publicado bloqueado",
+};
+const managementAuction = (
+  auction,
+  now,
+  producerId,
+  onlyUnavailable = false,
+) => ({
   _id: auction._id,
   lote: auction.lote,
-  produtos: auction.produtos.map((line) => ({ produtoId: line.produtoId ? { _id: line.produtoId._id, nome: line.produtoId.nome } : null, quantidade: line.quantidade, unidade: line.unidade })),
+  produtos: (auction.produtos ?? []).map((line) => ({
+    produtoId: line.produtoId
+      ? { _id: line.produtoId._id, nome: line.produtoId.nome }
+      : null,
+    quantidade: line.quantidade,
+    unidade: line.unidade,
+  })),
   precoBase: auction.precoBase,
   incremento: auction.incremento,
   dataInicio: auction.dataInicio,
   dataFim: auction.dataFim,
   estado: auctionState(auction, now),
+  visivel:
+    !onlyUnavailable &&
+    auctionProductsBelongTo(auction, producerId) &&
+    auction.produtos.every(
+      ({ produtoId }) =>
+        produtoId.publicado === true && produtoId.bloqueado !== true,
+    ),
   reservaStock: auction.reservaStock,
-  ...(auction.motivoCancelamento ? { motivoCancelamento: auction.motivoCancelamento } : {}),
+  ...(auction.motivoCancelamento
+    ? { motivoCancelamento: auction.motivoCancelamento }
+    : {}),
   licitacaoAtual: { valor: auction.licitacaoAtual.valor },
 });
 
-router.get("/mine", requireAuth("produtor"), requireApprovedProducer, async (request, response, next) => {
-  try {
-    const { page = "1", limit = "24" } = request.query;
-    const pageNumber = Number(page), limitNumber = Number(limit);
-    const skip = (pageNumber - 1) * limitNumber;
-    if ([page, limit].some((value) => typeof value !== "string" || !/^\d+$/.test(value)) ||
-      !Number.isSafeInteger(pageNumber) || pageNumber < 1 || !Number.isSafeInteger(skip) || limitNumber < 1 || limitNumber > 100)
-      return response.status(400).json({ erro: "Paginação inválida." });
-    const filter = { produtorId: request.user.id };
-    const [items, total] = await Promise.all([
-      Auction.find(filter).select(managementFields).sort({ createdAt: -1, _id: 1 }).skip(skip).limit(limitNumber).populate(managementPopulate).lean(),
-      Auction.countDocuments(filter),
-    ]);
-    const now = Date.now();
-    response.set("Cache-Control", "no-store").json({ items: items.map((item) => managementAuction(item, now)), page: pageNumber, limit: limitNumber, total });
-  } catch (error) { next(error); }
-});
+router.get(
+  "/mine",
+  requireAuth("produtor"),
+  requireApprovedProducer,
+  async (request, response, next) => {
+    try {
+      const { estado, visibilidade } = request.query;
+      const pagination = managementPagination(request.query);
+      if (!pagination)
+        return response.status(400).json({ erro: "Paginação inválida." });
+      const { page, limit, skip } = pagination;
+      if (estado !== undefined && !auctionStates.includes(estado))
+        return response
+          .status(400)
+          .json({ erro: "Estado de leilão inválido." });
+      if (visibilidade !== undefined && visibilidade !== "indisponivel")
+        return response
+          .status(400)
+          .json({ erro: "Visibilidade de leilão inválida." });
 
-router.get("/mine/:id", requireAuth("produtor"), requireApprovedProducer, async (request, response, next) => {
-  try {
-    if (!mongoose.isObjectIdOrHexString(request.params.id))
-      return response.status(404).json({ erro: "Leilão não encontrado." });
-    const auction = await Auction.findOne({ _id: request.params.id, produtorId: request.user.id }).select(managementFields).populate(managementPopulate).lean();
-    if (!auction) return response.status(404).json({ erro: "Leilão não encontrado." });
-    response.set("Cache-Control", "no-store").json(managementAuction(auction, Date.now()));
-  } catch (error) { next(error); }
-});
+      const producerId = request.user.id;
+      const now = Date.now();
+      const filter = {
+        produtorId: producerId,
+        ...auctionStateFilter(estado, now),
+      };
+      if (visibilidade) {
+        const publicIds = await Product.find({
+          ...publicProduct.match,
+          produtorId: producerId,
+        }).distinct("_id");
+        filter.$and = [
+          {
+            $or: [
+              { "produtos.0": { $exists: false } },
+              { produtos: { $elemMatch: { produtoId: { $nin: publicIds } } } },
+            ],
+          },
+        ];
+      }
+      const [items, total] = await Promise.all([
+        Auction.find(filter)
+          .select(managementFields)
+          .sort({ createdAt: -1, _id: 1 })
+          .skip(skip)
+          .limit(limit)
+          .populate(managementPopulate)
+          .lean(),
+        Auction.countDocuments(filter),
+      ]);
+      response.set("Cache-Control", "no-store").json({
+        items: items.map((item) =>
+          managementAuction(item, now, producerId, Boolean(visibilidade)),
+        ),
+        page,
+        limit,
+        total,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+router.get(
+  "/mine/:id",
+  requireAuth("produtor"),
+  requireApprovedProducer,
+  async (request, response, next) => {
+    try {
+      if (!mongoose.isObjectIdOrHexString(request.params.id))
+        return response.status(404).json({ erro: "Leilão não encontrado." });
+      const auction = await Auction.findOne({
+        _id: request.params.id,
+        produtorId: request.user.id,
+      })
+        .select(managementFields)
+        .populate(managementPopulate)
+        .lean();
+      if (!auction)
+        return response.status(404).json({ erro: "Leilão não encontrado." });
+      response
+        .set("Cache-Control", "no-store")
+        .json(managementAuction(auction, Date.now(), request.user.id));
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+router.get(
+  "/mine/:id/bids",
+  requireAuth("produtor"),
+  requireApprovedProducer,
+  async (request, response, next) => {
+    try {
+      const { id } = request.params;
+      if (!mongoose.isObjectIdOrHexString(id))
+        return response.status(404).json({ erro: "Leilão não encontrado." });
+      const pagination = managementPagination(request.query);
+      if (!pagination)
+        return response.status(400).json({ erro: "Paginação inválida." });
+      if (!(await Auction.exists({ _id: id, produtorId: request.user.id })))
+        return response.status(404).json({ erro: "Leilão não encontrado." });
+
+      const { page, limit, skip } = pagination;
+      const filter = { leilaoId: id };
+      const [bids, total] = await Promise.all([
+        Bid.find(filter)
+          .select("_id valor createdAt compradorId")
+          .sort({ createdAt: -1, _id: -1 })
+          .skip(skip)
+          .limit(limit)
+          .populate("compradorId", "nome")
+          .lean(),
+        Bid.countDocuments(filter),
+      ]);
+      const items = bids.map(({ _id, valor, createdAt, compradorId }) => ({
+        _id,
+        valor,
+        createdAt,
+        nome: compradorId?.nome ?? "Comprador",
+      }));
+      response
+        .set("Cache-Control", "no-store")
+        .json({ items, page, limit, total });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
 router.get("/:id", async (request, response, next) => {
   try {

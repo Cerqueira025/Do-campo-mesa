@@ -74,10 +74,12 @@ const groups: {
 export default function ProducerArea({
   children,
   title,
+  titleAction,
   section,
 }: {
   children: ReactNode;
   title: string;
+  titleAction?: ReactNode;
   section: ProducerSection;
 }) {
   const { utilizador } = useAuth();
@@ -100,6 +102,7 @@ export default function ProducerArea({
       areaId="producer"
       areaName="Área do produtor"
       title={title}
+      titleAction={titleAction}
       documentTitle={`${title} · Do campo à mesa`}
       navigationLabel="Gerir exploração"
       navigation={navigation}

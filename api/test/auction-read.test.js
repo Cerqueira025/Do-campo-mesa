@@ -38,12 +38,14 @@ const valid = {
 function matches(record, filter) {
   return Object.entries(filter).every(([key, value]) => {
     if (key === "$or") return value.some((branch) => matches(record, branch));
+    if (key === "$nor") return !value.some((branch) => matches(record, branch));
     const actual = key
       .split(".")
       .reduce((result, part) => result?.[part], record);
     if (!value || typeof value !== "object") return actual === value;
     return Object.entries(value).every(([operator, expected]) => {
       if (operator === "$ne") return actual !== expected;
+      if (operator === "$nin") return !expected.includes(actual);
       if (operator === "$gt") return actual > expected;
       if (operator === "$lte") return actual <= expected;
       throw new Error(`Operador nÃ£o suportado: ${operator}`);
@@ -158,6 +160,7 @@ test("Filtros e respostas seguem os limites das datas e respeitam tÃ©rmino explÃ
       dataInicio: new Date(now + 1),
     },
     { ...valid, _id: "at-start", dataInicio: new Date(now) },
+    { ...valid, _id: "active-before-start", dataInicio: new Date(now + 1) },
     { ...valid, _id: "before-end", dataFim: new Date(now + 1) },
     { ...valid, _id: "at-end", dataFim: new Date(now) },
     { ...valid, _id: "after-end", dataFim: new Date(now - 1) },
@@ -170,7 +173,7 @@ test("Filtros e respostas seguem os limites das datas e respeitam tÃ©rmino explÃ
   ];
   setup(t, records);
   const expected = {
-    agendado: ["before-start"],
+    agendado: ["before-start", "active-before-start"],
     ativo: ["at-start", "before-end"],
     terminado: ["at-end", "after-end", "explicit-end"],
   };

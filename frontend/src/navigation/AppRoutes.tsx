@@ -32,6 +32,7 @@ import { useAuth } from "../features/auth/useAuth";
 import ProducerProducts from "../features/products/ProducerProducts";
 import ProducerProductDetail from "../features/products/ProducerProductDetail";
 import ProducerAuctions from "../features/auctions/ProducerAuctions";
+import Button from "../components/ui/Button";
 import ProductForm from "../features/products/ProductForm";
 import AuctionForm from "../features/auctions/AuctionForm";
 import ProducerProfile from "../features/producers/ProducerProfile";
@@ -49,7 +50,7 @@ function resolvePage(pathname: string, location: string, embedded: boolean) {
         {ownProductId ? (
           <ProducerProductDetail key={location} id={ownProductId} />
         ) : (
-          <ProducerAuctions key={location} id={ownAuctionId} />
+          <ProducerAuctions key={pathname} id={ownAuctionId} />
         )}
       </ProtectedRoute>
     );
@@ -248,7 +249,15 @@ function AppRoutes() {
     <>
       <NavigationAnnouncer />
       {producerPage && embedded ? (
-        <ProducerArea title={producerPage.title} section={producerPage.section}>
+        <ProducerArea
+          title={producerPage.title}
+          section={producerPage.section}
+          titleAction={
+            pathname === "/produtor/leiloes" ? (
+              <Button href="/produtor/leiloes/novo">Novo leilão</Button>
+            ) : undefined
+          }
+        >
           {page}
         </ProducerArea>
       ) : buyerPage && embedded ? (

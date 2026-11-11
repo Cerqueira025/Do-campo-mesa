@@ -1209,11 +1209,13 @@ paths:
     get:
       tags: [Leilões]
       summary: Lista privada dos leilões do produtor aprovado autenticado
-      description: Inclui todos os estados e produtos despublicados ou bloqueados. Ordenação por criação decrescente. Não expõe identidades de licitantes.
+      description: Inclui todos os estados e produtos despublicados ou bloqueados por defeito. Os filtros podem ser combinados e são aplicados antes da paginação. Ordenação por criação decrescente. Não expõe identidades de licitantes.
       security: [{ bearerAuth: [] }]
       parameters:
         - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
         - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 24 } }
+        - { name: estado, in: query, schema: { type: string, enum: [agendado, ativo, terminado, cancelado] } }
+        - { name: visibilidade, in: query, schema: { type: string, enum: [indisponivel] } }
       responses:
         "200":
           description: Página privada de leilões
@@ -1243,6 +1245,43 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ProducerAuction' }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "403": { $ref: '#/components/responses/Forbidden' }
+        "404": { $ref: '#/components/responses/NotFound' }
+  /auctions/mine/{id}/bids:
+    get:
+      tags: [Leilões]
+      summary: Histórico de licitações de um leilão do próprio produtor aprovado
+      description: Ordenado da licitação mais recente para a mais antiga, com o nome do licitador, a data e o valor.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 24 } }
+      responses:
+        "200":
+          description: Página privada de licitações do leilão
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, page, limit, total]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required: [_id, valor, createdAt, nome]
+                      properties:
+                        _id: { type: string }
+                        valor: { type: integer, minimum: 1, description: Valor em cêntimos }
+                        createdAt: { type: string, format: date-time }
+                        nome: { type: string }
+                  page: { type: integer }
+                  limit: { type: integer }
+                  total: { type: integer }
+        "400": { $ref: '#/components/responses/BadRequest' }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
         "404": { $ref: '#/components/responses/NotFound' }
@@ -1797,7 +1836,7 @@ components:
     ProducerAuction:
       type: object
       additionalProperties: false
-      required: [_id, lote, produtos, precoBase, incremento, dataInicio, dataFim, estado, reservaStock, licitacaoAtual]
+      required: [_id, lote, produtos, precoBase, incremento, dataInicio, dataFim, estado, visivel, reservaStock, licitacaoAtual]
       properties:
         _id: { type: string }
         lote: { type: string }
@@ -1821,6 +1860,7 @@ components:
         dataInicio: { type: string, format: date-time }
         dataFim: { type: string, format: date-time }
         estado: { type: string, enum: [agendado, ativo, terminado, cancelado] }
+        visivel: { type: boolean, description: Indica se o lote está disponível na consulta pública. }
         reservaStock: { type: string, enum: [pendente, reservada, libertada, atribuida, sem-reserva] }
         motivoCancelamento: { type: string, enum: [stock-insuficiente, produto-indisponivel, produtor-indisponivel] }
         licitacaoAtual:

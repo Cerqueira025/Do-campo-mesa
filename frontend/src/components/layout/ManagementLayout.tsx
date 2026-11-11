@@ -24,6 +24,7 @@ interface ManagementLayoutProps {
   areaName: string;
   description?: string;
   title: string;
+  titleAction?: ReactNode;
   documentTitle: string;
   navigationLabel: string;
   navigation: ManagementNavigationGroup[];
@@ -38,6 +39,7 @@ export default function ManagementLayout({
   areaName,
   description,
   title,
+  titleAction,
   documentTitle,
   navigationLabel,
   navigation,
@@ -128,7 +130,10 @@ export default function ManagementLayout({
             id="main-content"
             tabIndex={-1}
           >
-            <h1 className="management-layout__title">{title}</h1>
+            <div className="management-layout__title-row">
+              <h1 className="management-layout__title">{title}</h1>
+              {titleAction}
+            </div>
             {children}
           </main>
         </div>
