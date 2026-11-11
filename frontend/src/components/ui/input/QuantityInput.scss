@@ -1,3 +1,5 @@
+@use "../../../styles/abstracts/mixins" as mixins;
+
 .quantity-input {
   display: flex;
   align-items: center;
@@ -27,8 +29,7 @@
     }
 
     &:focus-visible {
-      outline: 2px solid var(--color-green-900);
-      outline-offset: 2px;
+      @include mixins.focus-ring($offset: 2px);
     }
   }
 }

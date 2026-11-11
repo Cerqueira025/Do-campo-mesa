@@ -98,8 +98,7 @@
   }
 
   &__results:focus-visible {
-    outline: 2px solid var(--color-green-900);
-    outline-offset: 4px;
+    @include focus-ring();
   }
 
   @include up(desktop) {

@@ -2,6 +2,11 @@
 @use "../styles/abstracts/tokens" as tokens;
 
 .product-detail {
+  $aligned-padding-inline: max(
+    #{tokens.$page-padding-inline},
+    calc((100% - var(--content-max)) / 2 + #{tokens.$page-padding-inline})
+  );
+
   padding: 24px 0 48px;
   color: var(--color-green-950);
 
@@ -35,7 +40,7 @@
     position: relative;
     z-index: 2;
     padding-block: 20px;
-    padding-inline: max(24px, calc((100% - var(--content-max)) / 2 + 24px));
+    padding-inline: $aligned-padding-inline;
   }
 
   &__visual {
@@ -62,10 +67,7 @@
     position: relative;
     width: 100%;
     padding-block: 112px 28px;
-    padding-inline: max(
-      #{tokens.$page-padding-inline},
-      calc((100% - var(--content-max)) / 2 + #{tokens.$page-padding-inline})
-    );
+    padding-inline: $aligned-padding-inline;
     background: linear-gradient(
       180deg,
       transparent,
@@ -206,8 +208,7 @@
   }
 
   &__panel a:focus-visible {
-    outline: 3px solid var(--color-green-900);
-    outline-offset: 4px;
+    @include focus-ring($width: 3px);
   }
 
   &__order {

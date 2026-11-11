@@ -63,8 +63,7 @@
     font-size: var(--font-size-xs);
   }
   a:focus-visible {
-    outline: 3px solid var(--color-green-300);
-    outline-offset: 4px;
+    @include focus-ring($width: 3px, $color: var(--color-green-300));
   }
 
   @include up(tablet) {

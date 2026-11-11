@@ -10,8 +10,7 @@
   &__table:focus-visible,
   &__results:focus-visible,
   &__detail-decision section:focus-visible {
-    outline: 2px solid var(--color-green-900);
-    outline-offset: 4px;
+    @include mixins.focus-ring();
   }
   &__panel {
     @include surface.management-surface;

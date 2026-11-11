@@ -1,3 +1,5 @@
+@use "../../styles/abstracts/mixins" as mixins;
+
 .app-header {
   display: flex;
   flex-wrap: wrap;
@@ -28,8 +30,7 @@
       color: inherit;
     }
     &:focus-visible {
-      outline: 2px solid currentColor;
-      outline-offset: 4px;
+      @include mixins.focus-ring($color: currentColor);
     }
   }
 
@@ -48,8 +49,7 @@
     }
 
     a:not(.icon-button):focus-visible {
-      outline: 2px solid var(--color-yellow-500);
-      outline-offset: 4px;
+      @include mixins.focus-ring($color: var(--color-yellow-500));
     }
   }
 

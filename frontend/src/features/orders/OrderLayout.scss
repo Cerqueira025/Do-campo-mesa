@@ -15,8 +15,7 @@
   color: var(--color-green-950);
 }
 .order-page__link:focus-visible {
-  outline: 2px solid var(--color-green-900);
-  outline-offset: 4px;
+  @include mixins.focus-ring();
 }
 .order-page__header {
   margin-bottom: 2rem;

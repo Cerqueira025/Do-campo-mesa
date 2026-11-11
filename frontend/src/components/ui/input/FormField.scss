@@ -1,3 +1,5 @@
+@use "../../../styles/abstracts/mixins" as mixins;
+
 .form-field {
   display: grid;
   min-width: 0;
@@ -20,8 +22,7 @@
     background: var(--color-stone-50);
   }
   &__control:focus-within {
-    outline: 2px solid var(--color-green-900);
-    outline-offset: 3px;
+    @include mixins.focus-ring($offset: 3px);
   }
   &__control > input,
   &__control > textarea {

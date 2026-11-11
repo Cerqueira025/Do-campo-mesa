@@ -1,3 +1,5 @@
+@use "../../styles/abstracts/mixins" as mixins;
+
 .skip-to-content {
   position: fixed;
   z-index: 2000;
@@ -13,7 +15,6 @@
 
   &:focus-visible {
     transform: translateY(0);
-    outline: 3px solid var(--color-yellow-500);
-    outline-offset: 3px;
+    @include mixins.focus-ring($width: 3px, $color: var(--color-yellow-500), $offset: 3px);
   }
 }

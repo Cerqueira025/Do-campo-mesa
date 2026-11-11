@@ -89,8 +89,7 @@
     }
 
     &:focus-visible + .product-filters__chip {
-      outline: 2px solid var(--color-green-900);
-      outline-offset: 3px;
+      @include focus-ring($offset: 3px);
     }
 
     &:disabled + .product-filters__chip {
@@ -162,8 +161,7 @@
     }
 
     &:focus-visible {
-      outline: 2px solid var(--color-green-900);
-      outline-offset: 3px;
+      @include focus-ring($offset: 3px);
     }
   }
 

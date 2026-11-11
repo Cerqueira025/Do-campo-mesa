@@ -1,3 +1,5 @@
+@use "../../styles/abstracts/mixins" as mixins;
+
 .product-card {
   --bs-card-bg: var(--color-brown-100);
   --bs-card-border-radius: 40px;
@@ -38,8 +40,7 @@
     text-decoration: none;
 
     &:focus-visible {
-      outline: 3px solid currentColor;
-      outline-offset: 4px;
+      @include mixins.focus-ring($width: 3px, $color: currentColor);
     }
 
     &::after {

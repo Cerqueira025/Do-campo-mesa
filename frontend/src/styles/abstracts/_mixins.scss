@@ -12,3 +12,8 @@
     @content;
   }
 }
+
+@mixin focus-ring($width: 2px, $color: var(--color-green-900), $offset: 4px) {
+  outline: $width solid $color;
+  outline-offset: $offset;
+}

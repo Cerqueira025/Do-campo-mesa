@@ -1,3 +1,5 @@
+@use "../../styles/abstracts/mixins" as mixins;
+
 .origin-map {
   min-width: 0;
   padding: 24px;
@@ -44,8 +46,7 @@
     text-underline-offset: 4px;
 
     &:focus-visible {
-      outline: 3px solid currentColor;
-      outline-offset: 4px;
+      @include mixins.focus-ring($width: 3px, $color: currentColor);
     }
   }
 }
