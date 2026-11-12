@@ -63,20 +63,22 @@ explícita. Produtos sem imagem apresentam “Imagem indisponível”.
 
 As rotas são resolvidas em `src/navigation/AppRoutes.tsx`. A navegação interna usa a History API, preservando o endereço real dos links, abertura noutro separador e cliques com modificadores. O parâmetro `regresso` conserva o endereço do catálogo e os seus filtros; a cache em memória permite restaurar lista, scroll e foco.
 
-| Rotas                                                                            | Acesso e função                                                                                           |
-| -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `/`, `/produtos/:id`, `/produtores/:id`, `/leiloes/:id`                          | Catálogo, produtos, perfis e leilões públicos.                                                            |
-| `/login`, `/registo`                                      | Entrada e registo. |
-| `/conta`                                                                         | Conta autenticada e estado de aprovação do produtor.                                                      |
-| `/carrinho`                                                                      | Visitantes e compradores; artigos agrupados por produtor.                                                 |
-| `/finalizar-encomenda`, `/encomendas`                                            | Finalização e acompanhamento por compradores.                                                             |
-| `/produtor/encomendas`                                                           | Acompanhamento e avanço de estado pelo produtor.                                                          |
-| `/produtor/perfil`                                                               | Consulta e edição do próprio perfil por qualquer produtor, incluindo pendentes e rejeitados.              |
-| `/produtor/produtos`, `/produtor/produtos/novo`, `/produtor/produtos/:id/editar` | Gestão dos produtos próprios por produtores aprovados.                                                    |
-| `/produtor/leiloes/novo`                                                         | Criação de leilões com um produto ou cabaz por produtores aprovados.                                      |
-| `/encomendas/:id`                                                                | Detalhe protegido de uma encomenda do comprador ou produtor.                                              |
-| `/admin` e subrotas                                                              | Resumo, listas, detalhes e moderação por administradores.                                                 |
-| `/admin/backoffice`                                                              | Passo de entrada no Laravel, iniciado pelo botão «Serviços e sistema».                                    |
+| Rotas                                                                            | Acesso e função                                                                              |
+| -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `/`, `/produtos/:id`, `/produtores/:id`, `/leiloes/:id`                          | Catálogo, produtos, perfis e leilões públicos.                                               |
+| `/login`, `/registo`                                                             | Entrada e registo.                                                                           |
+| `/conta`                                                                         | Conta autenticada e estado de aprovação do produtor.                                         |
+| `/carrinho`                                                                      | Visitantes e compradores; artigos agrupados por produtor.                                    |
+| `/finalizar-encomenda`, `/encomendas`                                            | Finalização e acompanhamento por compradores.                                                |
+| `/produtor`                                                                      | Resumo da área do produtor.                                                                  |
+| `/produtor/encomendas`                                                           | Acompanhamento e avanço de estado pelo produtor.                                             |
+| `/produtor/perfil`                                                               | Consulta e edição do próprio perfil por qualquer produtor, incluindo pendentes e rejeitados. |
+| `/produtor/produtos`, `/produtor/produtos/novo`, `/produtor/produtos/:id/editar` | Gestão dos produtos próprios por produtores aprovados.                                       |
+| `/produtor/leiloes`, `/produtor/leiloes/:id`                                     | Lista, detalhe e histórico de licitações dos leilões próprios, para produtores aprovados.    |
+| `/produtor/leiloes/novo`                                                         | Criação de leilões com um produto ou cabaz por produtores aprovados.                         |
+| `/encomendas/:id`                                                                | Detalhe protegido de uma encomenda do comprador ou produtor.                                 |
+| `/admin` e subrotas                                                              | Resumo, listas, detalhes e moderação por administradores.                                    |
+| `/admin/backoffice`                                                              | Passo de entrada no Laravel, iniciado pelo botão «Serviços e sistema».                       |
 
 O catálogo tem paginação de 24 produtos e filtros na URL. Compras podem incluir vários produtores, gerando uma encomenda por produtor. Leilões usam Socket.IO para lances e notificações, com consultas periódicas à API para recuperar falhas de ligação. Produtores aprovados podem gerir produtos e criar leilões pela interface. O formulário de leilões permite um ou vários produtos publicados, desbloqueados e com stock, com início imediato ou agendado na hora local. O preço base e o incremento aplicam-se ao lote completo. A criação valida o stock; a reserva ocorre no início, pelo ciclo existente no servidor.
 
@@ -91,7 +93,7 @@ npm run dev -- --host 127.0.0.1 --port 5173 --strictPort
 
 O frontend usa `http://127.0.0.1:8000` para o backoffice. Para alterar, copia `.env.example` para `.env` e define `VITE_BACKOFFICE_URL`. Nunca coloques `JWT_SECRET` ou `BACKOFFICE_SECRET` em variáveis `VITE_*`. Usa `127.0.0.1` também nos endereços Laravel e na origem `MARKETPLACE_SITE_URL`, conforme [a preparação do backoffice](../backoffice/app/README.md#preparação-local).
 
-## Verificações disponíveis:
+## Verificações
 
 ### Revisão visual e responsiva
 
@@ -115,6 +117,8 @@ Os testes de interação usam Vitest, React Testing Library e jsdom, com respost
 da API simuladas; não precisam de servidor nem de base de dados. Cobrem checkout,
 carrinho, sessão, páginas protegidas e atualização de encomendas. O workflow
 `.github/workflows/frontend.yml` executa ambos os grupos através de `npm test`.
+
+## Área do produtor
 
 ### Gestão de produtos
 

@@ -93,13 +93,13 @@ teste é ignorado.
 **Resultado de 11 de novembro de 2026 (MongoDB Atlas):** 11 testes passaram
 (10 subtestes e o teste que os agrupa), sem falhas nem testes ignorados.
 
-| Cenário | Resultado observado |
-| --- | --- |
-| Entrada na sala | Dois compradores autenticados ligaram-se por WebSocket. Ambos receberam a hora do servidor e o estado inicial. A presença confirmou dois participantes. |
-| Dois lances simultâneos de 1,10 € | Um foi aceite. O outro foi recusado com o novo mínimo de 1,20 €. |
-| Persistência e estado partilhado | O MongoDB guardou um único lance. Ambos os clientes receberam uma única vez o mesmo evento `nova-licitacao` e, ao voltar a entrar na sala, viram o mesmo histórico, valor e comprador na liderança. |
-| Falha simulada na escrita do histórico | A transação no MongoDB reverteu a atualização do lance. O histórico ficou intacto e nenhum novo evento de licitação foi enviado. |
-| Fecho concorrente | Foi criada uma única encomenda para o vencedor, pelo valor do lote. Noutro subteste, a falha ao criar a encomenda reverteu o fecho sem emitir evento. |
+| Cenário                                | Resultado observado                                                                                                                                                                                 |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Entrada na sala                        | Dois compradores autenticados ligaram-se por WebSocket. Ambos receberam a hora do servidor e o estado inicial. A presença confirmou dois participantes.                                             |
+| Dois lances simultâneos de 1,10 €      | Um foi aceite. O outro foi recusado com o novo mínimo de 1,20 €.                                                                                                                                    |
+| Persistência e estado partilhado       | O MongoDB guardou um único lance. Ambos os clientes receberam uma única vez o mesmo evento `nova-licitacao` e, ao voltar a entrar na sala, viram o mesmo histórico, valor e comprador na liderança. |
+| Falha simulada na escrita do histórico | A transação no MongoDB reverteu a atualização do lance. O histórico ficou intacto e nenhum novo evento de licitação foi enviado.                                                                    |
+| Fecho concorrente                      | Foi criada uma única encomenda para o vencedor, pelo valor do lote. Noutro subteste, a falha ao criar a encomenda reverteu o fecho sem emitir evento.                                               |
 
 O fecho é testado separadamente ao nível do serviço. A execução não verifica
 a entrega das notificações privadas de fecho nem a apresentação no navegador.

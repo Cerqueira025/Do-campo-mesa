@@ -2,7 +2,10 @@
 
 Marketplace que aproxima produtores locais de consumidores e restaurantes.
 
-## Quick start
+Para avaliação do projeto, segue o [início rápido](#início-rápido) e consulta
+as [contas de demonstração](docs/dados-funcionais.md#contas-de-demonstração).
+
+## Início rápido
 
 **Requisitos:** Git, Node.js 22.14+ com npm e uma base MongoDB com suporte a
 transações (replica set, por exemplo MongoDB Atlas). O backoffice Laravel é opcional.
@@ -19,7 +22,7 @@ npm --prefix frontend ci
 ### 2. Configurar a base de dados MongoDB
 
 ```powershell
-Copy-Item api/.env.example api/.env
+if (-not (Test-Path api/.env)) { Copy-Item api/.env.example api/.env }
 ```
 
 Se já tiveres um `api/.env`, mantém-no e revê os valores:
@@ -32,14 +35,15 @@ Se já tiveres um `api/.env`, mantém-no e revê os valores:
 
 Não coloques o `.env` no Git. Se estás a reutilizar uma base com leilões antigos,
 segue primeiro as [migrações](docs/operacoes-locais.md#migrar-leilões-antigos).
+Para avaliação, usa uma base de demonstração vazia, como `do_campo_a_mesa_demo`.
 Numa base nova, cria as coleções e os índices:
 
 ```powershell
 npm --prefix api run db:init
 ```
 
-Para experimentar a aplicação com contas e produtos fictícios, carrega os exemplos
-**apenas na base de desenvolvimento**:
+Para carregar as contas e os produtos fictícios, deixa `SEED_PASSWORD` com o
+valor de exemplo e executa:
 
 ```powershell
 npm --prefix api run db:seed
@@ -63,10 +67,11 @@ npm --prefix frontend run dev -- --host 127.0.0.1 --port 5173 --strictPort
 - [Estado da API](http://127.0.0.1:3000/api/health)
 - [Swagger UI](http://127.0.0.1:3000/api-docs/)
 
-Se carregaste os exemplos, entra com `produtor@example.test` ou
-`admin@example.test`. Usa a palavra-passe definida em `SEED_PASSWORD` quando
-criaste as contas (por defeito, `CampoMesaDemo123!`). Consulta os
-[dados de demonstração](docs/dados-funcionais.md) para mais contas e cenários.
+Se carregaste os exemplos, entra com `ana@example.test` (comprador),
+`produtor@example.test` (produtor aprovado) ou `admin@example.test` (administrador).
+A palavra-passe inicial é `CampoMesaDemo123!`, salvo se alteraste `SEED_PASSWORD`
+antes de carregar os exemplos. Consulta a
+[lista completa das contas](docs/dados-funcionais.md#contas-de-demonstração).
 Se precisares de recuperar o acesso a uma conta, segue o
 [procedimento de redefinição local](docs/operacoes-locais.md#redefinir-a-palavra-passe-de-uma-conta).
 
@@ -95,6 +100,9 @@ npm --prefix api test
 npm --prefix frontend test
 ```
 
+Os testes de integração com MongoDB real só correm quando `MONGODB_TEST_URI`
+está definida. Consulta [como repetir a validação dos leilões e os resultados no Atlas](docs/operacoes-locais.md#validar-leilões-com-mongodb-real).
+
 Para correr o lint do repositório, instala também as ferramentas da raiz e as
 dependências PHP:
 
@@ -106,8 +114,10 @@ npm run lint
 
 ## Documentação
 
-- [Frontend](frontend/README.md): estrutura, rotas, estilos e fotografias.
-- [OpenAPI](docs/openapi.yaml) e [operações locais](docs/operacoes-locais.md):
-  contrato REST, coleção Bruno e manutenção da base de dados.
-- [Administração](docs/administracao.md) e [backoffice técnico](backoffice/app/README.md).
-- [Navegação e fluidez](docs/fluidez.md) e [enunciado do projeto](Do_Campo_a_Mesa_Enunciado.pdf).
+- [Operações locais](docs/operacoes-locais.md): migrações, redefinição de palavras-passe, validação com MongoDB real e testes Bruno.
+- [Dados de demonstração](docs/dados-funcionais.md): contas e exemplos. [Demonstrar um leilão com dois compradores](docs/dados-funcionais.md#demonstrar-um-leilão-com-dois-compradores): passos e resultados esperados no navegador.
+- [Frontend](frontend/README.md): estrutura, rotas, estilos e fotografias. [Navegação e fluidez](docs/fluidez.md): comportamento e medições históricas.
+- [OpenAPI](docs/openapi.yaml): contrato REST usado pelo Swagger UI. [Leilões em tempo real](docs/leiloes-tempo-real.md): eventos Socket.IO e recuperação da ligação.
+- [Administração](docs/administracao.md): gestão do mercado. [Backoffice técnico](backoffice/app/README.md): instalação e diagnóstico dos serviços.
+- [Relatório do projeto](docs/relatorio.md) e [enunciado](Do_Campo_a_Mesa_Enunciado.pdf).
+- [Auditoria de 2 de novembro de 2026](docs/auditoria-2026-11-02.md): registo histórico e notas de seguimento.

@@ -1,25 +1,49 @@
-# Dados funcionais MongoDB
+# Dados de demonstração
 
-Configurar `api/.env` conforme o [README principal](../README.md#2-configurar-a-base-de-dados-mongodb).
-Executar dentro de `api/`: `npm test`, `npm run db:init` e `npm run db:seed`.
-O comando usa a BD configurada em `MONGODB_DB_NAME`; não apaga nem atualiza documentos existentes.
-Uma segunda execução de um seed concluído insere zero documentos. Não executar em simultâneo com alterações aos dados ou com Bruno.
-Não há garantia de inserção atómica do conjunto: uma falha de rede pode deixar parte inserida; repetir conclui os documentos em falta.
+## Preparar a base para avaliação
 
-## Contas e identificadores
+1. Instala as dependências e configura `api/.env` conforme o [início rápido](../README.md#início-rápido). Usa um MongoDB com suporte a transações e define `MONGODB_DB_NAME=do_campo_a_mesa_demo`, ou outro nome de uma base vazia. Mantém `SEED_PASSWORD=CampoMesaDemo123!` para usar as contas abaixo.
+2. Na raiz do projeto, prepara as coleções e carrega o seed:
 
-Os exemplos antigos e as suas contas permanecem disponíveis. Novas contas usam a mesma password inicial
-`SEED_PASSWORD` (por defeito `CampoMesaDemo123!`), com bcrypt; alterações posteriores da variável não mudam contas existentes.
+   ```powershell
+   npm --prefix api run db:init
+   npm --prefix api run db:seed
+   ```
 
-| Contas                                                | Papel e estado                                 | IDs numéricos |
-| ----------------------------------------------------- | ---------------------------------------------- | ------------- |
-| `comprador1@example.test` a `comprador6@example.test` | Compradores                                    | 1001–1006     |
-| `quinta1@example.test`                                | Produtor aceite, Viana do Castelo              | 1101          |
-| `quinta2@example.test`                                | Produtor aceite, Braga                         | 1102          |
-| `quinta3@example.test`                                | Produtor aceite, Ponte de Lima                 | 1103          |
-| `quinta4@example.test`                                | Produtor aceite sem produtos, Viana do Castelo | 1104          |
-| `quinta5@example.test`                                | Produtor pendente, Braga                       | 1105          |
-| `quinta6@example.test`                                | Produtor rejeitado, Ponte de Lima              | 1106          |
+3. [Inicia a API e o frontend](../README.md#3-arrancar-a-api-e-o-frontend) e abre [a aplicação](http://127.0.0.1:5173). O backoffice Laravel é opcional para avaliar os fluxos do marketplace.
+
+O seed carrega contas, produtos, encomendas, avaliações e leilões fictícios.
+Não apaga nem altera documentos existentes, incluindo palavras-passe. Repetir o
+comando após uma execução completa não duplica os dados; se a primeira execução
+for interrompida, pode ser repetida para inserir os documentos em falta.
+
+## Contas de demonstração
+
+**Palavra-passe inicial de todas as contas abaixo: `CampoMesaDemo123!`.** Aplica-se
+às contas criadas com o valor predefinido de `SEED_PASSWORD`. Usa estas contas
+apenas numa instalação de demonstração. Se alterares `SEED_PASSWORD`, a nova
+palavra-passe só se aplica às contas que ainda não foram criadas.
+
+| Contas                                                | Papel e estado                                           | IDs numéricos |
+| ----------------------------------------------------- | -------------------------------------------------------- | ------------- |
+| `admin@example.test`                                  | Administrador: gestão de produtores e moderação          | 1             |
+| `ana@example.test`                                    | Comprador: catálogo, encomendas e leilões                | 2             |
+| `restaurante@example.test`                            | Comprador: segunda conta para testar licitações          | 3             |
+| `produtor@example.test`                               | Produtor aprovado: produtos, stock, encomendas e leilões | 4             |
+| `pendente@example.test`                               | Produtor a aguardar aprovação                            | 5             |
+| `rejeitado@example.test`                              | Produtor rejeitado                                       | 6             |
+| `comprador1@example.test` a `comprador6@example.test` | Compradores                                              | 1001–1006     |
+| `quinta1@example.test`                                | Produtor aceite, Viana do Castelo                        | 1101          |
+| `quinta2@example.test`                                | Produtor aceite, Braga                                   | 1102          |
+| `quinta3@example.test`                                | Produtor aceite, Ponte de Lima                           | 1103          |
+| `quinta4@example.test`                                | Produtor aceite sem produtos, Viana do Castelo           | 1104          |
+| `quinta5@example.test`                                | Produtor pendente, Braga                                 | 1105          |
+| `quinta6@example.test`                                | Produtor rejeitado, Ponte de Lima                        | 1106          |
+
+Para experimentar a concorrência entre compradores, segue o
+[guião de demonstração do leilão](#demonstrar-um-leilão-com-dois-compradores).
+
+## Identificadores dos dados
 
 Converter cada ID numérico com `seedId(n)` de `api/src/scripts/seed-data.js`:
 `dca000000000` + número hexadecimal com 12 posições. Por exemplo, 2001 corresponde a `dca0000000000000000007d1`.
@@ -86,8 +110,10 @@ não o ativa. Finais sem vencedor devolvem a reserva; com vencedor mantêm o lot
 atribuído. Falta de stock ou produto/produtor indisponível cancela sem reserva parcial.
 O processamento é retomado no arranque e repetido com cinco segundos de intervalo.
 Exemplos históricos terminados têm `sem-reserva`, sem descontos retroativos.
-A listagem pública exige todos os produtos existentes e publicados, pertencentes ao produtor do leilão, e produtor atualmente aprovado;
-leilões indisponíveis são omitidos e o detalhe devolve 404, incluindo identificadores inválidos.
+A listagem pública exige que todos os produtos do lote existam, estejam publicados,
+não estejam bloqueados e pertençam ao produtor do leilão. O produtor tem de estar
+aprovado. A lista omite leilões indisponíveis; o detalhe devolve 404 para esses
+leilões e para identificadores inválidos.
 Leilões terminados continuam consultáveis se cumprirem essas condições.
 
 O destaque da página inicial usa leilões reais da API e seleciona o ativo com fim mais próximo.
@@ -100,8 +126,37 @@ O vencedor escolhe levantamento ou entrega no detalhe da encomenda para a confir
 Leilões históricos já terminados não são convertidos retroativamente.
 A interface apresenta 24 produtos por página, com Anterior/Seguinte e `page` na URL.
 
-Para demonstrar lances atuais, prepara um novo leilão pela API com produtos de um
-produtor aprovado, stock suficiente e datas atuais, e usa duas contas de comprador.
+## Demonstrar um leilão com dois compradores
+
+Prepara a API e o frontend pelo [README](../README.md) e carrega os dados de
+demonstração numa base de desenvolvimento. Usa a palavra-passe definida ao
+carregar os exemplos.
+
+1. Entra como `quinta1@example.test` e abre **Novo leilão**. Escolhe um produto
+   publicado e desbloqueado com stock suficiente. Define o preço base em **1,00 €**,
+   o incremento em **0,10 €** e escolhe **Começar agora**. Dá tempo suficiente até
+   ao fim para abrir as sessões e licitar. Guarda o endereço público `/leiloes/:id`
+   do lote criado.
+2. Abre esse endereço em dois perfis de navegador separados (por exemplo, um
+   perfil normal e uma janela privada). Entra como `comprador1@example.test`
+   num e `comprador2@example.test` no outro. Com o leilão ativo, confirma nas duas
+   sessões o preço inicial de **1,00 €**, o mínimo de **1,10 €** e a presença de
+   dois participantes. Mantém a sessão do produtor fora da página pública.
+3. Prepara **1,10 €** nas duas sessões e submete os lances o mais próximo possível.
+   Confirma que o histórico mostra uma única licitação de **1,10 €**, com o mesmo
+   comprador em ambas, e que o novo mínimo é **1,20 €**. Se ambos os pedidos
+   chegarem ao servidor, um é recusado. Se a atualização chegar à outra sessão
+   antes do envio, a interface pode impedir o envio do valor desatualizado.
+4. Recarrega as duas páginas e confirma que o valor e o histórico se mantêm.
+   Para verificar o fecho, deixa o leilão terminar com as sessões abertas e observa
+   as notificações no vencedor e no produtor. Ambas devem abrir a mesma encomenda;
+   o outro comprador não deve receber uma notificação de vitória.
+
+O guião descreve o resultado esperado no navegador. Para provar que dois pedidos
+foram efetivamente enviados e que só um foi persistido, usa o
+[teste de integração com MongoDB real](operacoes-locais.md#validar-leilões-com-mongodb-real).
+Essa execução não verificou a entrega das notificações privadas de fecho.
+
 Repetir o seed não reabre leilões nem repõe produtores já decididos como pendentes.
 Antes de iniciar os leilões, confirma os índices com `npm run db:init`.
 
