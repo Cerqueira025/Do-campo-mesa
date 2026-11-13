@@ -1,0 +1,23 @@
+meta {
+  name: Remover fotografia desativa a imagem predefinida
+  type: http
+  seq: 49
+}
+
+delete {
+  url: {{baseUrl}}/products/{{functionalProduct2}}/photo
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{producerToken}}
+}
+
+tests {
+  test("Remover fotografia desativa a imagem predefinida", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody()._id).to.equal(bru.getVar("functionalProduct2"));
+    expect(res.getBody().fotografia).to.equal(null);
+  });
+}

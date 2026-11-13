@@ -1,0 +1,26 @@
+meta {
+  name: Recusa alterar aprovação pelo perfil próprio
+  type: http
+  seq: 22
+}
+
+patch {
+  url: {{baseUrl}}/producers/me
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authProducerToken}}
+}
+
+body:json {
+  {"descricao":"Alteração indevida","validacao":"rejeitado"}
+}
+
+tests {
+  test("Recusa alterar aprovação pelo perfil próprio", function() {
+    expect(res.getStatus()).to.equal(400);
+    expect(res.getBody().erro).to.equal("Indique apenas os dados da exploração a alterar.");
+  });
+}

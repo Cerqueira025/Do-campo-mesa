@@ -1,0 +1,24 @@
+meta {
+  name: Administração confirma denúncia preservada após republicação
+  type: http
+  seq: 20
+}
+
+get {
+  url: {{baseUrl}}/admin/reviews/{{testReviewId}}
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+tests {
+  test("a avaliação republicada conserva a denúncia original", function() {
+    expect(res.getStatus()).to.equal(200);
+    const review = res.getBody();
+    expect(review.estado).to.equal("publicada");
+    expect(review.totalDenuncias).to.equal(1);
+    expect(review.denuncias[0].motivo).to.equal("Conteúdo inadequado no cenário Bruno");
+  });
+}

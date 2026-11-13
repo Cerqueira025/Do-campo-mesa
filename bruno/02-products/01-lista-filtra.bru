@@ -17,6 +17,7 @@ tests {
     expect(body.items).to.be.an("array");
     expect(body.page).to.equal(1);
     expect(body.total).to.be.a("number");
+    expect(body.items.some((item) => item._id === "dca000000000000000000065")).to.equal(true);
     expect(body.items.every((item) => item.biologico && item.preco <= 200)).to.equal(true);
   });
 }

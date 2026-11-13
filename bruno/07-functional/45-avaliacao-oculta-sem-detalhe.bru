@@ -1,0 +1,18 @@
+meta {
+  name: Detalhe público não revela avaliação oculta
+  type: http
+  seq: 45
+}
+
+get {
+  url: {{baseUrl}}/reviews/{{functionalReview}}
+  body: none
+  auth: none
+}
+
+tests {
+  test("Detalhe público não revela avaliação oculta", function() {
+    expect(res.getStatus()).to.equal(404);
+    expect(res.getBody().erro).to.equal("Avaliação não encontrada.");
+  });
+}

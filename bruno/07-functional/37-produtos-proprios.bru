@@ -1,0 +1,27 @@
+meta {
+  name: Gestão inclui produto bloqueado sem dados da moderação
+  type: http
+  seq: 37
+}
+
+get {
+  url: {{baseUrl}}/products/mine?limit=2
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{producerToken}}
+}
+
+tests {
+  test("Gestão inclui produto bloqueado sem dados da moderação", function() {
+    expect(res.getStatus()).to.equal(200);
+    const { items, limit } = res.getBody();
+    expect(limit).to.equal(2);
+    expect(items.map(item => item._id)).to.have.members([bru.getVar("functionalProduct1"), bru.getVar("functionalProduct2")]);
+    const blocked = items.find(item => item._id === bru.getVar("functionalProduct1"));
+    expect(blocked.bloqueado).to.equal(true);
+    expect(blocked).not.to.have.property("ultimaDecisao");
+  });
+}

@@ -1,0 +1,22 @@
+meta {
+  name: Outro produtor não remove fotografia de produto alheio
+  type: http
+  seq: 47
+}
+
+delete {
+  url: {{baseUrl}}/products/{{functionalProduct2}}/photo
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{otherProducerToken}}
+}
+
+tests {
+  test("Outro produtor não remove fotografia de produto alheio", function() {
+    expect(res.getStatus()).to.equal(404);
+    expect(res.getBody().erro).to.equal("Produto não encontrado.");
+  });
+}

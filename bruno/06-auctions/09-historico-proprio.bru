@@ -1,0 +1,29 @@
+meta {
+  name: Histórico próprio pagina sem revelar IDs de compradores
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{baseUrl}}/auctions/mine/dca00000000000000000012e/bids?limit=1&page=1
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{producerToken}}
+}
+
+tests {
+  test("Histórico próprio pagina sem revelar IDs de compradores", function() {
+    expect(res.getStatus()).to.equal(200);
+    const { items, page, limit, total } = res.getBody();
+    expect(page).to.equal(1);
+    expect(limit).to.equal(1);
+    expect(total).to.be.at.least(2);
+    expect(items).to.have.length(1);
+    expect(items[0]).to.have.all.keys("_id", "valor", "createdAt", "nome");
+    expect(items[0].valor).to.be.at.least(2500);
+    expect(items[0].nome).to.be.a("string").and.not.be.empty;
+  });
+}

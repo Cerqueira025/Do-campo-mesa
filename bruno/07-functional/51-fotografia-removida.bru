@@ -1,0 +1,16 @@
+meta {
+  name: Ficheiro deixa de ser servido depois de remoção pelo proprietário
+  type: http
+  seq: 51
+}
+
+get {
+  url: {{baseUrl}}/uploads/products/{{functionalPhoto}}-480.webp
+  auth: none
+}
+
+tests {
+  test("o endereço anterior já não serve a imagem", function() {
+    expect(res.getStatus()).to.equal(404);
+  });
+}

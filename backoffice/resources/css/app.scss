@@ -19,8 +19,7 @@ a {
   color: inherit;
 }
 :focus-visible {
-  outline: 3px solid var(--color-green-900);
-  outline-offset: 4px;
+  @include mixins.focus-ring($width: 3px);
 }
 .shell {
   max-width: tokens.$content-max;

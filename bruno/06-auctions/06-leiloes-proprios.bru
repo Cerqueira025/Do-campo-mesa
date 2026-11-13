@@ -1,0 +1,26 @@
+meta {
+  name: Listagem privada inclui o novo leilão sem identificar licitantes
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/auctions/mine?limit=1
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{producerToken}}
+}
+
+tests {
+  test("Listagem privada inclui o novo leilão sem identificar licitantes", function() {
+    expect(res.getStatus()).to.equal(200);
+    const { items, limit } = res.getBody();
+    expect(limit).to.equal(1);
+    expect(items).to.have.length(1);
+    expect(items[0]._id).to.equal(bru.getVar("testAuctionId"));
+    expect(items[0].licitacaoAtual).to.deep.equal({ valor: 500 });
+  });
+}

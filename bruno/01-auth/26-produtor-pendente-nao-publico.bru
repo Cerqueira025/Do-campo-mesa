@@ -1,11 +1,11 @@
 meta {
   name: Produtor não aprovado não é público
   type: http
-  seq: 3
+  seq: 26
 }
 
 get {
-  url: {{baseUrl}}/producers/dca000000000000000000005
+  url: {{baseUrl}}/producers/{{rejectedProducerId}}
   body: none
   auth: none
 }
@@ -13,5 +13,6 @@ get {
 tests {
   test("perfil de produtor pendente devolve 404", function() {
     expect(res.getStatus()).to.equal(404);
+    expect(res.getBody().erro).to.equal("Produtor não encontrado.");
   });
 }

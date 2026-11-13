@@ -1,0 +1,23 @@
+meta {
+  name: Lista pública do produtor inclui avaliação nova e exclui a denunciada
+  type: http
+  seq: 44
+}
+
+get {
+  url: {{baseUrl}}/reviews/producers/dca000000000000000000004
+  body: none
+  auth: none
+}
+
+tests {
+  test("Lista pública do produtor inclui avaliação nova e exclui a denunciada", function() {
+    expect(res.getStatus()).to.equal(200);
+    const { items } = res.getBody();
+    const review = items.find(item => item.comentario === bru.getVar("testRun") + " avaliação de produtor");
+    expect(review).to.be.an("object");
+    expect(review.classificacao).to.equal(4);
+    expect(items.map(item => item._id)).not.to.include("dca0000000000000000001f6");
+    expect(review).not.to.have.any.keys("encomendaId", "denuncias", "ultimaDecisao");
+  });
+}

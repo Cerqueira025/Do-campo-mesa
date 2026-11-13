@@ -119,11 +119,13 @@ test(
       const initial = (
         await Review.findById(review._id)
       ).updatedAt.toISOString();
-      const responses = await Promise.all([
-        invoke("/:id/denuncias", { motivo: "$literal motivo" }),
-        invoke("/:id/denuncias", { motivo: "Duplicada" }),
-      ]);
+      const reasons = ["$literal motivo", "$literal duplicada"];
+      const responses = await Promise.all(
+        reasons.map((motivo) => invoke("/:id/denuncias", { motivo })),
+      );
       assert.deepEqual(responses.map((item) => item.code).sort(), [201, 409]);
+      const acceptedReason =
+        reasons[responses.findIndex(({ code }) => code === 201)];
       assert.equal(
         (await invoke("/:id/denuncias", { motivo: "Produtor" }, seedId(4)))
           .code,
@@ -135,10 +137,10 @@ test(
       });
       const stored = await Review.findById(review._id).select("+denuncias");
       assert.equal(stored.denuncias.length, 2);
-      assert.equal(stored.denuncias[0].motivo, "$literal motivo");
+      assert.equal(stored.denuncias[0].motivo, acceptedReason);
       const administrative = await consultAdmin(review._id);
       assert.equal(administrative.totalDenuncias, 2);
-      assert.equal(administrative.denuncias[0].motivo, "$literal motivo");
+      assert.equal(administrative.denuncias[0].motivo, acceptedReason);
       assert.equal(
         administrative.denuncias[0].autorId.nome,
         "Restaurante Demo",

@@ -1,0 +1,26 @@
+meta {
+  name: Admin bloqueia produto temporário
+  type: http
+  seq: 34
+}
+
+patch {
+  url: {{baseUrl}}/admin/products/{{functionalProduct1}}/moderacao
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+body:json {
+  {"bloqueado":true,"motivo":"Moderação no cenário Bruno","decisaoAnterior":null}
+}
+
+tests {
+  test("Admin bloqueia produto temporário", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody()).to.deep.equal({ _id: bru.getVar("functionalProduct1"), bloqueado: true });
+  });
+}

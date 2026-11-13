@@ -1,0 +1,26 @@
+meta {
+  name: Admin não repõe produto com decisão desatualizada
+  type: http
+  seq: 36
+}
+
+patch {
+  url: {{baseUrl}}/admin/products/{{functionalProduct1}}/moderacao
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+body:json {
+  {"bloqueado":false,"decisaoAnterior":null}
+}
+
+tests {
+  test("Admin não repõe produto com decisão desatualizada", function() {
+    expect(res.getStatus()).to.equal(409);
+    expect(res.getBody().erro).to.equal("A decisão já foi alterada. Atualize os dados e confirme novamente.");
+  });
+}
