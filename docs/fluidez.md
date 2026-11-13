@@ -25,17 +25,18 @@ Mudanças de identificador reiniciam o estado e cancelam pedidos anteriores. Pro
 
 ## Recursos e API
 
-Na versão desta medição, seis imagens de produtos tinham variantes WebP de 480 e 960 px, com transparência preservada.
-Atualmente, as 20 imagens de produtos disponíveis no projeto usam variantes locais nesses tamanhos.
+As fotografias carregadas pelos produtores e as imagens locais incluídas no
+projeto têm variantes WebP de 480 e 960 px. As imagens locais servem os registos
+antigos, conforme descrito nos [dados de demonstração](dados-funcionais.md#identificadores-dos-dados).
 Os cartões e produtos relacionados usam carregamento lazy; o detalhe carrega a sua imagem imediatamente.
-O mapa continua lazy. Se não houver imagem local ou esta falhar, é apresentada uma mensagem.
-
-O conjunto de imagens substituído passou de **10 105 161 bytes para 841 762 bytes**, incluindo todas as variantes:
-**redução de 91,7%**. Os originais substituídos sem referências foram removidos.
+O mapa continua lazy. Se não houver imagem de produto ou esta falhar, é apresentada uma mensagem.
 
 `GET /api/products/:id` carrega apenas o produto publicado e o respetivo produtor aceite,
-reduzindo de três para duas consultas num detalhe existente. Mantém a resposta pública e devolve 404
-para produto privado, inexistente ou com produtor indisponível. Não existem alterações aos schemas ou índices.
+usando duas consultas num detalhe existente. Devolve 404 para produto privado,
+inexistente ou com produtor indisponível.
+
+Para repetir as verificações, segue o [README](../README.md#verificações) e as
+[instruções para testar com Bruno](operacoes-locais.md#testar-a-api-com-bruno).
 
 ## Verificação histórica
 
@@ -52,12 +53,13 @@ atuais nem testes repetidos na revisão documental de 3 de novembro de 2026.
   fallback de imagem remota e leilão terminado.
 - As verificações visuais confirmaram a composição das imagens e o carregamento do mapa quando entra na área visível.
 
-Os testes unitários correm com `npm test` em `frontend/` e `api/`; os testes REST correm com
-`npm run test:api` em `api/`, com a API iniciada. Não executar os testes REST simultaneamente com alterações aos dados de demonstração.
-
 ## Medições históricas
 
 Os resultados e as condições de medição encontram-se em `fluidez-medicoes.json`.
+Na intervenção medida, seis imagens de produtos passaram para WebP de 480 e 960 px,
+com transparência preservada. O conjunto passou de **10 105 161 para 841 762 bytes**,
+incluindo as variantes (**menos 91,7%**). As consultas da API para um detalhe
+existente passaram de três para duas, sem alterações aos schemas ou índices.
 As execuções interrompidas por alterações do Vite foram excluídas dos resultados finais.
 As medidas locais são comparações de laboratório e não garantias de tempo em todas as máquinas ou redes.
 

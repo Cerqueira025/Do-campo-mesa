@@ -62,8 +62,10 @@ Converter cada ID numérico com `seedId(n)` de `api/src/scripts/seed-data.js`:
 O stock dos produtos representa a disponibilidade remanescente; não é deduzido novamente ao inserir encomendas históricas.
 As linhas guardam preços históricos diferentes dos atuais. Valores monetários são cêntimos inteiros;
 o total soma o arredondamento individual de cada linha. Existem stocks zero e fracionários e as quatro unidades suportadas.
-As imagens dos produtos são escolhidas no frontend pelo nome, a partir de ficheiros WebP locais.
-Produtos sem imagem correspondente apresentam “Imagem indisponível”.
+O frontend mostra a fotografia carregada pelo produtor quando existe. Nos registos
+antigos sem o campo `fotografia`, procura uma imagem WebP local pelo nome do produto.
+Se o campo estiver explicitamente vazio (`null`), se não houver imagem local
+correspondente ou se a imagem falhar, apresenta «Imagem indisponível».
 
 ## Resultados esperados após inserção inicial
 
@@ -79,11 +81,20 @@ de leilões posteriores. Não são contagens da base atualmente configurada.
 - Leilões 4006 e 4009 não têm licitações; o valor atual mantém o preço base e o comprador é nulo.
 - Pedidos de encomenda a produtores não aceites devolvem 409. Uma compra com vários produtores aceites devolve 201 e uma lista com uma encomenda por produtor, mesmo quando existe apenas um. A criação e a reserva de stock são uma única transação; uma falha reverte o conjunto. Preços, nomes e unidades enviados pelo cliente são ignorados; linhas do mesmo produto são consolidadas.
 
-Nas compras do catálogo, as quantidades seguem as regras partilhadas em
+## Regras de quantidade partilhadas
+
+Nas compras do catálogo e na criação de novos leilões, as quantidades seguem as regras partilhadas em
 `shared/purchaseQuantity.mjs`: múltiplos de 1 para `unidade`, de 100 para `g` e de
 0,5 para `kg` e `l`, com mínimo igual ao passo. Stock positivo inferior ao mínimo
-não permite uma compra válida. Estas restrições das compras não alteram os
-snapshots históricos nem a validação própria das quantidades de um lote de leilão.
+não permite uma compra válida nem a inclusão do produto num novo lote. A API
+usa a unidade do produto e valida o stock ao criar o leilão. Estas regras não
+alteram as quantidades já gravadas.
+O ficheiro `shared/purchaseQuantity.mjs` concentra os mínimos, incrementos e
+validação usados tanto pela API como pelo frontend. O ficheiro adjacente
+`purchaseQuantity.d.mts` declara os tipos para o TypeScript. O frontend acrescenta
+em `frontend/src/features/products/purchaseQuantity.ts` a lógica de stock e
+carrinho; a API reexporta as regras em `api/src/domain/purchaseQuantity.js`.
+
 Os dados gerados para uma base nova usam quantidades válidas nas compras e stock
 igual ou superior ao mínimo nos produtos com stock positivo. Como o seed preserva
 registos existentes, bases já inicializadas não são alteradas automaticamente.
@@ -125,6 +136,33 @@ eventos. Um leilão com reserva e vencedor gera uma encomenda única no fecho.
 O vencedor escolhe levantamento ou entrega no detalhe da encomenda para a confirmar.
 Leilões históricos já terminados não são convertidos retroativamente.
 A interface apresenta 24 produtos por página, com Anterior/Seguinte e `page` na URL.
+
+Cada licitação aplica-se ao lote completo, cuja imagem de capa vem do primeiro produto.
+O exemplo 4004 contém 2 kg de Batata e 10 g de Mel. O seed insere este lote
+diretamente na base; a API recusaria um pedido de criação com 10 g, pois o mínimo
+para essa unidade é 100 g.
+Se reutilizares uma base antiga, segue as [instruções de migração](operacoes-locais.md#migrar-leilões-antigos)
+com a API parada.
+
+## Demonstrar uma compra com dois produtores
+
+Usa uma base de demonstração preparada como descrito acima. Mantém as sessões do
+comprador e do produtor em perfis de navegador separados.
+
+1. Entra como `ana@example.test`. No catálogo, adiciona **1 kg de Batata** da
+   Quinta 1 (produto 2001) e **1 kg de Batata** da Quinta 2 (produto 2011).
+   No carrinho, confirma que os artigos estão agrupados por produtor.
+2. Abre **Finalizar encomenda**, escolhe **Levantamento junto de cada produtor**
+   e seleciona **Confirmar encomendas**. Em **Encomendas**, verifica que foram criadas duas encomendas
+   pendentes, cada uma com o artigo do respetivo produtor.
+3. Entra como `quinta1@example.test` e abre **Encomendas** na área do produtor.
+   Abre a encomenda recém-criada e avança pela ordem **Confirmada → Pronta →
+   Entregue**. Na sessão do comprador, confirma que só essa encomenda mudou de
+   estado.
+4. Como comprador, abre a encomenda entregue e usa **Avaliar esta encomenda**
+   para classificar o produto. Confirma que a avaliação aparece na encomenda
+   e no detalhe público do produto. A segunda encomenda, ainda pendente, não
+   permite avaliar.
 
 ## Demonstrar um leilão com dois compradores
 
@@ -169,10 +207,3 @@ nem os totais atuais. Os comandos e os fluxos atuais estão descritos acima.
 - Foram inseridos exatamente 141 documentos. A repetição inseriu zero e a comparação do conteúdo completo confirmou preservação dos documentos e dos timestamps.
 - Índices existentes confirmados, incluindo o índice único de email.
 - A base continha uma conta adicional aos exemplos: os totais após expansão são 19 utilizadores, 39 produtos, 27 encomendas, 12 leilões, 27 licitações e 38 avaliações.
-
-Os leilões usam `produtos`, uma lista obrigatória com quantidade e unidade por produto.
-O exemplo 4004 é um lote misto de 2 kg de Batata e 10 g de Mel do mesmo produtor;
-as regras de compra do catálogo não se aplicam às quantidades deste lote.
-Esse exemplo só é acrescentado em novas inserções; o seed preserva leilões já existentes.
-A imagem de capa vem do primeiro produto e a licitação aplica-se ao lote completo.
-Antes de usar uma base antiga, executar a migração descrita no README, com a API parada.

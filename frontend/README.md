@@ -26,6 +26,8 @@ Os estilos específicos ficam junto do componente, em ficheiros `.scss`. Usa `@u
 
 O cliente HTTP partilhado fica em `src/api/client.ts`. Não é necessário criar subpastas para cada hook ou serviço.
 
+As [regras de quantidade partilhadas](../docs/dados-funcionais.md#regras-de-quantidade-partilhadas) são usadas pela API e pelo frontend.
+
 Os campos reutilizáveis ficam em `src/components/ui/input/`: `InputField` recebe os atributos nativos de um input, `label`, `icon` e `hint`; `PasswordField` acrescenta a opção de mostrar/ocultar a password. Ambos reutilizam `FormField`, que também envolve selects e textareas e concentra os estilos em `FormField.scss`. O `InputField` associa automaticamente a dica ao input através de `aria-describedby`.
 
 ## Bootstrap 5
@@ -119,6 +121,17 @@ carrinho, sessão, páginas protegidas e atualização de encomendas. O workflow
 `.github/workflows/frontend.yml` executa ambos os grupos através de `npm test`.
 
 ## Área do produtor
+
+### Resumo de vendas e stock
+
+O resumo conta apenas as encomendas entregues, pela data da entrega no fuso de
+Lisboa. O gráfico mostra o mês atual, os últimos seis meses ou o ano atual.
+Os cabazes de leilão com vários produtos entram no total de vendas, mas ficam
+fora do ranking por produto porque têm um preço único para todo o lote.
+
+O aviso de stock mostra até cinco produtos publicados e desbloqueados com stock
+igual ou inferior a cinco na unidade de cada produto. Os produtos com menos
+stock aparecem primeiro.
 
 ### Gestão de produtos
 

@@ -33,5 +33,3 @@ O backoffice Laravel é opcional e concentra o diagnóstico dos serviços. A adm
 O repositório inclui testes da API, testes de interação no frontend e uma coleção Bruno para exercitar os endpoints. Entre os cenários cobertos estão permissões, mudanças de estado das encomendas, reserva e devolução de stock e licitações concorrentes. O [README](../README.md) indica como executar a aplicação e os testes.
 
 Em 11 de novembro de 2026, os [testes de integração com MongoDB Atlas](operacoes-locais.md#validar-leilões-com-mongodb-real) passaram: 10 subtestes e o teste que os agrupa, sem falhas nem testes ignorados. Dois compradores enviaram lances iguais por WebSocket: o servidor aceitou um só lance, guardou um registo no histórico e comunicou o mesmo estado aos dois clientes. Um subteste separado confirmou que o fecho concorrente cria uma única encomenda. A entrega das notificações privadas de fecho não foi verificada nessa execução. O workflow da API também está configurado para executar a suite de integração num replica set próprio.
-
-**Uso de IA:** foi utilizado o Codex para consultar o repositório e preparar esta versão do relatório.
