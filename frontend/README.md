@@ -93,7 +93,7 @@ npm ci
 npm run dev -- --host 127.0.0.1 --port 5173 --strictPort
 ```
 
-O frontend usa `http://127.0.0.1:8000` para o backoffice. Para alterar, copia `.env.example` para `.env` e define `VITE_BACKOFFICE_URL`. Nunca coloques `JWT_SECRET` ou `BACKOFFICE_SECRET` em variáveis `VITE_*`. Usa `127.0.0.1` também nos endereços Laravel e na origem `MARKETPLACE_SITE_URL`, conforme [a preparação do backoffice](../backoffice/app/README.md#preparação-local).
+O frontend usa `http://127.0.0.1:8000` para o backoffice. Para alterar, copia `.env.example` para `.env` e define `VITE_BACKOFFICE_URL`. Nunca coloques `JWT_SECRET` ou `BACKOFFICE_SECRET` em variáveis `VITE_*`. Usa `127.0.0.1` também nos endereços Laravel e na origem `MARKETPLACE_SITE_URL`, conforme [a preparação do backoffice](../backoffice/README.md#preparação-local).
 
 ## Verificações
 

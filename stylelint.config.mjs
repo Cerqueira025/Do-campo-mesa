@@ -4,12 +4,12 @@ export default {
     {
       files: [
         "frontend/src/**/*.scss",
-        "backoffice/app/resources/css/**/*.scss",
+        "backoffice/resources/css/**/*.scss",
       ],
       extends: ["stylelint-config-recommended-scss"],
     },
     {
-      files: ["backoffice/app/resources/css/**/*.css"],
+      files: ["backoffice/resources/css/**/*.css"],
       rules: {
         "at-rule-no-unknown": [
           true,

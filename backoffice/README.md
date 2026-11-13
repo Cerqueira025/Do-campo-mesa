@@ -6,7 +6,7 @@ Painel Laravel 13 com Blade e Eloquent, aberto pelo botão **Serviços e sistema
 
 Requisitos: PHP 8.5 com PDO SQLite (versão usada pelas dependências bloqueadas), Composer, Node.js e a base MongoDB já configurada para a API. Não há criação de novas contas administrativas nem cópia dos dados do marketplace para SQLite.
 
-1. Na raiz da aplicação Laravel (`backoffice/app`), executar `composer install` e `npm ci`.
+1. Na raiz da aplicação Laravel (`backoffice`), executar `composer install` e `npm ci`.
 2. Copiar `.env.example` para `.env` se ainda não existir. Executar `php artisan key:generate` apenas se `APP_KEY` estiver vazia.
 3. Gerar um segredo aleatório com pelo menos 32 caracteres e colocar o mesmo `BACKOFFICE_SECRET` em `api/.env` e no `.env` do Laravel. Não usar `JWT_SECRET` para este propósito. Nunca colocar este segredo no frontend.
 4. Manter `DB_CONNECTION=sqlite`, `SESSION_DRIVER=database` e `SESSION_ENCRYPT=true`. Criar `database/database.sqlite` se necessário e executar `php artisan migrate`.
@@ -43,7 +43,7 @@ npm run dev -- --host 127.0.0.1 --port 5173 --strictPort
 ```
 
 ```powershell
-# backoffice/app
+# backoffice
 php artisan serve --host=127.0.0.1 --port=8000
 ```
 

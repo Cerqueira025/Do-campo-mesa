@@ -228,7 +228,7 @@ class BackofficeTest extends TestCase
 
     public function test_real_openapi_document_can_be_read_by_the_runtime_yaml_parser(): void
     {
-        $specification = Yaml::parseFile(base_path('../../docs/openapi.yaml'));
+        $specification = Yaml::parseFile(base_path('../docs/openapi.yaml'));
         $this->assertSame('3.0.3', $specification['openapi']);
         $this->assertArrayHasKey('/admin/services', $specification['paths']);
     }

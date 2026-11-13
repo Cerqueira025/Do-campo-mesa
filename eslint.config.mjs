@@ -7,15 +7,15 @@ export default defineConfig([
     '**/node_modules/**',
     '**/dist/**',
     '**/coverage/**',
-    'backoffice/app/vendor/**',
-    'backoffice/app/storage/**',
-    'backoffice/app/bootstrap/cache/**',
-    'backoffice/app/public/build/**',
+    'backoffice/vendor/**',
+    'backoffice/storage/**',
+    'backoffice/bootstrap/cache/**',
+    'backoffice/public/build/**',
   ]),
   {
     files: [
       'api/**/*.js',
-      'backoffice/app/vite.config.js',
+      'backoffice/vite.config.js',
       '*.config.mjs',
     ],
     extends: [js.configs.recommended],
@@ -24,7 +24,7 @@ export default defineConfig([
     },
   },
   {
-    files: ['backoffice/app/resources/js/**/*.js'],
+    files: ['backoffice/resources/js/**/*.js'],
     extends: [js.configs.recommended],
     languageOptions: {
       globals: globals.browser,
