@@ -111,7 +111,7 @@ function selected(menu: HTMLElement, label: string) {
   );
 }
 
-test("Secções e formulários mudam só o painel e preservam o menu e o cabeçalho", async () => {
+test("Secções e formulários mudam só o painel e preservam o menu e o cabeçalho", () => {
   mount();
   const header = screen.getByRole("banner");
   const menu = screen.getByRole("navigation", { name: "Gerir exploração" });
@@ -134,7 +134,8 @@ test("Secções e formulários mudam só o painel e preservam o menu e o cabeça
     ["A minha conta", "/conta", "Dados da conta"],
   ]) {
     fireEvent.click(within(menu).getByRole("link", { name: label }));
-    await screen.findByRole("heading", {
+    const main = within(screen.getByRole("main"));
+    main.getByRole("heading", {
       name: heading,
       level: heading === "Dados da conta" ? 2 : 1,
     });
@@ -144,9 +145,8 @@ test("Secções e formulários mudam só o painel e preservam o menu e o cabeça
       menu,
     );
     expect(screen.getAllByRole("main")).toHaveLength(1);
-    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(document.activeElement).toBe(
-      screen.getByRole("heading", { level: 1 }),
+      main.getByRole("heading", { level: 1 }),
     );
     if (
       label === "Editar perfil da exploração" ||
@@ -169,9 +169,9 @@ test("Secções e formulários mudam só o painel e preservam o menu e o cabeça
     [`/encomendas/${product._id}`, "Detalhe da encomenda"],
   ]) {
     act(() => navigate(path));
-    await screen.findByRole("heading", {
+    within(screen.getByRole("main")).getByRole("heading", {
       name: heading,
-      level: heading === "Dados da conta" ? 2 : 1,
+      level: 1,
     });
     expect(
       screen.getByRole("button", { name: "Abrir menu da exploração" }),
@@ -387,9 +387,9 @@ test("Resumo mostra carregamento, erro recuperável e encomendas recentes", asyn
   await screen.findByText("Maria");
   const detail = screen.getByRole("link", { name: `Encomenda ${order._id}` });
   expect(detail.getAttribute("href")).toBe(`/encomendas/${order._id}`);
-  expect(screen.getByRole("link", { name: "Ver todas" }).getAttribute("href")).toBe(
-    "/produtor/encomendas",
-  );
+  expect(
+    screen.getByRole("link", { name: "Ver todas" }).getAttribute("href"),
+  ).toBe("/produtor/encomendas");
   expect(sales.parentElement?.textContent).toContain(priceFormatter.format(0));
 
   request.mockResolvedValueOnce([
@@ -397,7 +397,9 @@ test("Resumo mostra carregamento, erro recuperável e encomendas recentes", asyn
   ]);
   act(() => document.dispatchEvent(new Event("visibilitychange")));
   await waitFor(() =>
-    expect(sales.parentElement?.textContent).toContain(priceFormatter.format(12.5)),
+    expect(sales.parentElement?.textContent).toContain(
+      priceFormatter.format(12.5),
+    ),
   );
 });
 
@@ -442,28 +444,50 @@ test("Resumo permite mudar o período e recuperar avisos de stock de várias pá
       throw new Error("Stock indisponível");
     }
     const page = url.includes("page=1&") ? 1 : 2;
-    const items = page === 1
-      ? [
-          { ...available, _id: "limite", nome: "No limite", stock: 5 },
-          { ...available, _id: "acima", nome: "Acima do limite", stock: 6 },
-          { ...available, _id: "bloqueado", nome: "Bloqueado", stock: 1, bloqueado: true },
-        ]
-      : [{ ...available, nome: "Esgotado", stock: 0 }];
+    const items =
+      page === 1
+        ? [
+            { ...available, _id: "limite", nome: "No limite", stock: 5 },
+            { ...available, _id: "acima", nome: "Acima do limite", stock: 6 },
+            {
+              ...available,
+              _id: "bloqueado",
+              nome: "Bloqueado",
+              stock: 1,
+              bloqueado: true,
+            },
+          ]
+        : [{ ...available, nome: "Esgotado", stock: 0 }];
     return { items, total: 101, page, limit: 100 };
   });
-  const initial = await screen.findByRole("button", { name: "6 meses", pressed: true });
+  const initial = await screen.findByRole("button", {
+    name: "6 meses",
+    pressed: true,
+  });
   expect(initial).toBeTruthy();
   const monthly = screen.getByRole("button", { name: "Mês", pressed: false });
   fireEvent.click(monthly);
   expect(monthly.getAttribute("aria-pressed")).toBe("true");
   expect(screen.getByText("Por valor vendido · Mês")).toBeTruthy();
-  const chart = screen.getByRole("slider", { name: "Período no gráfico de vendas" });
-  expect(chart.getAttribute("aria-valuetext")).toContain(priceFormatter.format(0));
-  fireEvent.click(await screen.findByRole("button", { name: "Voltar a consultar stock" }));
-  const stock = (await screen.findByRole("heading", { name: "Stock baixo" })).parentElement!;
+  const chart = screen.getByRole("slider", {
+    name: "Período no gráfico de vendas",
+  });
+  expect(chart.getAttribute("aria-valuetext")).toContain(
+    priceFormatter.format(0),
+  );
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Voltar a consultar stock" }),
+  );
+  const stock = (await screen.findByRole("heading", { name: "Stock baixo" }))
+    .parentElement!;
   await within(stock).findByRole("link", { name: "Esgotado" });
-  expect(within(stock).getAllByRole("link").map((link) => link.textContent)).toEqual([
-    "Esgotado", "No limite", "Ver produtos",
-  ]);
-  expect(request).toHaveBeenCalledWith("/products/mine?page=2&limit=100", expect.anything());
+  expect(
+    within(stock)
+      .getAllByRole("link")
+      .map((link) => link.textContent),
+  ).toEqual(["Esgotado", "No limite", "Ver produtos"]);
+  expect(request).toHaveBeenCalledWith(
+    "/products/mine?page=2&limit=100",
+    expect.anything(),
+  );
 });

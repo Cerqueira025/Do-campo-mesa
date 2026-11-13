@@ -10,18 +10,9 @@ permissions:
 jobs:
   test-api:
     runs-on: ubuntu-latest
-    services:
-      mongodb:
-        image: mongo:7
-        ports:
-          - 27017:27017
-        options: >-
-          --health-cmd "mongosh --quiet --eval 'db.adminCommand(\"ping\").ok'"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
     env:
-      MONGODB_URI: mongodb://127.0.0.1:27017
+      MONGODB_URI: mongodb://127.0.0.1:27017/?replicaSet=ci
+      MONGODB_TEST_URI: mongodb://127.0.0.1:27017/?replicaSet=ci
       MONGODB_DB_NAME: do_campo_a_mesa_test
       JWT_SECRET: ci-only-secret-that-is-at-least-32-characters-long
 
@@ -37,7 +28,28 @@ jobs:
         working-directory: api
         run: npm ci
 
-      - name: Run model tests
+      - name: Start MongoDB replica set
+        run: |
+          docker run --detach --name mongodb-ci --publish 127.0.0.1:27017:27017 \
+            mongo:7 --replSet ci --bind_ip_all
+          for attempt in {1..30}; do
+            if docker exec mongodb-ci mongosh --quiet --eval \
+              'rs.initiate({_id: "ci", members: [{_id: 0, host: "127.0.0.1:27017"}]})'; then
+              break
+            fi
+            sleep 1
+          done
+          for attempt in {1..30}; do
+            if docker exec mongodb-ci mongosh --quiet --eval \
+              'quit(db.hello().isWritablePrimary ? 0 : 1)'; then
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs mongodb-ci
+          exit 1
+
+      - name: Run API tests
         working-directory: api
         run: npm test
 

@@ -100,7 +100,9 @@ test("Cria um lote com um produto e abre o detalhe, sem enviar campos de stock",
   const before = Date.now();
   submit();
   await waitFor(() =>
-    expect(navigate).toHaveBeenCalledWith(`/produtor/leiloes/${auctionId}?criado=1`),
+    expect(navigate).toHaveBeenCalledWith(
+      `/produtor/leiloes/${auctionId}?criado=1`,
+    ),
   );
   const [path, options] = request.mock.calls.at(-1)!;
   expect(path).toBe("/auctions");
@@ -217,10 +219,11 @@ test("Uma falha numa página impede submeter dados parciais e permite repetir o 
       <AuctionForm />
     </AuthContext.Provider>,
   );
-  expect((await screen.findByRole("alert")).textContent).toContain(
-    "Ligação interrompida",
-  );
-  expect(document.activeElement).toBe(screen.getByRole("alert"));
+  await waitFor(() => {
+    const alert = screen.getByRole("alert");
+    expect(alert.textContent).toContain("Ligação interrompida");
+    expect(document.activeElement).toBe(alert);
+  });
   expect(screen.queryByRole("button", { name: "Criar leilão" })).toBeNull();
   request.mockResolvedValue(page([potato]));
   fireEvent.click(screen.getByRole("button", { name: "Tentar novamente" }));
@@ -350,14 +353,20 @@ test("Datas inválidas mostram erro junto ao campo e recebem foco", async () => 
   const end = screen.getByLabelText("Data e hora de fim");
   fireEvent.change(end, { target: { value: "2000-01-01T12:00" } });
   submit();
-  expect(screen.getByText("Escolha uma data e hora de fim futura.")).toBeTruthy();
+  expect(
+    screen.getByText("Escolha uma data e hora de fim futura."),
+  ).toBeTruthy();
   expect(end.getAttribute("aria-invalid")).toBe("true");
   expect(end.getAttribute("aria-describedby")).toBe("auction-end-error");
   expect(document.activeElement).toBe(end);
   choose("Início do leilão", "Agendar");
-  fireEvent.change(screen.getByLabelText("Data e hora de início"), { target: { value: "2099-01-01T15:00" } });
+  fireEvent.change(screen.getByLabelText("Data e hora de início"), {
+    target: { value: "2099-01-01T15:00" },
+  });
   fireEvent.change(end, { target: { value: "2099-01-01T14:00" } });
   submit();
-  expect(screen.getByText("O fim deve ser posterior ao início do leilão.")).toBeTruthy();
+  expect(
+    screen.getByText("O fim deve ser posterior ao início do leilão."),
+  ).toBeTruthy();
   expect(request).toHaveBeenCalledTimes(1);
 });

@@ -104,17 +104,24 @@ test("Resumo prioriza tarefas, usa contagens reais e mantém navegação fora do
   fireEvent.click(
     screen.getByRole("button", { name: "Fechar menu administrativo" }),
   );
-  expect(menu.hidden).toBe(true);
-  fireEvent.click(screen.getByRole("link", { name: /Ver utilizadores/ }));
-  await screen.findByRole("heading", { name: "Utilizadores", level: 1 });
-  expect(
-    screen
-      .getByRole("button", { name: "Abrir menu administrativo" })
-      .getAttribute("aria-expanded"),
-  ).toBe("false");
-  fireEvent.click(
-    screen.getByRole("button", { name: "Abrir menu administrativo" }),
-  );
+  try {
+    expect(menu.hidden).toBe(true);
+    fireEvent.click(
+      within(main).getByRole("link", { name: /Ver utilizadores/ }),
+    );
+    expect(
+      within(main).getByRole("heading", { name: "Utilizadores", level: 1 }),
+    ).toBeTruthy();
+    expect(
+      screen
+        .getByRole("button", { name: "Abrir menu administrativo" })
+        .getAttribute("aria-expanded"),
+    ).toBe("false");
+  } finally {
+    fireEvent.click(
+      screen.getByRole("button", { name: "Abrir menu administrativo" }),
+    );
+  }
 });
 
 test("Resumo vazio mantém atalhos secundários e permite recuperar de uma falha inicial", async () => {
