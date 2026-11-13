@@ -131,6 +131,8 @@ export function restoreNavigation(ready = true) {
   }
   window.scrollTo(0, 0);
   const heading = document.querySelector<HTMLElement>(
+    "main [data-navigation-content] h2",
+  ) ?? document.querySelector<HTMLElement>(
     'main h1, main [role="status"]',
   );
   if (heading) {

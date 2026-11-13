@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, raw } from "express";
 import mongoose from "mongoose";
 import Product from "../models/Product.js";
 import User from "../models/User.js";
@@ -7,6 +7,8 @@ import Auction from "../models/Auction.js";
 import { requireApprovedProducer, requireAuth } from "../middleware/auth.js";
 import { requireObjectBody } from "../middleware/requestBody.js";
 import { withProductRatings } from "../services/reviews.js";
+import { productPhotos } from "../services/productPhotos.js";
+import { photoMimeTypes, maxPhotoBytes } from "../domain/productPhoto.js";
 
 const router = Router();
 const publicProducer = {
@@ -32,7 +34,155 @@ const pickProduct = (body) =>
       .filter((field) => body[field] !== undefined)
       .map((field) => [field, body[field]]),
   );
+const managementFields = [
+  "_id",
+  ...fields.filter((field) => field !== "imagens"),
+  "createdAt",
+  "updatedAt",
+  "bloqueado",
+  "fotografia",
+];
+const managementProduct = (product) =>
+  Object.fromEntries(
+    managementFields
+      .map((field) => [
+        field,
+        field === "bloqueado" ? product[field] === true : product[field],
+      ])
+      .filter(([, value]) => value !== undefined),
+  );
+
+router.get(
+  "/mine",
+  requireAuth("produtor"),
+  requireApprovedProducer,
+  async (request, response, next) => {
+    try {
+      const { page = "1", limit = "24" } = request.query;
+      const pageNumber = Number(page),
+        limitNumber = Number(limit);
+      const skip = (pageNumber - 1) * limitNumber;
+      if (
+        [page, limit].some(
+          (value) => typeof value !== "string" || !/^\d+$/.test(value),
+        ) ||
+        !Number.isSafeInteger(pageNumber) ||
+        pageNumber < 1 ||
+        !Number.isSafeInteger(skip) ||
+        limitNumber < 1 ||
+        limitNumber > 100
+      )
+        return response.status(400).json({ erro: "Paginação inválida." });
+      const filter = { produtorId: request.user.id };
+      const [items, total] = await Promise.all([
+        Product.find(filter)
+          .select(managementFields.join(" "))
+          .sort({ createdAt: -1, _id: 1 })
+          .skip(skip)
+          .limit(limitNumber)
+          .lean(),
+        Product.countDocuments(filter),
+      ]);
+      response.set("Cache-Control", "no-store").json({
+        items: items.map(managementProduct),
+        page: pageNumber,
+        limit: limitNumber,
+        total,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+router.get(
+  "/mine/:id",
+  requireAuth("produtor"),
+  requireApprovedProducer,
+  async (request, response, next) => {
+    try {
+      if (!mongoose.isObjectIdOrHexString(request.params.id))
+        return response.status(404).json({ erro: "Produto não encontrado." });
+      const product = await Product.findOne({
+        _id: request.params.id,
+        produtorId: request.user.id,
+      })
+        .select(managementFields.join(" "))
+        .lean();
+      if (!product)
+        return response.status(404).json({ erro: "Produto não encontrado." });
+      response
+        .set("Cache-Control", "no-store")
+        .json(managementProduct(product));
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+async function ownPhotoProduct(request, response, next) {
+  try {
+    if (!mongoose.isObjectIdOrHexString(request.params.id))
+      return response.status(404).json({ erro: "Produto não encontrado." });
+    const product = await Product.findOne({
+      _id: request.params.id,
+      produtorId: request.user.id,
+    })
+      .select(managementFields.join(" "))
+      .lean();
+    if (!product)
+      return response.status(404).json({ erro: "Produto não encontrado." });
+    request.photoProduct = product;
+    next();
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function changePhoto(request, response, next) {
+  let uploaded;
+  try {
+    if (request.method === "PUT") {
+      const contentType = request
+        .get("content-type")
+        ?.split(";")[0]
+        .trim()
+        .toLowerCase();
+      if (!Object.hasOwn(photoMimeTypes, contentType))
+        return response
+          .status(415)
+          .json({ erro: "Envie uma fotografia JPEG, PNG ou WebP." });
+      if (!Buffer.isBuffer(request.body) || !request.body.length)
+        return response.status(400).json({ erro: "Selecione uma fotografia." });
+      uploaded = await productPhotos.save(request.body, contentType);
+    }
+    const previous = request.photoProduct.fotografia;
+    const product = await Product.findOneAndUpdate(
+      {
+        _id: request.params.id,
+        produtorId: request.user.id,
+        fotografia: previous === undefined ? { $exists: false } : previous,
+      },
+      { $set: { fotografia: uploaded ?? null } },
+      { new: true, runValidators: true },
+    ).select(managementFields.join(" "));
+    if (!product)
+      throw Object.assign(
+        new Error(
+          "O produto foi alterado ou removido. Atualize a página e tente novamente.",
+        ),
+        { status: 409 },
+      );
+    uploaded = undefined;
+    await productPhotos.remove(previous);
+    response.set("Cache-Control", "no-store").json(managementProduct(product));
+  } catch (error) {
+    if (uploaded) await productPhotos.remove(uploaded);
+    next(error);
+  }
+}
 
 router.get("/", async (request, response, next) => {
   try {
@@ -232,7 +382,7 @@ router.get("/filters", async (_request, response, next) => {
 router.get("/:id", async (request, response, next) => {
   try {
     if (!mongoose.isValidObjectId(request.params.id))
-      return response.status(404).json({ erro: "Produto não encontrado." });
+      return response.status(400).json({ erro: "ID de produto inválido." });
     const product = await Product.findOne({
       _id: request.params.id,
       publicado: true,
@@ -337,6 +487,7 @@ router.delete(
     let session;
     try {
       const filter = { _id: request.params.id, produtorId: request.user.id };
+      let deletedPhoto;
       session = await mongoose.startSession();
       await session.withTransaction(async () => {
         // A mesma escrita na criação de leilões serializa as duas operações.
@@ -370,7 +521,9 @@ router.delete(
           throw Object.assign(new Error("Produto não encontrado."), {
             status: 404,
           });
+        deletedPhoto = deleted.fotografia;
       });
+      await productPhotos.remove(deletedPhoto);
       response.status(204).end();
     } catch (error) {
       next(error);
@@ -378,6 +531,22 @@ router.delete(
       if (session) await session.endSession();
     }
   },
+);
+
+router.put(
+  "/:id/photo",
+  requireAuth("produtor"),
+  requireApprovedProducer,
+  ownPhotoProduct,
+  raw({ type: Object.keys(photoMimeTypes), limit: maxPhotoBytes }),
+  changePhoto,
+);
+router.delete(
+  "/:id/photo",
+  requireAuth("produtor"),
+  requireApprovedProducer,
+  ownPhotoProduct,
+  changePhoto,
 );
 
 export default router;

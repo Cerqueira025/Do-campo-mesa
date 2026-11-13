@@ -35,6 +35,30 @@ export async function cleanupBrunoAuction(id) {
   }
 }
 
+export async function cleanupBrunoOrder(id, userIds) {
+  const session = await mongoose.startSession();
+  try {
+    await session.withTransaction(async () => {
+      const order = await Order.findOneAndDelete(
+        { _id: id, compradorId: { $in: userIds }, leilaoId: null },
+        { session },
+      );
+      if (!order) return;
+      for (const line of order.linhas) {
+        const result = await Product.updateOne(
+          { _id: line.produtoId },
+          { $inc: { stock: line.quantidade } },
+          { session },
+        );
+        if (result.matchedCount !== 1)
+          throw new Error("Produto de encomenda de teste não encontrado.");
+      }
+    });
+  } finally {
+    await session.endSession();
+  }
+}
+
 export async function cleanupBrunoData() {
   const users = await User.find({ email: testUserEmail }).select("_id");
   const userIds = users.map((user) => user._id);
@@ -46,12 +70,7 @@ export async function cleanupBrunoData() {
 
   for (const order of orders) {
     if (order.leilaoId) continue;
-    for (const line of order.linhas) {
-      await Product.updateOne(
-        { _id: line.produtoId },
-        { $inc: { stock: line.quantidade } },
-      );
-    }
+    await cleanupBrunoOrder(order._id, userIds);
   }
 
   const auctions = await Auction.find({ lote: testMarker }).select("_id");
@@ -62,7 +81,10 @@ export async function cleanupBrunoData() {
 
   await Review.deleteMany(reviewFilter);
   for (const id of auctionIds) await cleanupBrunoAuction(id);
-  await Order.deleteMany({ compradorId: { $in: userIds } });
+  await Order.deleteMany({
+    compradorId: { $in: userIds },
+    leilaoId: { $ne: null },
+  });
   await Product.deleteMany({ nome: testMarker });
   await User.deleteMany({ _id: { $in: userIds } });
 }

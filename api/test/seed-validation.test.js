@@ -14,11 +14,41 @@ import {
   Bid,
   Review,
 } from "../src/models/index.js";
+import {
+  quantityRules,
+  validPurchaseQuantity,
+} from "../../shared/purchaseQuantity.mjs";
 
 const hash = await bcrypt.hash("CampoMesaDemo123!", 4);
 const fresh = () => seedData(hash, new Date("2026-10-15T12:00:00Z"));
 const rows = (data, model) =>
   data.find(([candidate]) => candidate === model)[1];
+
+test("Dados novos respeitam as quantidades de compra e os stocks mínimos públicos", () => {
+  const data = fresh();
+  const approved = new Set(
+    rows(data, User)
+      .filter((user) => user.perfilProdutor?.validacao === "aceite")
+      .map((user) => String(user._id)),
+  );
+  for (const order of rows(data, Order).filter((item) => !item.leilaoId)) {
+    for (const line of order.linhas) {
+      assert.ok(
+        validPurchaseQuantity(line.quantidade, line.unidade),
+        `${order._id}: ${line.quantidade} ${line.unidade}`,
+      );
+    }
+  }
+  for (const product of rows(data, Product).filter(
+    (item) => item.publicado && approved.has(String(item.produtorId)),
+  )) {
+    assert.ok(
+      product.stock === 0 ||
+        product.stock >= quantityRules[product.unidade].min,
+      `${product._id}: ${product.stock} ${product.unidade}`,
+    );
+  }
+});
 
 test("Conjunto funcional cobre contagens, visibilidade, estados e médias dos filtros", async () => {
   const data = fresh();

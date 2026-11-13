@@ -4,9 +4,18 @@ import Order from "./Order.js";
 import Auction from "./Auction.js";
 import Bid from "./Bid.js";
 import Review from "./Review.js";
+import BackofficeCode from "./BackofficeCode.js";
 
 export { User, Product, Order, Auction, Bid, Review };
-export const models = [User, Product, Order, Auction, Bid, Review];
+export const models = [
+  User,
+  Product,
+  Order,
+  Auction,
+  Bid,
+  Review,
+  BackofficeCode,
+];
 
 export async function initializeCollections() {
   for (const model of models) {

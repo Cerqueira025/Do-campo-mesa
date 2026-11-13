@@ -320,6 +320,13 @@ test("Visitante assiste à sala pública; JWT inválido não obtém sala privada
   );
 });
 
+test("JWT anterior à redefinição não abre uma sessão Socket.IO", async (t) => {
+  const { connect, users } = setup(t);
+  users.get(buyer1).sessionVersion = 1;
+  assert.match((await connect(buyer1)).error.message, /Autenticação/);
+  assert.ok((await connect(producer)).rooms.has(`user:${producer}`));
+});
+
 test("IDs de leilão com capitalização diferente partilham sala, presença e transições", async (t) => {
   const { connect, emissions, io } = setup(t);
   const lower = await connect();

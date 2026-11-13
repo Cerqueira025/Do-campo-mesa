@@ -9,6 +9,7 @@ import {
   Auction,
   Bid,
   Review,
+  models,
 } from "../src/models/index.js";
 
 const passwordHash = await bcrypt.hash("CampoMesaDemo123!", 4);
@@ -193,10 +194,12 @@ test("IDs do seed permanecem estáveis mesmo quando as datas mudam", () => {
 
 test("Seed repetido preserva documentos e timestamps existentes", async (t) => {
   const collections = new Map();
-  for (const [model] of fixtures) {
-    const stored = new Map();
+  for (const model of models) {
     t.mock.method(model, "createCollection", async () => {});
     t.mock.method(model, "createIndexes", async () => {});
+  }
+  for (const [model] of fixtures) {
+    const stored = new Map();
     t.mock.method(model, "find", (filter) => ({
       select: () => ({
         lean: async () =>

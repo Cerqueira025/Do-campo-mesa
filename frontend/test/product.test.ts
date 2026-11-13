@@ -74,3 +74,22 @@ test("Mapa só é disponibilizado com coordenadas válidas, incluindo zero", () 
   );
   assert.match(originMapUrl({ latitude: 0, longitude: 0 })!, /query=0%2C0/);
 });
+
+test("Fotografia carregada é independente do nome e null remove a imagem antiga", () => {
+  const fotografia = "11111111-1111-4111-8111-111111111111";
+  const first = productImages({ nome: "Batata", fotografia });
+  assert.equal(first.image, `/api/uploads/products/${fotografia}-960.webp`);
+  assert.equal(
+    first.srcSet,
+    `/api/uploads/products/${fotografia}-480.webp 480w, /api/uploads/products/${fotografia}-960.webp 960w`,
+  );
+  assert.deepEqual(productImages({ nome: "Outro nome", fotografia }), first);
+  assert.equal(mapProduct({ ...product, fotografia }).image, first.image);
+  assert.equal(
+    productImages({ nome: "Batata", fotografia: null }).image,
+    undefined,
+  );
+  assert.ok(
+    productImages({ nome: "Batata" }).image?.endsWith("Batata-960.webp"),
+  );
+});

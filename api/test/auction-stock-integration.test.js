@@ -1,8 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
+import { once } from "node:events";
+import { createServer } from "node:http";
 import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
+import { Server } from "socket.io";
+import { io as connectSocket } from "socket.io-client";
 import {
   Auction,
   Bid,
@@ -465,125 +469,135 @@ test(
             dataFim: new Date(Date.now() + 300000),
           });
           await processAuctionStock(auction.id, now);
-          const rooms = new Map();
-          const broadcasts = [];
-          const io = {
-            sockets: { adapter: { rooms } },
-            use(handler) {
-              this.middleware = handler;
-            },
-            on(_name, handler) {
-              this.connection = handler;
-            },
-            to(name) {
-              return {
-                emit(event, payload) {
-                  broadcasts.push({ name, event, payload });
-                },
-              };
-            },
-          };
-          registerSockets(io);
-          async function connect(user) {
-            const handlers = new Map();
-            const socket = {
-              data: {},
-              handshake: {
+          const server = createServer();
+          const io = new Server(server);
+          const clients = [];
+          const previousSecret = process.env.JWT_SECRET;
+          process.env.JWT_SECRET = randomUUID();
+          try {
+            registerSockets(io);
+            await new Promise((resolve) =>
+              server.listen(0, "127.0.0.1", resolve),
+            );
+            const url = `http://127.0.0.1:${server.address().port}`;
+            const received = [[], []];
+            const presence = [[], []];
+            for (const [index, user] of users.slice(1, 3).entries()) {
+              const socket = connectSocket(url, {
                 auth: {
                   token: jwt.sign(
                     { id: String(user._id) },
                     process.env.JWT_SECRET,
-                    { expiresIn: "1h" },
+                    {
+                      expiresIn: "1h",
+                    },
                   ),
                 },
-              },
-              on(name, handler) {
-                handlers.set(name, handler);
-              },
-              emit() {},
-              join(name) {
-                if (!rooms.has(name)) rooms.set(name, new Set());
-                rooms.get(name).add(this);
-              },
-              leave(name) {
-                rooms.get(name)?.delete(this);
-              },
-              disconnect() {
-                handlers.get("disconnecting")?.();
-                for (const name of rooms.keys()) this.leave(name);
-                handlers.get("disconnect")?.();
-              },
-              trigger(name, ...args) {
-                return handlers.get(name)?.(...args);
-              },
+                transports: ["websocket"],
+                reconnection: false,
+                autoConnect: false,
+              });
+              clients.push(socket);
+              socket.on("nova-licitacao", (bid) => received[index].push(bid));
+              socket.on("presenca", (count) => presence[index].push(count));
+              const connected = once(socket, "connect", {
+                signal: AbortSignal.timeout(5000),
+              });
+              socket.connect();
+              await connected;
+            }
+
+            async function enter(socket) {
+              const state = once(socket, "estado", {
+                signal: AbortSignal.timeout(5000),
+              });
+              const [ack, [snapshot]] = await Promise.all([
+                socket.timeout(5000).emitWithAck("entrar", auction.id),
+                state,
+              ]);
+              assert.deepEqual(ack, { ok: true });
+              return snapshot;
+            }
+
+            const before = Date.now();
+            for (const snapshot of await Promise.all(clients.map(enter))) {
+              assert.equal(snapshot.leilao.licitacaoAtual.valor, 100);
+              assert.deepEqual(snapshot.licitacoes, []);
+              assert.ok(Date.parse(snapshot.agora) >= before);
+              assert.ok(Date.parse(snapshot.agora) <= Date.now());
+            }
+
+            const placeBid = (socket, valor) =>
+              socket.timeout(15000).emitWithAck("licitar", {
+                leilaoId: auction.id,
+                valor,
+              });
+            const answers = await Promise.all(
+              clients.map((socket) => placeBid(socket, 110)),
+            );
+            const winner = answers.findIndex((answer) => answer.ok);
+            assert.deepEqual(answers.map((answer) => answer.ok).sort(), [
+              false,
+              true,
+            ]);
+            assert.deepEqual(answers[winner], { ok: true, valor: 110 });
+            assert.match(answers[1 - winner].erro, /Licitação mínima: 1\.20/);
+            const winnerId = String(users[winner + 1]._id);
+
+            const [savedBids, savedAuction] = await Promise.all([
+              Bid.find({ leilaoId: auction.id }).lean(),
+              Auction.findById(auction.id).lean(),
+            ]);
+            assert.equal(savedBids.length, 1);
+            const [bid] = savedBids;
+            assert.equal(bid.valor, 110);
+            assert.equal(String(bid.compradorId), winnerId);
+            assert.equal(savedAuction.licitacaoAtual.valor, 110);
+            assert.equal(
+              String(savedAuction.licitacaoAtual.compradorId),
+              winnerId,
+            );
+
+            const expectedBid = {
+              _id: String(bid._id),
+              valor: 110,
+              compradorId: winnerId,
+              nome: users[winner + 1].nome,
+              createdAt: bid.createdAt.toISOString(),
             };
-            const error = await new Promise((resolve) =>
-              io.middleware(socket, resolve),
-            );
-            assert.equal(error, undefined);
-            io.connection(socket);
-            t.after(() => socket.disconnect());
-            await socket.trigger("entrar", auction.id, (answer) =>
-              assert.equal(answer.ok, true),
-            );
-            return socket;
+            async function assertSharedState() {
+              const snapshots = await Promise.all(clients.map(enter));
+              assert.deepEqual(snapshots[0].leilao, snapshots[1].leilao);
+              for (const [index, snapshot] of snapshots.entries()) {
+                assert.equal(presence[index].at(-1), 2);
+                assert.deepEqual(received[index], [expectedBid]);
+                assert.deepEqual(snapshot.licitacoes, [expectedBid]);
+                assert.equal(snapshot.leilao.licitacaoAtual.valor, 110);
+                assert.equal(
+                  snapshot.leilao.licitacaoAtual.compradorId,
+                  winnerId,
+                );
+                assert.deepEqual(
+                  snapshot.ultimaLicitacaoPropria,
+                  index === winner ? expectedBid : null,
+                );
+              }
+            }
+            await assertSharedState();
+
+            t.mock.method(Bid, "create", async () => {
+              throw new Error("Falha simulada no histórico");
+            });
+            const failure = await placeBid(clients[0], 120);
+            assert.equal(failure.ok, false);
+            assert.equal(await Bid.countDocuments({ leilaoId: auction.id }), 1);
+            await assertSharedState();
+          } finally {
+            for (const socket of clients) socket.disconnect();
+            await io.close();
+            if (previousSecret === undefined) delete process.env.JWT_SECRET;
+            else process.env.JWT_SECRET = previousSecret;
           }
-          const [first, second] = await Promise.all([
-            connect(users[1]),
-            connect(users[2]),
-          ]);
-          const answers = await Promise.all([
-            new Promise((resolve) =>
-              first.trigger(
-                "licitar",
-                { leilaoId: auction.id, valor: 110 },
-                resolve,
-              ),
-            ),
-            new Promise((resolve) =>
-              second.trigger(
-                "licitar",
-                { leilaoId: auction.id, valor: 110 },
-                resolve,
-              ),
-            ),
-          ]);
-          assert.deepEqual(answers.map((answer) => answer.ok).sort(), [
-            false,
-            true,
-          ]);
-          assert.equal(await Bid.countDocuments({ leilaoId: auction._id }), 1);
-          assert.equal(
-            (await Auction.findById(auction.id)).licitacaoAtual.valor,
-            110,
-          );
-          assert.equal(
-            broadcasts.filter((event) => event.event === "nova-licitacao")
-              .length,
-            1,
-          );
-          const mockedCreate = t.mock.method(Bid, "create", async () => {
-            throw new Error("Falha simulada no histórico");
-          });
-          const failure = await new Promise((resolve) =>
-            first.trigger(
-              "licitar",
-              { leilaoId: auction.id, valor: 120 },
-              resolve,
-            ),
-          );
-          assert.equal(failure.ok, false);
-          assert.equal(await Bid.countDocuments({ leilaoId: auction._id }), 1);
-          assert.equal(
-            (await Auction.findById(auction.id)).licitacaoAtual.valor,
-            110,
-          );
-          assert.equal(
-            broadcasts.filter((event) => event.event === "nova-licitacao")
-              .length,
-            1,
-          );
-          mockedCreate.mock.restore();
         },
       );
     } finally {

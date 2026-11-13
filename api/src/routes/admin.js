@@ -23,7 +23,7 @@ const models = {
 const fields = {
   users: "nome email papel perfilProdutor createdAt updatedAt ultimaDecisao",
   products:
-    "nome descricao produtorId categoria preco unidade stock epoca biologico dataValidade publicado bloqueado createdAt updatedAt ultimaDecisao",
+    "nome descricao produtorId categoria preco unidade stock epoca biologico dataValidade publicado bloqueado fotografia createdAt updatedAt ultimaDecisao",
   reviews:
     "autorId encomendaId produtoId produtorId classificacao comentario estado createdAt updatedAt ultimaDecisao denuncias",
   orders:
@@ -238,7 +238,7 @@ function decorate(item, resource, now) {
 
 router.get("/summary", async (_request, response, next) => {
   try {
-    const [users, orders, pendingProducers, activeAuctions] = await Promise.all(
+    const [users, orders, pendingProducers, activeAuctions, reportedReviews] = await Promise.all(
       [
         User.aggregate([{ $group: { _id: "$papel", total: { $sum: 1 } } }]),
         Order.aggregate([{ $group: { _id: "$estado", total: { $sum: 1 } } }]),
@@ -247,6 +247,7 @@ router.get("/summary", async (_request, response, next) => {
           "perfilProdutor.validacao": "pendente",
         }),
         Auction.countDocuments(auctionStateFilter("ativo", Date.now())),
+        Review.countDocuments({ estado: "denunciada" }),
       ],
     );
     response.json({
@@ -254,6 +255,7 @@ router.get("/summary", async (_request, response, next) => {
       orders: Object.fromEntries(orders.map((item) => [item._id, item.total])),
       pendingProducers,
       activeAuctions,
+      reportedReviews,
     });
   } catch (error) {
     next(error);

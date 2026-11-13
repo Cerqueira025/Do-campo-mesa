@@ -1,3 +1,5 @@
+@use "../../styles/abstracts/mixins" as mixins;
+
 .review-list {
   padding-block: 24px;
 
@@ -59,7 +61,6 @@
   }
 
   &__title:focus {
-    outline: 3px solid var(--color-green-950);
-    outline-offset: 4px;
+    @include mixins.focus-ring($width: 3px, $color: var(--color-green-950));
   }
 }

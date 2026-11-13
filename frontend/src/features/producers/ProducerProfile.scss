@@ -1,0 +1,10 @@
+@use "../../styles/abstracts/mixins" as mixins;
+
+.producer-profile__coordinates {
+  display: grid;
+  gap: 1rem;
+
+  @include mixins.up(tablet) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

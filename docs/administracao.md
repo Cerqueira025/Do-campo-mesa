@@ -2,14 +2,14 @@
 
 A área React começa em `/admin` e exige o papel atual `administrador` na API.
 Inclui resumo, aprovação de registos pendentes, moderação de produtos e avaliações,
-utilizadores, encomendas e todos os estados dos leilões. O botão «Serviços e sistema»
+utilizadores, encomendas e todos os estados dos leilões. O acesso «Serviços e sistema», no final do menu administrativo,
 abre o backoffice técnico Laravel, com entrada direta, verificações locais e histórico
 de 30 dias. Consulta [a preparação e funcionamento do backoffice](../backoffice/app/README.md).
 A execução sem infraestrutura Cloud foi acordada com o professor. Gráficos ficam fora desta implementação.
 
 ## Entrada no backoffice técnico
 
-O botão «Serviços e sistema» inicia a sessão Laravel em `/entrar`, regressa à SPA
+O acesso «Serviços e sistema» inicia a sessão Laravel em `/entrar`, regressa à SPA
 em `/admin/backoffice?state=…` e envia um código temporário por POST para `/entrada`.
 O JWT não passa no endereço do browser. A configuração exige `BACKOFFICE_SECRET`
 igual nos dois servidores e a mesma origem local (`127.0.0.1`) nos endereços de entrada.
@@ -27,7 +27,7 @@ não existe verificação periódica. Abrir o histórico não executa diagnósti
 
 ## Consultas
 
-- `GET /api/admin/summary`: `{ users: { [papel]: total }, orders: { [estado]: total }, pendingProducers, activeAuctions }`.
+- `GET /api/admin/summary`: `{ users: { [papel]: total }, orders: { [estado]: total }, pendingProducers, activeAuctions, reportedReviews }`.
 - `GET /api/admin/users`, `/products`, `/reviews`, `/orders`, `/auctions`:
   `{ items, page, limit, total }`. Produtos incluem também `categorias`, independentemente da página e dos filtros.
 - `GET /api/admin/users/:id`, `/products/:id`, `/reviews/:id`, `/auctions/:id`:
@@ -117,9 +117,19 @@ apenas enquanto visíveis e sem sobreposição de ciclos. As restantes páginas
 carregam ao entrar, após decisões ou ao selecionar Atualizar. Falhas temporárias
 mantêm os dados da mesma consulta com indicação de erro.
 
-O menu segue os filtros do catálogo: lateral a partir de 1024 px, acima do conteúdo
-nos restantes ecrãs, sem sobreposição. A escolha de abrir/fechar mantém-se durante
-a navegação. Tabelas no desktop, cartões no telemóvel, avaliações sempre em cartões.
+O resumo destaca produtores pendentes e avaliações no estado `denunciada` (contagem
+`reportedReviews`, não o número de denúncias), seguido dos totais e distribuições.
+O menu agrupa moderação e gestão e reutiliza `ManagementLayout`, tal como a área do produtor.
+As duas áreas usam largura máxima de 1280 px, menu lateral de 256 px a partir de 1024 px
+e o título na coluna principal. Nos restantes ecrãs, o menu começa recolhido e abre acima
+do conteúdo, sem sobreposição. Antes de uma escolha explícita, acompanha o breakpoint;
+depois, a escolha de abrir/fechar mantém-se durante a navegação e remontagens, separadamente
+por área e apenas em memória até recarregar. Os painéis partilham o mixin `management-surface`,
+com borda, raio de 1 rem e padding de 1 rem (1,25 rem a partir de 768 px). Tabelas no desktop com deslocamento horizontal local quando necessário; cartões nos
+ecrãs menores, avaliações sempre em cartões. Pesquisa, filtros, atualização manual e
+limpeza estão agrupados. Limpar filtros mantém os critérios obrigatórios dos produtores
+pendentes e permite consultar todos os estados de leilões. Os detalhes agrupam informação,
+decisão e relações; a decisão passa para uma coluna lateral a partir de 1280 px.
 Botões, campos, pesquisa, imagens e navegação de sessão reutilizam os componentes
 existentes; as cores provêm dos tokens.
 

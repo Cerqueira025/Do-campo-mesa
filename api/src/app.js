@@ -5,7 +5,11 @@ import producerRoutes from "./routes/producers.js";
 import orderRoutes from "./routes/orders.js";
 import reviewRoutes from "./routes/reviews.js";
 import auctionRoutes from "./routes/auctions.js";
+import backofficeRoutes from "./routes/backoffice.js";
+import swaggerUi from "swagger-ui-express";
+import { readFileSync } from "node:fs";
 import adminRoutes from "./routes/admin.js";
+import { productPhotoDirectory } from "./services/productPhotos.js";
 
 const app = express();
 
@@ -24,11 +28,43 @@ app.get("/api/health", (_request, response) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use(
+  "/api/uploads/products",
+  express.static(productPhotoDirectory, {
+    index: false,
+    dotfiles: "deny",
+    maxAge: "1y",
+    immutable: true,
+    setHeaders(response) {
+      response.setHeader("X-Content-Type-Options", "nosniff");
+    },
+  }),
+);
 app.use("/api/products", productRoutes);
 app.use("/api/producers", producerRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/auctions", auctionRoutes);
+app.use("/api", backofficeRoutes);
+
+const specification = readFileSync(
+  new URL("../../docs/openapi.yaml", import.meta.url),
+  "utf8",
+);
+app.get("/api-docs/openapi.yaml", (_req, res) =>
+  res.type("application/yaml").send(specification),
+);
+app.use(
+  "/api-docs",
+  swaggerUi.serve,
+  swaggerUi.setup(null, {
+    swaggerOptions: {
+      url: "/api-docs/openapi.yaml",
+      persistAuthorization: false,
+      validatorUrl: null,
+    },
+  }),
+);
 app.use("/api/admin", adminRoutes);
 
 app.use("/api", (_request, response) => {

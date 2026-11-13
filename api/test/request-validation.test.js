@@ -25,12 +25,13 @@ const token = (index) =>
   jwt.sign({ id: accounts[index].id }, process.env.JWT_SECRET, {
     expiresIn: "2h",
   });
+const createProduct = { method: "POST", path: "/products", account: 1 };
+const updateProduct = { method: "PUT", path: `/products/${id}`, account: 1 };
 const writes = [
   { method: "POST", path: "/auth/registo" },
   { method: "POST", path: "/auth/login" },
-  { method: "POST", path: "/auth/recuperar-password" },
-  { method: "POST", path: "/products", account: 1 },
-  { method: "PUT", path: `/products/${id}`, account: 1 },
+  createProduct,
+  updateProduct,
   { method: "POST", path: "/orders", account: 0 },
   { method: "PATCH", path: `/orders/${id}/estado`, account: 1 },
   { method: "POST", path: "/reviews", account: 0 },
@@ -296,8 +297,8 @@ test("Produtos preservam validação do Mongoose, conversões, campos desconheci
     stored.populate = async () => stored;
     return stored;
   });
-  assert.equal((await call(writes[3], "{}")).status, 400);
-  const created = await call(writes[3], JSON.stringify(data));
+  assert.equal((await call(createProduct, "{}")).status, 400);
+  const created = await call(createProduct, JSON.stringify(data));
   assert.equal(created.status, 201);
   assert.equal(created.body.preco, 150);
   assert.equal(created.body.stock, 2);
@@ -308,7 +309,7 @@ test("Produtos preservam validação do Mongoose, conversões, campos desconheci
     await stored.validate();
     return stored;
   };
-  const updated = await call(writes[4], "{}");
+  const updated = await call(updateProduct, "{}");
   assert.equal(updated.status, 200);
   assert.equal(updated.body.nome, data.nome);
   assert.equal(updated.body.preco, 150);
@@ -328,5 +329,5 @@ test("Falhas inesperadas continuam a devolver 500 e conflitos continuam a devolv
   t.mock.method(Product, "create", async () => {
     throw Object.assign(new Error("Duplicado"), { code: 11000 });
   });
-  assert.equal((await call(writes[3], "{}")).status, 409);
+  assert.equal((await call(createProduct, "{}")).status, 409);
 });

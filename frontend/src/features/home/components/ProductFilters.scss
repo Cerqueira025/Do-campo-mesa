@@ -89,8 +89,7 @@
     }
 
     &:focus-visible + .product-filters__chip {
-      outline: 2px solid var(--color-green-900);
-      outline-offset: 3px;
+      @include focus-ring($offset: 3px);
     }
 
     &:disabled + .product-filters__chip {
@@ -162,33 +161,7 @@
     }
 
     &:focus-visible {
-      outline: 2px solid var(--color-green-900);
-      outline-offset: 3px;
-    }
-  }
-
-  &__select {
-    min-height: 48px;
-    border-color: var(--color-green-900);
-    border-radius: 12px;
-    background-color: var(--color-white);
-    color: var(--color-green-950);
-    // Native arrows inherit the control colour instead of Bootstrap's fixed SVG colour.
-    appearance: auto;
-    background-image: none;
-    padding-right: 12px;
-
-    &:focus {
-      border-color: var(--color-green-900);
-      box-shadow: 0 0 0 2px var(--color-green-20);
-      outline: 2px solid var(--color-green-900);
-      outline-offset: 2px;
-    }
-
-    &:disabled {
-      background-color: var(--color-stone-50);
-      color: var(--color-green-50);
-      cursor: not-allowed;
+      @include focus-ring($offset: 3px);
     }
   }
 

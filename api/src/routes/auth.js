@@ -13,9 +13,15 @@ const validPassword = (password) =>
 const passwordMessage =
   "A password deve ter pelo menos 8 caracteres e não ultrapassar 72 bytes em UTF-8.";
 const tokenFor = (user) =>
-  jwt.sign({ id: user.id, papel: user.papel }, process.env.JWT_SECRET, {
-    expiresIn: "2h",
-  });
+  jwt.sign(
+    {
+      id: user.id,
+      papel: user.papel,
+      sessionVersion: user.sessionVersion ?? 0,
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: "2h" },
+  );
 
 router.post("/registo", requireObjectBody, async (request, response, next) => {
   try {
@@ -82,7 +88,7 @@ router.post("/login", requireObjectBody, async (request, response, next) => {
     }
     const user = await User.findOne({
       email: email.trim().toLowerCase(),
-    }).select("+passwordHash");
+    }).select("+passwordHash +sessionVersion");
     if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
       return response.status(401).json({ erro: "Credenciais inválidas." });
     }
@@ -93,38 +99,7 @@ router.post("/login", requireObjectBody, async (request, response, next) => {
 });
 
 router.get("/eu", requireAuth(), (request, response) => {
-  response.json(request.user.publico());
+  response.set("Cache-Control", "no-store").json(request.user.publico());
 });
-
-// Recuperação simplificada para a demonstração: não verifica a posse do email.
-router.post(
-  "/recuperar-password",
-  requireObjectBody,
-  async (request, response, next) => {
-    try {
-      const { email, password } = request.body || {};
-      if (
-        typeof email !== "string" ||
-        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
-      ) {
-        return response
-          .status(400)
-          .json({ erro: "Um email válido é obrigatório." });
-      }
-      if (!validPassword(password))
-        return response.status(400).json({ erro: passwordMessage });
-      const user = await User.findOneAndUpdate(
-        { email: email.trim().toLowerCase() },
-        { $set: { passwordHash: await bcrypt.hash(password, 12) } },
-        { runValidators: true },
-      );
-      if (!user)
-        return response.status(404).json({ erro: "Conta não encontrada." });
-      response.json({ mensagem: "Palavra-passe atualizada." });
-    } catch (error) {
-      next(error);
-    }
-  },
-);
 
 export default router;

@@ -7,6 +7,7 @@ export interface ApiProduct {
   stock?: number;
   preco: number;
   unidade: string;
+  fotografia?: string | null;
   avaliacao?: Rating;
 }
 
@@ -114,7 +115,18 @@ export const priceFormatter = new Intl.NumberFormat("pt-PT", {
   currency: "EUR",
 });
 
-export function productImages(product: Pick<ApiProduct, "nome">) {
+export function productImages(
+  product: Pick<ApiProduct, "nome" | "fotografia">,
+) {
+  if (product.fotografia !== undefined) {
+    const base = product.fotografia
+      ? `/api/uploads/products/${encodeURIComponent(product.fotografia)}`
+      : undefined;
+    return {
+      image: base ? `${base}-960.webp` : undefined,
+      srcSet: base ? `${base}-480.webp 480w, ${base}-960.webp 960w` : undefined,
+    };
+  }
   const image = images[product.nome.trim().toLowerCase()];
   return {
     image: image?.large,

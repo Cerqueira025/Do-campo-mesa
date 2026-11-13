@@ -1,0 +1,26 @@
+.order-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-bottom: 0.2rem;
+  font-weight: 700;
+  border-radius: 0.5rem;
+  padding: 0.2rem 0.5rem;
+
+  &--pendente {
+    background: var(--color-brown-100);
+    color: var(--color-brown-500);
+  }
+  &--confirmada {
+    background: var(--color-blue-100);
+    color: var(--color-blue-700);
+  }
+  &--pronta {
+    background: var(--color-green-100);
+    color: var(--color-green-800);
+  }
+  &--entregue {
+    background: var(--color-green-300);
+    color: var(--color-green-950);
+  }
+}

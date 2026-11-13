@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   catalogQuery,
+  invalidateCatalogCache,
   catalogPagination,
   readCatalogCache,
   writeCatalogCache,
@@ -109,4 +110,12 @@ test("Detalhe reutiliza o produto completo da consulta mais recente", () => {
   for (let i = 0; i < 10; i++)
     writeCatalogCache(`product-eviction-${i}`, { items: [], total: 0 });
   assert.equal(readCatalogProduct(product._id), undefined);
+});
+
+test("Alterações de produtos invalidam resultados e opções de filtros", () => {
+  writeCatalogCache("antes-da-edicao", { items: [], total: 1 });
+  writeFilterCache({ categorias: ["Antiga"], produtores: [], localidades: [] });
+  invalidateCatalogCache();
+  assert.equal(readCatalogCache("antes-da-edicao"), undefined);
+  assert.equal(readFilterCache(), null);
 });

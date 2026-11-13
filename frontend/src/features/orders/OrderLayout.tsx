@@ -5,17 +5,21 @@ import "./OrderLayout.scss";
 export default function OrderLayout({
   title,
   children,
+  embedded = false,
 }: {
   title: string;
   children: ReactNode;
+  embedded?: boolean;
 }) {
   useEffect(() => {
+    if (embedded) return;
     const previous = document.title;
     document.title = `${title} · Do campo à mesa`;
     return () => {
       document.title = previous;
     };
-  }, [title]);
+  }, [title, embedded]);
+  if (embedded) return <div className="order-content">{children}</div>;
   return (
     <main className="order-page">
       <div className="order-page__header">

@@ -1,6 +1,7 @@
 import { useRef, useState, type FormEvent } from "react";
 import Button from "../../components/ui/Button";
 import FormField from "../../components/ui/input/FormField";
+import Select from "../../components/ui/input/Select";
 import LoadingPlaceholder from "../../components/ui/LoadingPlaceholder";
 import { ApiError } from "../../api/client";
 import { useAuth } from "../auth/useAuth";
@@ -64,19 +65,22 @@ function ReviewForm({
       onSubmit={(event) => void submit(event)}
       aria-busy={busy}
     >
-      <FormField id={`${id}-rating`} label={`Classificação de ${target.name}`}>
-        <select
+      <FormField
+        id={`${id}-rating`}
+        label={`Classificação de ${target.name}`}
+        unframed
+        compact={false}
+      >
+        <Select
           id={`${id}-rating`}
           value={rating}
           disabled={busy}
-          onChange={(event) => setRating(event.target.value)}
-        >
-          {[5, 4, 3, 2, 1].map((value) => (
-            <option key={value} value={value}>
-              {value} de 5
-            </option>
-          ))}
-        </select>
+          onValueChange={setRating}
+          options={[5, 4, 3, 2, 1].map((value) => ({
+            value: String(value),
+            label: `${value} de 5`,
+          }))}
+        />
       </FormField>
       <FormField id={`${id}-comment`} label="Comentário">
         <textarea

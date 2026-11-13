@@ -21,6 +21,7 @@ export interface AdminDecision {
 export interface AdminRecord {
   _id: string;
   nome?: string;
+  fotografia?: string | null;
   email?: string;
   papel?: string;
   createdAt: string;
@@ -93,6 +94,7 @@ export interface AdminSummary {
   orders: Record<string, number>;
   pendingProducers: number;
   activeAuctions: number;
+  reportedReviews: number;
 }
 
 export function readAdminLocation(section: AdminSection, search: string) {

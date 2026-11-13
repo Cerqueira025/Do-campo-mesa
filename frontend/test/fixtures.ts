@@ -2,6 +2,31 @@ import { vi } from "vitest";
 import type { AuthContextValue } from "../src/features/auth/authContext";
 import type { ProductDetail } from "../src/features/products/product";
 
+export function mockDesktopQuery(initial = true) {
+  const listeners = new Set<() => void>();
+  const query = {
+    matches: initial,
+    media: "(min-width: 1024px)",
+    addEventListener: vi.fn((_event: string, listener: () => void) =>
+      listeners.add(listener),
+    ),
+    removeEventListener: vi.fn((_event: string, listener: () => void) =>
+      listeners.delete(listener),
+    ),
+  };
+  vi.stubGlobal(
+    "matchMedia",
+    vi.fn(() => query),
+  );
+  return {
+    query,
+    resize(desktop: boolean) {
+      query.matches = desktop;
+      listeners.forEach((listener) => listener());
+    },
+  };
+}
+
 export const product: ProductDetail = {
   _id: "dca000000000000000000065",
   nome: "Batata",

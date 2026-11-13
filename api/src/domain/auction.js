@@ -21,7 +21,17 @@ export function auctionStateFilter(state, now) {
       $or: [{ estado: "terminado" }, { dataFim: { $lte: date } }],
     };
   if (state === "agendado")
-    return { estado: "agendado", dataFim: { $gt: date } };
+    return {
+      estado: { $nin: ["cancelado", "terminado"] },
+      dataFim: { $gt: date },
+      $nor: [
+        {
+          estado: "ativo",
+          reservaStock: "reservada",
+          dataInicio: { $lte: date },
+        },
+      ],
+    };
   if (state === "ativo")
     return {
       estado: "ativo",

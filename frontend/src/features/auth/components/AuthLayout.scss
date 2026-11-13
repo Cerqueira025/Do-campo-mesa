@@ -3,6 +3,8 @@
 .auth-layout {
   display: flex;
   flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
   padding: 8px 24px;
   background: var(--color-green-950);
 
@@ -61,8 +63,7 @@
     font-size: var(--font-size-xs);
   }
   a:focus-visible {
-    outline: 3px solid var(--color-green-300);
-    outline-offset: 4px;
+    @include focus-ring($width: 3px, $color: var(--color-green-300));
   }
 
   @include up(tablet) {

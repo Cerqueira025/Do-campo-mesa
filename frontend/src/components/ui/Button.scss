@@ -1,3 +1,5 @@
+@use "../../styles/abstracts/mixins" as mixins;
+
 .button {
   --bs-btn-color: var(--color-white);
   --bs-btn-hover-color: var(--color-white);
@@ -13,8 +15,7 @@
   border: 0;
 
   &:focus-visible {
-    outline: 3px solid currentColor;
-    outline-offset: 4px;
+    @include mixins.focus-ring($width: 3px, $color: currentColor);
   }
 
   &:disabled {

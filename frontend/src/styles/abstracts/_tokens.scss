@@ -10,6 +10,7 @@ $colors: (
   "green-50": rgba(6, 42, 27, 50%),
   "green-90": rgba(6, 42, 27, 90%),
   "green-95": rgba(6, 42, 27, 95%),
+  "green-100": #e4f1df,
   "green-300": #86b99c,
   "green-500": #38831f,
   "green-800": #2f7419,
@@ -26,8 +27,13 @@ $colors: (
   "white-40": rgb(255 255 255 / 40%),
   "white-50": rgb(255 255 255 / 50%),
   "white-70": rgb(255 255 255 / 70%),
+  
   // Yellow
   "yellow-500": #f5c32c,
+
+  // Blue
+  "blue-100": #d5dffc,
+  "blue-700": #1d4ed8,
 
   // Brown
   "brown-50": #c9a066b8,

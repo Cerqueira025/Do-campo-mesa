@@ -3,13 +3,13 @@
 Revisão do commit `76b7e9e`, dos dois PDFs principais, do frontend React, da API Express/Mongoose, dos sockets, da coleção Bruno, da configuração de integração contínua e do esqueleto Laravel.
 
 > **Documento histórico.** Os achados, contagens e resultados abaixo descrevem
-> a auditoria de 2 de novembro de 2026. Na revisão documental de 3 de novembro,
-> o código já inclui Swagger UI, backoffice técnico Laravel e workflow de testes,
-> lint e build do frontend. A documentação funcional também foi atualizada.
-> Estas alterações não constituem uma nova auditoria nem comprovam a resolução
-> dos restantes achados. Para preparação e comportamento atuais, consulta o
-> [README principal](../README.md), o [frontend](../frontend/README.md),
-> os [dados funcionais](dados-funcionais.md) e o [backoffice](../backoffice/app/README.md).
+> a auditoria de 2 de novembro de 2026. Para o estado atual, consulta o
+> [índice de documentação](../README.md#documentação) e os
+> [resultados da validação com MongoDB real](operacoes-locais.md#validar-leilões-com-mongodb-real).
+> As notas de seguimento indicam verificações posteriores. A revisão documental
+> de 3 de novembro já registava Swagger UI, o backoffice técnico Laravel e o
+> workflow de testes, lint e build do frontend. Os restantes achados exigem
+> nova verificação antes de serem usados como lista de trabalho atual.
 
 O projeto já tem uma base funcional considerável: catálogo com filtros e paginação, autenticação e papéis, carrinho, encomendas por produtor, avaliações, denúncias, administração React, reservas de stock e implementação de licitações por Socket.IO. Ainda não cumpre integralmente o enunciado. As maiores lacunas são a gestão pelo produtor, fotografias e storage, Swagger UI, preparação/publicação Cloud e entregáveis. Há também falhas concretas de segurança, integração e consistência.
 
@@ -366,6 +366,8 @@ Os 12 leilões atuais terminaram. `db:seed` preserva os IDs e datas existentes, 
 Os testes normais usam persistência simulada. Dois testes de MongoDB real estão preparados mas ficaram ignorados por falta de `MONGODB_TEST_URI`. A coleção Bruno cobre HTTP, mas não a licitação real por Socket.IO. Não há teste de ponta a ponta com dois clientes reais que cubra lance simultâneo, histórico confirmado, fecho, encomenda única e notificações.
 
 Não é correto concluir, a partir dos 197 testes que passaram, que a concorrência real foi validada nesta execução. É necessário preparar um ambiente isolado de testes e produzir a evidência exigida para o desafio central.
+
+**Seguimento de 11 de novembro de 2026:** a [validação com MongoDB real](operacoes-locais.md#validar-leilões-com-mongodb-real) confirmou a concorrência entre dois compradores por WebSocket, o histórico e estado partilhados e, num subteste separado, a criação de uma única encomenda no fecho. A entrega das notificações privadas de fecho não foi verificada nesta execução.
 
 **Evidência:** `api/test/socket-auctions.test.js`, `auction-stock-integration.test.js`, `review-reports-integration.test.js`, `api/src/scripts/test-api.js`.
 **Requisito:** enunciado, página 7; guia, páginas 79, 90 e 91.

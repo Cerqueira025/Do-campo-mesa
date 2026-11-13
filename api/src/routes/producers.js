@@ -11,6 +11,89 @@ import { publicReviewFields, withProductRatings } from "../services/reviews.js";
 const router = Router();
 const publicFields =
   "nome perfilProdutor.descricao perfilProdutor.localidade perfilProdutor.coordenadas createdAt";
+const profileFields = ["descricao", "localidade", "morada", "coordenadas"];
+const privateFields = profileFields
+  .map((field) => `perfilProdutor.${field}`)
+  .join(" ");
+const ownProfile = (producer) =>
+  Object.fromEntries(
+    profileFields.map((field) => [field, producer.perfilProdutor[field]]),
+  );
+
+router.get("/me", requireAuth("produtor"), async (request, response, next) => {
+  try {
+    const producer = await User.findOne({
+      _id: request.user.id,
+      papel: "produtor",
+    }).select(privateFields);
+    if (!producer)
+      return response.status(404).json({ erro: "Produtor não encontrado." });
+    response.set("Cache-Control", "no-store").json(ownProfile(producer));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.patch(
+  "/me",
+  requireAuth("produtor"),
+  requireObjectBody,
+  async (request, response, next) => {
+    try {
+      const entries = Object.entries(request.body);
+      if (
+        !entries.length ||
+        entries.some(([field]) => !profileFields.includes(field))
+      )
+        return response
+          .status(400)
+          .json({ erro: "Indique apenas os dados da exploração a alterar." });
+      for (const [field, value] of entries) {
+        if (field === "coordenadas") {
+          if (
+            !value ||
+            typeof value !== "object" ||
+            Array.isArray(value) ||
+            Object.keys(value).some(
+              (key) => !["latitude", "longitude"].includes(key),
+            ) ||
+            !Number.isFinite(value.latitude) ||
+            !Number.isFinite(value.longitude) ||
+            Math.abs(value.latitude) > 90 ||
+            Math.abs(value.longitude) > 180
+          )
+            return response
+              .status(400)
+              .json({ erro: "Indique latitude e longitude válidas." });
+        } else if (
+          typeof value !== "string" ||
+          (field !== "descricao" && !value.trim())
+        ) {
+          return response.status(400).json({
+            erro: "A localidade e a morada são obrigatórias; a descrição deve ser texto.",
+          });
+        }
+      }
+      const producer = await User.findOneAndUpdate(
+        { _id: request.user.id, papel: "produtor" },
+        {
+          $set: Object.fromEntries(
+            entries.map(([field, value]) => [
+              `perfilProdutor.${field}`,
+              typeof value === "string" ? value.trim() : value,
+            ]),
+          ),
+        },
+        { new: true, runValidators: true },
+      ).select(privateFields);
+      if (!producer)
+        return response.status(404).json({ erro: "Produtor não encontrado." });
+      response.set("Cache-Control", "no-store").json(ownProfile(producer));
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
 router.get(
   "/pendentes",

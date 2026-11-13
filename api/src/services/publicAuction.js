@@ -10,15 +10,21 @@ export const publicProducer = {
   match: { papel: "produtor", "perfilProdutor.validacao": "aceite" },
 };
 
+export function auctionProductsBelongTo(auction, producerId) {
+  return Boolean(
+    auction?.produtos?.length &&
+    auction.produtos.every(
+      (line) =>
+        line.produtoId &&
+        String(line.produtoId.produtorId) === String(producerId),
+    ),
+  );
+}
+
 export function publicAuction(auction, now) {
   if (
     !auction?.produtorId ||
-    !auction.produtos?.length ||
-    auction.produtos.some(
-      (line) =>
-        !line.produtoId ||
-        String(line.produtoId.produtorId) !== String(auction.produtorId._id),
-    )
+    !auctionProductsBelongTo(auction, auction.produtorId._id)
   )
     return null;
   const produtos = auction.produtos.map((line) => {
@@ -31,7 +37,10 @@ export function publicAuction(auction, now) {
 
 export async function findPublicAuction(id, now = Date.now()) {
   const auction = await Auction.findById(id)
-    .populate({ ...publicProduct, select: "nome descricao unidade produtorId" })
+    .populate({
+      ...publicProduct,
+      select: "nome descricao unidade fotografia produtorId",
+    })
     .populate({
       ...publicProducer,
       select: "nome perfilProdutor.descricao perfilProdutor.localidade",

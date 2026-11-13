@@ -2,17 +2,22 @@ import { useState } from "react";
 import Button from "../components/ui/Button";
 import LoadingPlaceholder from "../components/ui/LoadingPlaceholder";
 import FormField from "../components/ui/input/FormField";
+import Select from "../components/ui/input/Select";
 import InternalLink from "../navigation/InternalLink";
 import { useCart } from "../features/cart/cartContext";
 import OrderLayout from "../features/orders/OrderLayout";
+import OrderStatus from "../features/orders/OrderStatus";
+import ProducerOrderRow from "../features/orders/ProducerOrderRow";
 import { orderDate, orderStates, type Order } from "../features/orders/order";
 import { useOrderPolling } from "../features/orders/useOrderPolling";
 import { priceFormatter } from "../features/products/product";
 
 export default function OrdersPage({
   producer = false,
+  embedded = false,
 }: {
   producer?: boolean;
+  embedded?: boolean;
 }) {
   const { data, error, refresh } = useOrderPolling<Order[]>("/orders");
   const [filter, setFilter] = useState("");
@@ -20,6 +25,7 @@ export default function OrdersPage({
   const orders = data?.filter((order) => !filter || order.estado === filter);
   return (
     <OrderLayout
+      embedded={embedded}
       title={producer ? "Encomendas recebidas" : "As minhas encomendas"}
     >
       {!producer && confirmadas.length > 0 && (
@@ -41,19 +47,21 @@ export default function OrdersPage({
         </section>
       )}
       <div className="order-page__form">
-        <FormField id="order-filter" label="Filtrar por estado">
-          <select
+        <FormField
+          id="order-filter"
+          label="Filtrar por estado"
+          unframed
+          compact={false}
+        >
+          <Select
             id="order-filter"
             value={filter}
-            onChange={(event) => setFilter(event.target.value)}
-          >
-            <option value="">Todos os estados</option>
-            {orderStates.map((state) => (
-              <option key={state} value={state}>
-                {state}
-              </option>
-            ))}
-          </select>
+            onValueChange={setFilter}
+            options={[
+              { value: "", label: "Todos os estados" },
+              ...orderStates.map((state) => ({ value: state, label: state })),
+            ]}
+          />
         </FormField>
       </div>
       {error && (
@@ -74,7 +82,14 @@ export default function OrdersPage({
         </div>
       )}
       <ul className="order-page__list">
-        {orders?.map((order) => (
+        {orders?.map((order) => producer ? (
+          <li className="order-page__panel" key={order._id}>
+            <ProducerOrderRow order={order} heading="h2" />
+            {order.leilaoId && !order.entrega && (
+              <p>A aguardar a modalidade do vencedor.</p>
+            )}
+          </li>
+        ) : (
           <li className="order-page__panel" key={order._id}>
             <h2>
               <InternalLink
@@ -85,16 +100,10 @@ export default function OrdersPage({
               </InternalLink>
             </h2>
             <p>
-              {producer
-                ? order.compradorId?.nome || "Comprador indisponível"
-                : order.produtorId?.nome || "Produtor indisponível"}
+              {order.produtorId?.nome || "Produtor indisponível"}
             </p>
             {order.leilaoId && !order.entrega && (
-              <p>
-                {producer
-                  ? "A aguardar a modalidade do vencedor."
-                  : "Escolha como receber o lote no detalhe da encomenda."}
-              </p>
+              <p>Escolha como receber o lote no detalhe da encomenda.</p>
             )}
             <dl className="order-page__facts">
               <div>
@@ -103,7 +112,9 @@ export default function OrdersPage({
               </div>
               <div>
                 <dt>Estado</dt>
-                <dd>{order.estado}</dd>
+                <dd>
+                  <OrderStatus state={order.estado} />
+                </dd>
               </div>
               <div>
                 <dt>Total</dt>

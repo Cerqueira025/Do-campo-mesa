@@ -18,6 +18,7 @@ export async function api<T>(
   path: string,
   { method = "GET", body, token, signal }: ApiOptions = {},
 ): Promise<T> {
+  const binary = body instanceof Blob;
   let response: Response;
   try {
     response = await fetch(`/api${path}`, {
@@ -25,10 +26,18 @@ export async function api<T>(
       signal,
       headers: {
         Accept: "application/json",
-        ...(body === undefined ? {} : { "Content-Type": "application/json" }),
+        ...(body === undefined
+          ? {}
+          : {
+              "Content-Type": binary
+                ? body.type || "application/octet-stream"
+                : "application/json",
+            }),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
-      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+      ...(body === undefined
+        ? {}
+        : { body: binary ? body : JSON.stringify(body) }),
     });
   } catch (error) {
     if (signal?.aborted) throw error;

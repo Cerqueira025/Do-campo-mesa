@@ -1,0 +1,47 @@
+@use "../../styles/abstracts/mixins" as mixins;
+
+.auction-form {
+  &__products,
+  &__line,
+  &__columns {
+    display: grid;
+    gap: 1rem;
+    min-width: 0;
+  }
+  &__products {
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+  &__products > legend,
+  &__line > legend {
+    float: none;
+    width: auto;
+    font-size: 1rem;
+  }
+  &__line {
+    margin: 0;
+    padding: 1rem;
+    border: 1px solid var(--color-green-20);
+    border-radius: 1rem;
+    align-items: start;
+  }
+  &__product-control {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  &__products > .button {
+    justify-self: start;
+  }
+
+  @include mixins.up(tablet) {
+    &__columns {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    &__line {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+  }
+}

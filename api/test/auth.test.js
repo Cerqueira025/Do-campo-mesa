@@ -4,6 +4,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import app from "../src/app.js";
 import User from "../src/models/User.js";
+import { resetPassword } from "../src/services/resetPassword.js";
 import Product from "../src/models/Product.js";
 import Auction from "../src/models/Auction.js";
 import mongoose from "mongoose";
@@ -232,94 +233,63 @@ test("Login recusa sufixos além dos 72 bytes que bcrypt truncaria", async (t) =
   );
 });
 
-test("Recuperação altera só o hash, aceita email normalizado e mantém os JWT existentes", async (t) => {
-  const buyer = account();
-  const original = buyer.toObject();
-  users(t, [buyer]);
-  t.mock.method(User, "findOneAndUpdate", async (filter, update, options) => {
-    assert.deepEqual(filter, { email: buyer.email });
-    assert.deepEqual(Object.keys(update.$set), ["passwordHash"]);
-    assert.equal(options.runValidators, true);
-    buyer.passwordHash = update.$set.passwordHash;
-    return buyer;
-  });
-  const token = tokenFor();
+test("A API já não oferece recuperação pública de palavra-passe", async () => {
   const response = await call("/auth/recuperar-password", {
     method: "POST",
-    body: {
-      email: " COMPRADOR@example.test ",
-      password: "NovaPasswordTeste123!",
-      papel: "administrador",
-      nome: "Nome adulterado",
-    },
+    body: { email: "comprador@example.test", password: "NovaPassword123!" },
   });
-  assert.deepEqual(response, {
-    status: 200,
-    body: { mensagem: "Palavra-passe atualizada." },
+  assert.equal(response.status, 404);
+});
+
+test("Redefinição local revoga os tokens da conta e mantém as restantes sessões", async (t) => {
+  const buyer = account();
+  const other = account(adminId, "administrador");
+  users(t, [buyer, other]);
+  t.mock.method(User, "updateOne", async (filter, update, options) => {
+    assert.deepEqual(filter, { email: buyer.email });
+    assert.deepEqual(update.$inc, { sessionVersion: 1 });
+    assert.equal(options.runValidators, true);
+    buyer.passwordHash = update.$set.passwordHash;
+    buyer.sessionVersion += update.$inc.sessionVersion;
+    return { modifiedCount: 1 };
   });
+
+  const oldToken = tokenFor(buyer.id);
+  assert.equal((await call("/auth/eu", { token: oldToken })).status, 200);
+  const password = await resetPassword(" COMPRADOR@EXAMPLE.TEST ");
   assert.equal(bcrypt.getRounds(buyer.passwordHash), 12);
-  const previous = { ...original };
-  const current = buyer.toObject();
-  delete previous.passwordHash;
-  delete current.passwordHash;
-  assert.deepEqual(current, previous);
+  assert.equal((await call("/auth/eu", { token: oldToken })).status, 401);
   assert.equal(
-    (
-      await call("/auth/login", {
-        method: "POST",
-        body: { email: buyer.email, password: "PasswordTeste123!" },
-      })
-    ).status,
-    401,
-  );
-  assert.equal(
-    (
-      await call("/auth/login", {
-        method: "POST",
-        body: { email: buyer.email, password: "NovaPasswordTeste123!" },
-      })
-    ).status,
+    (await call("/auth/eu", { token: tokenFor(other.id) })).status,
     200,
   );
-  assert.equal((await call("/auth/eu", { token })).status, 200);
-});
 
-test("Recuperação valida email, tipos e limites antes de consultar a base", async (t) => {
-  t.mock.method(User, "findOneAndUpdate", () => {
-    throw new Error("Não consultar com dados inválidos.");
-  });
-  for (const body of [
-    undefined,
-    {},
-    { email: { $ne: null }, password: "password123" },
-    { email: "email-invalido", password: "password123" },
-    { email: "comprador@example.test", password: 123 },
-    { email: "comprador@example.test", password: "curta" },
-    { email: "comprador@example.test", password: "á".repeat(37) },
-  ]) {
-    assert.equal(
-      (await call("/auth/recuperar-password", { method: "POST", body })).status,
-      400,
-    );
-  }
-});
-
-test("Recuperação de conta inexistente devolve 404 sem criar utilizador", async (t) => {
-  t.mock.method(User, "findOneAndUpdate", async (_filter, _update, options) => {
-    assert.notEqual(options.upsert, true);
-    return null;
-  });
+  const login = (password) =>
+    call("/auth/login", {
+      method: "POST",
+      body: { email: buyer.email, password },
+    });
+  assert.equal((await login("PasswordTeste123!")).status, 401);
+  const current = await login(password);
+  assert.equal(current.status, 200);
+  assert.equal(current.body.utilizador.sessionVersion, undefined);
   assert.equal(
-    (
-      await call("/auth/recuperar-password", {
-        method: "POST",
-        body: {
-          email: "ninguem@example.test",
-          password: "NovaPasswordTeste123!",
-        },
-      })
-    ).status,
-    404,
+    (await call("/auth/eu", { token: current.body.token })).status,
+    200,
+  );
+});
+
+test("Redefinição local não devolve palavra-passe para conta inexistente ou erro de escrita", async (t) => {
+  const update = t.mock.method(User, "updateOne", async () => ({
+    modifiedCount: 0,
+  }));
+  assert.equal(await resetPassword("inexistente@example.test"), null);
+  update.mock.mockImplementation(async () => {
+    throw new Error("Escrita falhou");
+  });
+  await assert.rejects(
+    resetPassword("inexistente@example.test"),
+    /Escrita falhou/,
   );
 });
 

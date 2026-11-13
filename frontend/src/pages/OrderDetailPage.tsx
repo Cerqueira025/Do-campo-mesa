@@ -2,10 +2,12 @@ import { useRef, useState, type FormEvent } from "react";
 import Button from "../components/ui/Button";
 import LoadingPlaceholder from "../components/ui/LoadingPlaceholder";
 import FormField from "../components/ui/input/FormField";
+import Select from "../components/ui/input/Select";
 import { ApiError } from "../api/client";
 import { useAuth } from "../features/auth/useAuth";
 import OrderLayout from "../features/orders/OrderLayout";
 import OrderReviews from "../features/orders/OrderReviews";
+import OrderStatus from "../features/orders/OrderStatus";
 import { orderDate, orderStates, type Order } from "../features/orders/order";
 import { useOrderPolling } from "../features/orders/useOrderPolling";
 import { priceFormatter } from "../features/products/product";
@@ -20,7 +22,12 @@ export default function OrderDetailPage({
   embedded?: boolean;
   backUrl?: string;
 }) {
-  if (embedded && id) return <OrderDetail key={id} id={id} backUrl={backUrl} />;
+  if (embedded && id)
+    return (
+      <div className="order-content">
+        <OrderDetail key={id} id={id} backUrl={backUrl} />
+      </div>
+    );
   return id ? (
     <OrderLayout title="Detalhe da encomenda">
       <OrderDetail key={id} id={id} />
@@ -180,7 +187,9 @@ function OrderDetail({ id, backUrl }: { id: string; backUrl?: string }) {
                 .
               </p>
             )}
-            <h3>Estado: {order.estado}</h3>
+            <h3>
+              Estado: <OrderStatus state={order.estado} />
+            </h3>
             <ol
               className="order-page__timeline"
               aria-label="Progressão da encomenda"
@@ -265,20 +274,27 @@ function OrderDetail({ id, backUrl }: { id: string; backUrl?: string }) {
                 className="order-page__form"
                 onSubmit={(event) => void chooseDelivery(event)}
               >
-                <FormField id="auction-delivery-type" label="Modalidade">
-                  <select
+                <FormField
+                  id="auction-delivery-type"
+                  label="Modalidade"
+                  unframed
+                  compact={false}
+                >
+                  <Select
                     id="auction-delivery-type"
                     value={deliveryType}
                     disabled={busy}
-                    onChange={(event) =>
-                      setDeliveryType(event.target.value as typeof deliveryType)
+                    onValueChange={(value) =>
+                      setDeliveryType(value as typeof deliveryType)
                     }
-                  >
-                    <option value="levantamento">
-                      Levantamento junto do produtor
-                    </option>
-                    <option value="entrega">Entrega na morada indicada</option>
-                  </select>
+                    options={[
+                      {
+                        value: "levantamento",
+                        label: "Levantamento junto do produtor",
+                      },
+                      { value: "entrega", label: "Entrega na morada indicada" },
+                    ]}
+                  />
                 </FormField>
                 {deliveryType === "entrega" && (
                   <FormField

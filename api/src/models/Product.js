@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { reference, money, text, unit } from "./fields.js";
 import { decision, privateDecision } from "./decision.js";
+import { photoIdPattern } from "../domain/productPhoto.js";
 
 const productSchema = new mongoose.Schema(
   {
@@ -8,6 +9,7 @@ const productSchema = new mongoose.Schema(
     nome: text,
     descricao: text,
     categoria: text,
+    fotografia: { type: String, match: photoIdPattern },
     preco: money(),
     unidade: unit,
     stock: { type: Number, required: true, min: 0, validate: Number.isFinite },

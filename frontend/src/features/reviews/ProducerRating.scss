@@ -1,0 +1,32 @@
+@use "../../components/layout/management-surface" as surface;
+
+.producer-rating {
+  display: flex;
+  flex-direction: column;
+  @include surface.management-surface;
+
+  h2 {
+    margin: 0 0 1.5rem;
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+  }
+  &__content {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    min-height: 11rem;
+    text-align: center;
+  }
+  &__empty-icon {
+    width: 4.5rem;
+    height: 4.5rem;
+    color: var(--color-green-300);
+  }
+  .rating-summary {
+    font-size: var(--font-size-xl);
+    font-weight: 400;
+  }
+}
