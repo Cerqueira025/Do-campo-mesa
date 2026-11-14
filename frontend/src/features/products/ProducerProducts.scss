@@ -6,11 +6,7 @@
     accent-color: var(--color-green-900);
   }
   &__sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
+    @include mixins.visually-hidden;
   }
   &__panel {
     @include surface.management-surface;
