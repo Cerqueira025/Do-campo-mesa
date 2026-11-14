@@ -1,5 +1,6 @@
 import { User, Product, Order, Auction, Bid, Review } from "../models/index.js";
 import mongoose from "mongoose";
+import { productPhotos } from "../services/productPhotos.js";
 
 const testUserEmail = /^bruno-test-[0-9]+-[a-z0-9]+@example\.test$/;
 const testMarker = /^BRUNO_AUTOTEST_/;
@@ -85,6 +86,10 @@ export async function cleanupBrunoData() {
     compradorId: { $in: userIds },
     leilaoId: { $ne: null },
   });
-  await Product.deleteMany({ nome: testMarker });
+  const testProducts = await Product.find({ nome: testMarker }).select("_id");
+  for (const { _id } of testProducts) {
+    const product = await Product.findOneAndDelete({ _id, nome: testMarker });
+    await productPhotos.remove(product?.fotografia);
+  }
   await User.deleteMany({ _id: { $in: userIds } });
 }

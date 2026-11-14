@@ -142,9 +142,18 @@ do seed for diferente da predefinida, ajusta `demoPassword` em
 npm --prefix api run test:api
 ```
 
+Se só a palavra-passe de `produtor@example.test` tiver sido reposta, fornece-a
+ao runner pela variável de ambiente `BRUNO_PRODUCER_PASSWORD`. No Bruno
+Desktop, ajusta `producerPassword` no ambiente local sem guardar o valor no Git.
+
 A coleção faz escritas reais e limpa as contas `bruno-test-*` e os documentos
-marcados com `BRUNO_AUTOTEST_`. Usa uma base de demonstração e evita usá-la
-simultaneamente para outras operações.
+marcados com `BRUNO_AUTOTEST_`, incluindo as fotografias dos produtos
+temporários. Usa a mesma base de desenvolvimento na API e no runner, e evita
+executar duas instâncias da coleção em simultâneo.
+
+A coleção inclui casos de permissões, validação e persistência. Os casos de
+sucesso que exigem o segredo de integração do backoffice ou uma encomenda de
+um leilão ganho são verificados em `api/test`.
 
 Para validar apenas o contrato OpenAPI e os testes do Swagger, sem MongoDB:
 
