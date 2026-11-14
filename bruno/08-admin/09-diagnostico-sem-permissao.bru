@@ -1,0 +1,22 @@
+meta {
+  name: Comprador não tem acesso ao diagnóstico administrativo
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{baseUrl}}/admin/services
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{testBuyerToken}}
+}
+
+tests {
+  test("Comprador não tem acesso ao diagnóstico administrativo", function() {
+    expect(res.getStatus()).to.equal(403);
+    expect(res.getBody()).not.to.have.property("results");
+  });
+}

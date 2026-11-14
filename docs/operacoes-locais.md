@@ -20,22 +20,48 @@ para reservar stock no arranque da API. As migrações podem ser repetidas e
 preservam os documentos já migrados. Se o comando indicar documentos inválidos,
 corrige-os antes de repetir. Numa base nova basta `db:init`.
 
+## Fazer uma cópia de segurança e restaurar
+
+Para a API e, se o usares, o Laravel. Garante que nenhum outro processo escreve
+na base durante a cópia. Guarda estes elementos juntos numa pasta privada fora
+do repositório:
+
+1. **MongoDB:** exporta a base indicada por `MONGODB_DB_NAME` com
+   [`mongodump`](https://www.mongodb.com/docs/database-tools/mongodump/).
+   Usa um ficheiro de configuração privado com a URI de origem em `uri` e
+   substitui `BASE_ORIGEM` pelo nome da base. Corre o comando na pasta da cópia:
+
+   ```powershell
+   mongodump --config="CAMINHO_CONFIG_ORIGEM" --db="BASE_ORIGEM" --archive=marketplace.archive --gzip
+   ```
+
+2. **Fotografias:** copia `api/uploads/products`, se existir, incluindo as duas
+   variantes WebP de cada fotografia. Os documentos MongoDB referenciam esses ficheiros.
+3. **Histórico Laravel:** se usares o backoffice, abre
+   `backoffice/database/database.sqlite` com a ferramenta `sqlite3` e usa
+   `.backup CAMINHO_DA_COPIA` para criar um ficheiro SQLite autónomo.
+
+Para testar o restauro, usa uma instalação separada e uma base MongoDB vazia com
+suporte a transações. Com a API e o Laravel dessa instalação parados, corre
+[`mongorestore`](https://www.mongodb.com/docs/database-tools/mongorestore/) na
+pasta da cópia, com a configuração privada da ligação de destino:
+
+```powershell
+mongorestore --config="CAMINHO_CONFIG_DESTINO" --archive=marketplace.archive --gzip --nsInclude="BASE_ORIGEM.*" --nsFrom="BASE_ORIGEM.*" --nsTo="BASE_DESTINO.*" --stopOnError
+```
+
+Confirma que o restauro terminou sem erros, aponta a API para a base de destino
+e repõe as fotografias no mesmo caminho relativo. Se copiaste o SQLite, coloca
+a cópia em `backoffice/database/database.sqlite` na instalação de teste.
+Arranca os serviços e confirma o catálogo, a imagem de um produto com fotografia
+carregada e, se aplicável, o histórico do backoffice. Volta a iniciar sessão no
+backoffice. Guarda a configuração e os segredos separadamente dos dados.
+
 ## Redefinir a palavra-passe de uma conta
 
 A redefinição é feita por um operador com acesso ao terminal e permissões de
 escrita no MongoDB. O email serve apenas para identificar a conta, mesmo quando
 é fictício.
-
-**Evolução da implementação:** inicialmente, a recuperação era feita pelo
-endpoint público `POST /api/auth/recuperar-password`, que aceitava o email e
-uma nova palavra-passe sem verificar a identidade do pedido. Quem conhecesse o
-email de uma conta podia, por isso, alterar a sua palavra-passe, e os tokens
-anteriores continuavam válidos.
-
-Como as contas de demonstração usam emails fictícios, esse fluxo foi removido
-e substituído pela redefinição pelo operador local. A página de login já não
-oferece recuperação e o endereço antigo devolve `404`. Um teste mantém esta
-verificação para detetar a reintrodução acidental da rota.
 
 1. Para a API para fechar também as ligações Socket.IO já abertas.
 2. Confirma que `MONGODB_URI` e `MONGODB_DB_NAME` em `api/.env` apontam para a
@@ -57,6 +83,7 @@ troca de códigos de entrada do Laravel rejeitam credenciais com uma versão
 anterior. Contas e credenciais antigas sem versão equivalem a `0`, pelo que
 não é necessária uma migração e as restantes contas mantêm as sessões.
 
+O endereço antigo de recuperação devolve `404`.
 Os testes automatizados cobrem a rota antiga, a mudança de credenciais e a
 revogação de tokens e códigos com persistência simulada. Para confirmar o
 comando de ponta a ponta, usa uma base MongoDB isolada: verifica que a
@@ -115,9 +142,18 @@ do seed for diferente da predefinida, ajusta `demoPassword` em
 npm --prefix api run test:api
 ```
 
+Se só a palavra-passe de `produtor@example.test` tiver sido reposta, fornece-a
+ao runner pela variável de ambiente `BRUNO_PRODUCER_PASSWORD`. No Bruno
+Desktop, ajusta `producerPassword` no ambiente local sem guardar o valor no Git.
+
 A coleção faz escritas reais e limpa as contas `bruno-test-*` e os documentos
-marcados com `BRUNO_AUTOTEST_`. Usa uma base de demonstração e evita usá-la
-simultaneamente para outras operações.
+marcados com `BRUNO_AUTOTEST_`, incluindo as fotografias dos produtos
+temporários. Usa a mesma base de desenvolvimento na API e no runner, e evita
+executar duas instâncias da coleção em simultâneo.
+
+A coleção inclui casos de permissões, validação e persistência. Os casos de
+sucesso que exigem o segredo de integração do backoffice ou uma encomenda de
+um leilão ganho são verificados em `api/test`.
 
 Para validar apenas o contrato OpenAPI e os testes do Swagger, sem MongoDB:
 

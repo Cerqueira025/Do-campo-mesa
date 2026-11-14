@@ -19,5 +19,10 @@ body:json {
 }
 
 tests {
-  test("devolve 200", function() { expect(res.getStatus()).to.equal(200); });
+  test("republica a avaliação sem expor denúncias no resultado da moderação", function() {
+    expect(res.getStatus()).to.equal(200);
+    const review = res.getBody();
+    expect(review.estado).to.equal("publicada");
+    expect(review).not.to.have.property("denuncias");
+  });
 }

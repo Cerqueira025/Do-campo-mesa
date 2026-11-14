@@ -1,0 +1,31 @@
+meta {
+  name: Produtor envia uma fotografia PNG para o produto temporário
+  type: http
+  seq: 46
+}
+
+put {
+  url: {{baseUrl}}/products/{{functionalProduct2}}/photo
+  body: file
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{producerToken}}
+}
+
+body:file {
+  file: @file(fixtures/product-photo.png) @contentType(image/png)
+}
+
+tests {
+  test("associa ao produto uma referência de fotografia válida", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody()._id).to.equal(bru.getVar("functionalProduct2"));
+    expect(res.getBody().fotografia).to.match(/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i);
+  });
+}
+
+script:post-response {
+  bru.setVar("functionalPhoto", res.getBody().fotografia);
+}

@@ -15,6 +15,10 @@
 
   &:focus-visible {
     transform: translateY(0);
-    @include mixins.focus-ring($width: 3px, $color: var(--color-yellow-500), $offset: 3px);
+    @include mixins.focus-ring(
+      $width: 3px,
+      $color: var(--color-yellow-500),
+      $offset: 3px
+    );
   }
 }

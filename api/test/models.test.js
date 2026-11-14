@@ -226,7 +226,7 @@ test("Seed repetido preserva documentos e timestamps existentes", async (t) => {
   }
   assert.deepEqual(await insertSeedData(fixtures), {
     users: 18,
-    products: 39,
+    products: 48,
     orders: 27,
     auctions: 12,
     bids: 27,

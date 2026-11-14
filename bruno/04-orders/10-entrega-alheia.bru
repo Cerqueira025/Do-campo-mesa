@@ -1,0 +1,26 @@
+meta {
+  name: Comprador não altera a entrega de uma encomenda alheia
+  type: http
+  seq: 10
+}
+
+patch {
+  url: {{baseUrl}}/orders/{{testOrderId}}/entrega
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{buyerToken}}
+}
+
+body:json {
+  {"entrega":{"tipo":"levantamento"}}
+}
+
+tests {
+  test("Comprador não altera a entrega de uma encomenda alheia", function() {
+    expect(res.getStatus()).to.equal(404);
+    expect(res.getBody().erro).to.equal("Encomenda não encontrada.");
+  });
+}

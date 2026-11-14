@@ -1,0 +1,17 @@
+meta {
+  name: Fotografia continua disponível depois de remoção recusada
+  type: http
+  seq: 48
+}
+
+get {
+  url: {{baseUrl}}/uploads/products/{{functionalPhoto}}-480.webp
+  auth: none
+}
+
+tests {
+  test("serve o ficheiro convertido para WebP", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getHeader("content-type")).to.equal("image/webp");
+  });
+}

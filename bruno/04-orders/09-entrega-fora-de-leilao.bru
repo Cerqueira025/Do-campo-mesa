@@ -1,0 +1,26 @@
+meta {
+  name: Encomenda normal não permite escolher novamente a entrega
+  type: http
+  seq: 9
+}
+
+patch {
+  url: {{baseUrl}}/orders/{{testOrderId}}/entrega
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{testBuyerToken}}
+}
+
+body:json {
+  {"entrega":{"tipo":"levantamento"}}
+}
+
+tests {
+  test("Encomenda normal não permite escolher novamente a entrega", function() {
+    expect(res.getStatus()).to.equal(409);
+    expect(res.getBody().erro).to.equal("Esta encomenda já não aguarda a escolha da modalidade.");
+  });
+}

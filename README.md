@@ -77,9 +77,9 @@ Se precisares de recuperar o acesso a uma conta, segue o
 
 ## Backoffice opcional
 
-Segue a [preparação local do Laravel](backoffice/app/README.md#preparação-local)
+Segue a [preparação local do Laravel](backoffice/README.md#preparação-local)
 (PHP 8.5 com PDO SQLite e Composer) e
-[inicia o Laravel](backoffice/app/README.md#arranque). Depois, entra com uma conta
+[inicia o Laravel](backoffice/README.md#arranque). Depois, entra com uma conta
 de administrador e abre **Serviços e sistema** em
 [Administração](http://127.0.0.1:5173/admin).
 
@@ -108,16 +108,15 @@ dependências PHP:
 
 ```powershell
 npm ci
-composer --working-dir=backoffice/app install
+composer --working-dir=backoffice install
 npm run lint
 ```
 
 ## Documentação
 
-- [Operações locais](docs/operacoes-locais.md): migrações, redefinição de palavras-passe, validação com MongoDB real e testes Bruno.
-- [Dados de demonstração](docs/dados-funcionais.md): contas e exemplos. [Demonstrar um leilão com dois compradores](docs/dados-funcionais.md#demonstrar-um-leilão-com-dois-compradores): passos e resultados esperados no navegador.
+- [Operações locais](docs/operacoes-locais.md): migrações, cópias de segurança, redefinição de palavras-passe e testes.
+- [Dados de demonstração](docs/dados-funcionais.md): contas, exemplos e guiões para [uma compra com dois produtores](docs/dados-funcionais.md#demonstrar-uma-compra-com-dois-produtores) e [um leilão com dois compradores](docs/dados-funcionais.md#demonstrar-um-leilão-com-dois-compradores).
 - [Frontend](frontend/README.md): estrutura, rotas, estilos e fotografias. [Navegação e fluidez](docs/fluidez.md): comportamento e medições históricas.
 - [OpenAPI](docs/openapi.yaml): contrato REST usado pelo Swagger UI. [Leilões em tempo real](docs/leiloes-tempo-real.md): eventos Socket.IO e recuperação da ligação.
-- [Administração](docs/administracao.md): gestão do mercado. [Backoffice técnico](backoffice/app/README.md): instalação e diagnóstico dos serviços.
+- [Administração](docs/administracao.md): gestão do mercado. [Backoffice técnico](backoffice/README.md): instalação e diagnóstico dos serviços.
 - [Relatório do projeto](docs/relatorio.md) e [enunciado](Do_Campo_a_Mesa_Enunciado.pdf).
-- [Auditoria de 2 de novembro de 2026](docs/auditoria-2026-11-02.md): registo histórico e notas de seguimento.

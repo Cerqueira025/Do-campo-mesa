@@ -1,0 +1,25 @@
+meta {
+  name: Comprador reconhece avaliação oculta na encomenda
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/orders/{{testOrderId}}/reviews
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{testBuyerToken}}
+}
+
+tests {
+  test("avaliação oculta continua registada para o comprador", function() {
+    expect(res.getStatus()).to.equal(200);
+    const review = res.getBody().find(item => item._id === bru.getVar("testReviewId"));
+    expect(review).to.be.an("object");
+    expect(review.estado).to.equal("oculta");
+    expect(review.encomendaId).to.equal(bru.getVar("testOrderId"));
+  });
+}

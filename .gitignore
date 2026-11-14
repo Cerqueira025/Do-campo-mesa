@@ -12,9 +12,12 @@ api/uploads/
 npm-debug.log*
 
 # Laravel
-backoffice/app/.env
-backoffice/app/vendor/
-backoffice/app/storage/*.key
+backoffice/.env
+backoffice/vendor/
+backoffice/storage/*.key
+
+# Demo videos
+/docs/*.mp4
 
 # Editor and operating system files
 .idea/

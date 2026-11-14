@@ -1165,7 +1165,8 @@ paths:
       summary: Cria um leilão com um ou vários produtos próprios de produtor aprovado
       description:
         "Papel: produtor aprovado. Exige lista não vazia de produtos distintos, publicados e pertencentes ao
-        produtor autenticado. Cada quantidade deve ser positiva e não exceder o stock; a unidade vem do produto,
+        produtor autenticado. Cada quantidade deve ser um múltiplo de 1 para unidade, 100 para g ou 0,5 para kg e l,
+        com mínimo igual ao passo, e não pode exceder o stock. A unidade vem do produto,
         ignorando valores enviados pelo cliente. Preço base e licitações aplicam-se ao lote completo. Exige aprovação
         atual na base de dados; produtores pendentes ou rejeitados recebem 403. O servidor guarda agendado com
         reservaStock pendente; valores de estado, reserva e motivo enviados pelo cliente são ignorados. Datas devem ser

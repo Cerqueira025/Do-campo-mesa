@@ -20,6 +20,8 @@ export interface AuctionCardAuction {
   srcSet?: string;
   currentBid: number;
   endsAt: number;
+  startsAt?: string;
+  basePrice?: number;
   participants?: number | null;
 }
 
@@ -27,14 +29,18 @@ function AuctionCard({
   auction,
   onEnter,
   href,
+  clockOffset = 0,
 }: {
   auction: AuctionCardAuction;
   onEnter?: () => void;
   href?: string;
+  clockOffset?: number;
 }) {
   const id = useId();
-  const { remaining } = useAuctionCountdown(auction.endsAt);
-  const ended = remaining === 0;
+  const { remaining } = useAuctionCountdown(auction.endsAt, clockOffset);
+  const scheduled = auction.startsAt !== undefined;
+  const ended = !scheduled && remaining === 0;
+  const action = scheduled ? "Ver leilão" : "Entrar no leilão";
 
   return (
     <article className="auction-card" aria-labelledby={`${id}-title`}>
@@ -69,30 +75,49 @@ function AuctionCard({
               ? "Participantes: indisponível"
               : `${auction.participants} ${auction.participants === 1 ? "participante" : "participantes"}`}
           </p>
-          <span className="auction-card__badge">
+          <span
+            className={`auction-card__badge${scheduled ? " auction-card__badge--scheduled" : ""}`}
+          >
             <span className="auction-card__status-dot" aria-hidden="true" />
-            {ended ? "TERMINADO" : "EM DIRETO"}
+            {scheduled ? "AGENDADO" : ended ? "TERMINADO" : "EM DIRETO"}
           </span>
         </div>
         <div className="auction-card__summary">
-          <h2 className="auction-card__title" id={`${id}-title`}>
+          <h3 className="auction-card__title" id={`${id}-title`}>
             {auction.name}
-          </h2>
+          </h3>
           <p className="auction-card__lot">{auction.lotDescription}</p>
         </div>
 
         <dl className="auction-card__metrics">
           <div className="auction-card__bid">
             <dt>
-              <FontAwesomeIcon icon={faGavel} aria-hidden="true" /> Lance atual
+              <FontAwesomeIcon icon={faGavel} aria-hidden="true" />{" "}
+              {scheduled ? "Preço base" : "Lance atual"}
             </dt>
-            <dd>{priceFormatter.format(auction.currentBid / 100)}</dd>
+            <dd>
+              {priceFormatter.format(
+                (auction.basePrice ?? auction.currentBid) / 100,
+              )}
+            </dd>
           </div>
           <div className="auction-card__countdown">
             <dt>
-              <FontAwesomeIcon icon={faClock} aria-hidden="true" /> Termina em
+              <FontAwesomeIcon icon={faClock} aria-hidden="true" />{" "}
+              {scheduled ? "Começa em" : "Termina em"}
             </dt>
-            <dd>{formatRemaining(remaining)}</dd>
+            <dd>
+              {scheduled ? (
+                <time dateTime={auction.startsAt}>
+                  {new Date(auction.startsAt!).toLocaleString("pt-PT", {
+                    dateStyle: "short",
+                    timeStyle: "short",
+                  })}
+                </time>
+              ) : (
+                formatRemaining(remaining)
+              )}
+            </dd>
           </div>
         </dl>
 
@@ -104,7 +129,7 @@ function AuctionCard({
               icon={faArrowRight}
               iconPosition="end"
             >
-              Entrar no leilão
+              {action}
             </Button>
           ) : (
             <Button
@@ -114,7 +139,7 @@ function AuctionCard({
               disabled={ended || !onEnter}
               onClick={onEnter}
             >
-              Entrar no leilão
+              {action}
             </Button>
           )}
         </div>

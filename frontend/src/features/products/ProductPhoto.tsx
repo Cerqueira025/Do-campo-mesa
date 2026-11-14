@@ -89,7 +89,11 @@ export default function ProductPhoto({
           disabled={disabled || busy}
         >
           <legend>Carregar ou substituir fotografia</legend>
-          <ProductPhotoSelection key={selectionKey} product={product} onSelect={setFile} />
+          <ProductPhotoSelection
+            key={selectionKey}
+            product={product}
+            onSelect={setFile}
+          />
           <div className="producer-products__actions">
             <Button type="submit" disabled={!file}>
               {busy ? "A guardar…" : "Guardar fotografia"}
@@ -106,7 +110,11 @@ export default function ProductPhoto({
   );
 }
 
-export function ProductPhotoSelection({ product, onSelect, onValidity }: {
+export function ProductPhotoSelection({
+  product,
+  onSelect,
+  onValidity,
+}: {
   product?: ProducerProduct;
   onSelect: (file: File | undefined) => void;
   onValidity?: (valid: boolean) => void;
@@ -114,7 +122,9 @@ export function ProductPhotoSelection({ product, onSelect, onValidity }: {
   const [preview, setPreview] = useState<string>();
   const [error, setError] = useState("");
   const input = useRef<HTMLInputElement>(null);
-  useEffect(() => { if (preview) return () => URL.revokeObjectURL(preview); }, [preview]);
+  useEffect(() => {
+    if (preview) return () => URL.revokeObjectURL(preview);
+  }, [preview]);
   function select(file?: File) {
     onSelect(undefined);
     setPreview(undefined);
@@ -125,15 +135,53 @@ export function ProductPhotoSelection({ product, onSelect, onValidity }: {
       failure = "A fotografia deve ter conteúdo e não ultrapassar 5 MiB.";
     setError(failure);
     onValidity?.(!failure);
-    if (failure) { if (input.current) input.current.value = ""; return; }
+    if (failure) {
+      if (input.current) input.current.value = "";
+      return;
+    }
     onSelect(file);
     if (file) setPreview(URL.createObjectURL(file));
   }
-  return <div className="product-photo__selection">
-    {(preview || product) && <ImageWithFallback {...(preview ? { image: preview } : productImages(product!))} alt={preview ? product ? `Pré-visualização de ${product.nome}` : "Pré-visualização da fotografia" : product!.nome} className="product-photo__preview" sizes="320px" />}
-    <FormField id="product-photo-file" label={product ? "Nova fotografia" : "Fotografia"} hint="JPEG, PNG ou WebP estático, até 5 MiB e 25 milhões de píxeis.">
-      <input id="product-photo-file" type="file" ref={input} accept="image/jpeg,image/png,image/webp" aria-invalid={Boolean(error)} aria-describedby={`product-photo-file-hint${error ? " product-photo-file-error" : ""}`} onChange={(event) => select(event.target.files?.[0])} />
-    </FormField>
-    {error && <p id="product-photo-file-error" className="producer-products__error" role="alert">{error}</p>}
-  </div>;
+  return (
+    <div className="product-photo__selection">
+      {(preview || product) && (
+        <ImageWithFallback
+          {...(preview ? { image: preview } : productImages(product!))}
+          alt={
+            preview
+              ? product
+                ? `Pré-visualização de ${product.nome}`
+                : "Pré-visualização da fotografia"
+              : product!.nome
+          }
+          className="product-photo__preview"
+          sizes="320px"
+        />
+      )}
+      <FormField
+        id="product-photo-file"
+        label={product ? "Nova fotografia" : "Fotografia"}
+        hint="JPEG, PNG ou WebP estático, até 5 MiB e 25 milhões de píxeis."
+      >
+        <input
+          id="product-photo-file"
+          type="file"
+          ref={input}
+          accept="image/jpeg,image/png,image/webp"
+          aria-invalid={Boolean(error)}
+          aria-describedby={`product-photo-file-hint${error ? " product-photo-file-error" : ""}`}
+          onChange={(event) => select(event.target.files?.[0])}
+        />
+      </FormField>
+      {error && (
+        <p
+          id="product-photo-file-error"
+          className="producer-products__error"
+          role="alert"
+        >
+          {error}
+        </p>
+      )}
+    </div>
+  );
 }

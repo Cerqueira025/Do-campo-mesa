@@ -1,0 +1,23 @@
+meta {
+  name: Detalhe privado confirma que a remoção ficou guardada
+  type: http
+  seq: 50
+}
+
+get {
+  url: {{baseUrl}}/products/mine/{{functionalProduct2}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{producerToken}}
+}
+
+tests {
+  test("Detalhe privado confirma que a remoção ficou guardada", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody()._id).to.equal(bru.getVar("functionalProduct2"));
+    expect(res.getBody().fotografia).to.equal(null);
+  });
+}

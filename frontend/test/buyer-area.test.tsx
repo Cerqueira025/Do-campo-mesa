@@ -63,12 +63,16 @@ test("Navegação e histórico preservam menu, cabeçalho e foco", async () => {
   mount();
   const menu = screen.getByRole("navigation", { name: "Área pessoal" });
   const header = screen.getByRole("banner");
-  fireEvent.click(within(menu).getByRole("link", { name: "As minhas encomendas" }));
+  fireEvent.click(
+    within(menu).getByRole("link", { name: "As minhas encomendas" }),
+  );
   await screen.findByText("Ainda não há encomendas.");
   expectPage("As minhas encomendas", "As minhas encomendas");
   expect(screen.getByRole("banner")).toBe(header);
   expect(screen.getByRole("navigation", { name: "Área pessoal" })).toBe(menu);
-  expect(document.activeElement).toBe(screen.getByRole("heading", { level: 1 }));
+  expect(document.activeElement).toBe(
+    screen.getByRole("heading", { level: 1 }),
+  );
 
   act(() => navigate(`/encomendas/${orderId}`));
   expectPage("Detalhe da encomenda", "As minhas encomendas");

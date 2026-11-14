@@ -1,0 +1,27 @@
+meta {
+  name: Comprador avalia o produtor da encomenda entregue
+  type: http
+  seq: 43
+}
+
+post {
+  url: {{baseUrl}}/reviews
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{testBuyerToken}}
+}
+
+body:json {
+  {"encomendaId":"{{functionalOrder}}","produtorId":"dca000000000000000000004","classificacao":4,"comentario":"{{testRun}} avaliação de produtor"}
+}
+
+tests {
+  test("Comprador avalia o produtor da encomenda entregue", function() {
+    expect(res.getStatus()).to.equal(201);
+    expect(res.getBody().estado).to.equal("publicada");
+    expect(res.getBody().produtorId).to.equal("dca000000000000000000004");
+  });
+}

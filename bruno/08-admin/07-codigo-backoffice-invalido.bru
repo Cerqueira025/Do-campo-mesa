@@ -1,0 +1,26 @@
+meta {
+  name: Emissão de código recusa identificador inválido
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/admin/backoffice/codes
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+body:json {
+  {"state":"invalido"}
+}
+
+tests {
+  test("Emissão de código recusa identificador inválido", function() {
+    expect(res.getStatus()).to.equal(400);
+    expect(res.getBody().erro).to.equal("Entrada inválida.");
+  });
+}

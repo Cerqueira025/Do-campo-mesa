@@ -49,8 +49,14 @@ async function call(path = "", method = "GET", body, token = true) {
 
 test("Consultas de leilões exigem autenticação e aprovação", async (t) => {
   const paths = ["/mine", `/mine/${id}`, `/mine/${id}/bids`];
-  for (const path of paths) assert.equal((await call(path, "GET", undefined, false)).status, 401);
-  for (const [role, approval] of [["comprador"], ["administrador"], ["produtor", "pendente"], ["produtor", "rejeitado"]]) {
+  for (const path of paths)
+    assert.equal((await call(path, "GET", undefined, false)).status, 401);
+  for (const [role, approval] of [
+    ["comprador"],
+    ["administrador"],
+    ["produtor", "pendente"],
+    ["produtor", "rejeitado"],
+  ]) {
     auth(t, role, approval);
     for (const path of paths) assert.equal((await call(path)).status, 403);
     t.mock.restoreAll();
@@ -124,15 +130,58 @@ test("Histórico devolve o nome do licitador e trata compradores removidos", asy
   });
 });
 const sample = {
-  _id: id, lote: "Cabaz", precoBase: 500, incremento: 100,
-  produtos: [{ produtoId: { _id: owner, nome: "Batata", publicado: false, bloqueado: true }, quantidade: 2, unidade: "kg" }],
-  dataInicio: new Date(Date.now() - 5000), dataFim: new Date(Date.now() + 600000),
-  estado: "ativo", reservaStock: "reservada", licitacaoAtual: { valor: 600, compradorId: "privado" },
+  _id: id,
+  lote: "Cabaz",
+  precoBase: 500,
+  incremento: 100,
+  produtos: [
+    {
+      produtoId: {
+        _id: owner,
+        nome: "Batata",
+        publicado: false,
+        bloqueado: true,
+      },
+      quantidade: 2,
+      unidade: "kg",
+    },
+  ],
+  dataInicio: new Date(Date.now() - 5000),
+  dataFim: new Date(Date.now() + 600000),
+  estado: "ativo",
+  reservaStock: "reservada",
+  licitacaoAtual: { valor: 600, compradorId: "privado" },
 };
 test("Lista apenas leilões próprios e não expõe licitantes ou filtra produtos privados", async (t) => {
   auth(t);
-  const query = { select() { return this; }, sort(value) { assert.deepEqual(value, { createdAt: -1, _id: 1 }); return this; }, skip(value) { assert.equal(value, 24); return this; }, limit(value) { assert.equal(value, 24); return this; }, populate(value) { assert.equal(value.match, undefined); return this; }, async lean() { return [sample]; } };
-  t.mock.method(Auction, "find", (filter) => { assert.deepEqual(filter, { produtorId: owner }); return query; });
+  const query = {
+    select() {
+      return this;
+    },
+    sort(value) {
+      assert.deepEqual(value, { createdAt: -1, _id: 1 });
+      return this;
+    },
+    skip(value) {
+      assert.equal(value, 24);
+      return this;
+    },
+    limit(value) {
+      assert.equal(value, 24);
+      return this;
+    },
+    populate(value) {
+      assert.equal(value.match, undefined);
+      return this;
+    },
+    async lean() {
+      return [sample];
+    },
+  };
+  t.mock.method(Auction, "find", (filter) => {
+    assert.deepEqual(filter, { produtorId: owner });
+    return query;
+  });
   t.mock.method(Auction, "countDocuments", async () => 25);
   const response = await call("/mine?page=2&limit=24");
   assert.equal(response.status, 200);
@@ -147,22 +196,50 @@ test("Detalhe limita propriedade e devolve 404 para outro produtor ou ID inváli
   auth(t);
   t.mock.method(Auction, "findOne", (filter) => {
     assert.deepEqual(filter, { _id: id, produtorId: owner });
-    return { select() { return this; }, populate() { return this; }, async lean() { return null; } };
+    return {
+      select() {
+        return this;
+      },
+      populate() {
+        return this;
+      },
+      async lean() {
+        return null;
+      },
+    };
   });
   assert.equal((await call(`/mine/${id}`)).status, 404);
   assert.equal((await call("/mine/invalido")).status, 404);
 });
 test("Paginação inválida é rejeitada antes da consulta", async (t) => {
   auth(t);
-  for (const suffix of ["page=0", "limit=101", "limit=1.5", "page=9007199254740992", "page=1&page=2"])
+  for (const suffix of [
+    "page=0",
+    "limit=101",
+    "limit=1.5",
+    "page=9007199254740992",
+    "page=1&page=2",
+  ])
     assert.equal((await call(`/mine?${suffix}`)).status, 400);
 });
 
 test("Detalhe privado inclui produtos indisponíveis e calcula o estado terminado", async (t) => {
   auth(t);
   t.mock.method(Auction, "findOne", () => ({
-    select() { return this; }, populate(value) { assert.equal(value.match, undefined); return this; },
-    async lean() { return { ...sample, dataFim: new Date(Date.now() - 1000), produtos: [{ produtoId: null, quantidade: 2, unidade: "kg" }] }; },
+    select() {
+      return this;
+    },
+    populate(value) {
+      assert.equal(value.match, undefined);
+      return this;
+    },
+    async lean() {
+      return {
+        ...sample,
+        dataFim: new Date(Date.now() - 1000),
+        produtos: [{ produtoId: null, quantidade: 2, unidade: "kg" }],
+      };
+    },
   }));
   const response = await call(`/mine/${id}`);
   assert.equal(response.status, 200);

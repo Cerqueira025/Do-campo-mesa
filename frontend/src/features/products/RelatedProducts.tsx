@@ -35,7 +35,10 @@ export default function RelatedProducts({
     const controller = new AbortController();
     async function load() {
       try {
-        const params = new URLSearchParams({ produtorId: producerId, limit: "7" });
+        const params = new URLSearchParams({
+          produtorId: producerId,
+          limit: "7",
+        });
         const response = await fetch(`/api/products?${params}`, {
           signal: controller.signal,
         });
@@ -43,7 +46,9 @@ export default function RelatedProducts({
         const data = (await response.json()) as { items: ApiProduct[] };
         if (!Array.isArray(data.items)) throw new Error("Resposta inválida");
         if (!controller.signal.aborted) {
-          setProducts(data.items.filter((product) => product._id !== id).slice(0, 6));
+          setProducts(
+            data.items.filter((product) => product._id !== id).slice(0, 6),
+          );
           setStatus("success");
         }
       } catch {

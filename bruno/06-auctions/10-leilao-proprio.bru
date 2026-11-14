@@ -1,0 +1,25 @@
+meta {
+  name: Detalhe privado devolve lote e quantidade sem dados do comprador
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{baseUrl}}/auctions/mine/{{testAuctionId}}
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{producerToken}}
+}
+
+tests {
+  test("devolve o leilão criado e omite a identidade do licitante", function() {
+    expect(res.getStatus()).to.equal(200);
+    const auction = res.getBody();
+    expect(auction._id).to.equal(bru.getVar("testAuctionId"));
+    expect(auction.produtos).to.have.length(1);
+    expect(auction.produtos[0].quantidade).to.equal(2);
+    expect(auction.licitacaoAtual).to.deep.equal({ valor: 500 });
+  });
+}

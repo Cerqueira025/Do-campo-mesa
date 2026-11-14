@@ -80,10 +80,9 @@ export function navigate(
   if (!entry()) initializeNavigation();
   savePosition();
   const current = entry()!;
-  const catalog =
-    window.location.pathname === "/"
-      ? { key: current.key, url: locationSnapshot(), index: current.index }
-      : current.catalog;
+  const catalog = ["/", "/leiloes"].includes(window.location.pathname)
+    ? { key: current.key, url: locationSnapshot(), index: current.index }
+    : current.catalog;
   const next: Entry = {
     key: replace ? current.key : crypto.randomUUID(),
     url: relative,
@@ -130,11 +129,9 @@ export function restoreNavigation(ready = true) {
     return;
   }
   window.scrollTo(0, 0);
-  const heading = document.querySelector<HTMLElement>(
-    "main [data-navigation-content] h2",
-  ) ?? document.querySelector<HTMLElement>(
-    'main h1, main [role="status"]',
-  );
+  const heading =
+    document.querySelector<HTMLElement>("main [data-navigation-content] h2") ??
+    document.querySelector<HTMLElement>('main h1, main [role="status"]');
   if (heading) {
     heading.tabIndex = -1;
     heading.focus({ preventScroll: true });

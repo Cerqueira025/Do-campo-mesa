@@ -37,6 +37,12 @@ try {
       "local",
       "--env-var",
       `baseUrl=${baseUrl}`,
+      ...(process.env.BRUNO_PRODUCER_PASSWORD
+        ? [
+            "--env-var",
+            "producerPassword=" + process.env.BRUNO_PRODUCER_PASSWORD,
+          ]
+        : []),
       "-r",
     ],
     { stdio: "inherit", env: brunoEnv, cwd: collectionPath },

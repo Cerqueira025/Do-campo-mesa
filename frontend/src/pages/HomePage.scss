@@ -10,6 +10,20 @@
     margin-inline: auto;
   }
 
+  &__auction-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+
+    h2 {
+      margin: 0;
+      font-size: var(--font-size-xl);
+    }
+  }
+
   &__products {
     padding-block: 24px 64px;
   }

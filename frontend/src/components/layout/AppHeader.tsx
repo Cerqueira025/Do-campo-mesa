@@ -20,11 +20,13 @@ import "./AppHeader.scss";
 interface AppHeaderProps {
   variant?: "default" | "overlay";
   onBack?: () => void;
+  backLabel?: string;
 }
 
 export default function AppHeader({
   variant = "default",
   onBack,
+  backLabel = "Voltar ao catálogo",
 }: AppHeaderProps) {
   const { estado, utilizador, sair } = useAuth();
   const { canBuy } = useCart();
@@ -38,7 +40,7 @@ export default function AppHeader({
           <IconButton
             className="app-header__back"
             variant="plain"
-            aria-label="Voltar ao catálogo"
+            aria-label={backLabel}
             icon={<FontAwesomeIcon icon={faAngleLeft} aria-hidden="true" />}
             onClick={onBack}
           />

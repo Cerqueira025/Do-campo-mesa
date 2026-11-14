@@ -15,8 +15,9 @@ tests {
     expect(res.getStatus()).to.equal(200);
     const producers = res.getBody();
     expect(producers).to.be.an("array");
-    expect(producers.map((item) => item._id)).not.to.include("dca000000000000000000005");
-    expect(producers.map((item) => item._id)).not.to.include("dca000000000000000000006");
+    const ids = producers.map((item) => item._id);
+    expect(ids).to.include(bru.getVar("authProducerId"));
+    expect(ids).not.to.include(bru.getVar("rejectedProducerId"));
     expect(producers.every((item) => !item.perfilProdutor.morada)).to.equal(true);
   });
 }

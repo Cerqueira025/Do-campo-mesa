@@ -1,0 +1,20 @@
+meta {
+  name: Lista avaliações do produto
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/reviews/products/dca000000000000000000065
+  body: none
+  auth: none
+}
+
+tests {
+  test("lista avaliações publicadas e resumo", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().items).to.be.an("array");
+    expect(res.getBody().total).to.be.a("number");
+    expect(res.getBody().items.some((item) => item._id === bru.getVar("testReviewId"))).to.equal(true);
+  });
+}

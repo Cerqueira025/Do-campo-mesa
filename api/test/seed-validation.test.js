@@ -62,7 +62,7 @@ test("Conjunto funcional cobre contagens, visibilidade, estados e médias dos fi
   );
   assert.deepEqual(
     data.map(([, docs]) => docs.length),
-    [18, 39, 27, 12, 27, 38],
+    [18, 48, 27, 12, 27, 38],
   );
   const users = rows(data, User);
   const approved = new Set(
@@ -70,7 +70,7 @@ test("Conjunto funcional cobre contagens, visibilidade, estados e médias dos fi
       .filter((u) => u.perfilProdutor?.validacao === "aceite")
       .map((u) => String(u._id)),
   );
-  const products = rows(data, Product).slice(3);
+  const products = rows(data, Product).slice(3, 39);
   assert.equal(
     products.filter((p) => p.publicado && approved.has(String(p.produtorId)))
       .length,
@@ -111,6 +111,41 @@ test("Conjunto funcional cobre contagens, visibilidade, estados e médias dos fi
     for (const row of rows(data, model).slice(offset))
       counts[row[field]] = (counts[row[field]] || 0) + 1;
     assert.deepEqual(counts, expected);
+  }
+});
+
+test("As novas variedades são públicas e têm stock nas quintas aprovadas", () => {
+  const data = fresh();
+  const expected = new Map([
+    ["Abóbora", 1101],
+    ["Alho", 1101],
+    ["Brócolos", 1101],
+    ["Cebola", 1101],
+    ["Tomate", 1101],
+    ["Cereja", 1102],
+    ["Laranja", 1102],
+    ["Morango", 1102],
+    ["Pão", 1103],
+  ]);
+  const approved = new Set(
+    rows(data, User)
+      .filter((user) => user.perfilProdutor?.validacao === "aceite")
+      .map((user) => String(user._id)),
+  );
+  const products = rows(data, Product);
+  const additions = products.slice(39);
+  assert.equal(additions.length, expected.size);
+  assert.equal(new Set(products.map(({ nome }) => nome)).size, 19);
+  for (const [i, product] of additions.entries()) {
+    const producer = expected.get(product.nome);
+    assert.ok(producer, product.nome);
+    assert.equal(String(product._id), String(seedId(2037 + i)));
+    assert.equal(String(product.produtorId), String(seedId(producer)));
+    assert.ok(approved.has(String(product.produtorId)));
+    assert.equal(product.publicado, true);
+    assert.ok(product.stock >= quantityRules[product.unidade].initial);
+    assert.equal(product.fotografia, undefined);
+    assert.doesNotMatch(product.descricao, /exploração funcional/i);
   }
 });
 

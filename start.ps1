@@ -17,12 +17,12 @@ try {
 
     $requirements = @(
         @{ Path = 'api/.env'; Help = 'Copia api/.env.example para api/.env e configura a API e o MongoDB Atlas.' }
-        @{ Path = 'backoffice/app/.env'; Help = 'Segue a preparacao local em backoffice/app/README.md, incluindo APP_KEY e BACKOFFICE_SECRET.' }
+        @{ Path = 'backoffice/.env'; Help = 'Segue a preparacao local em backoffice/README.md, incluindo APP_KEY e BACKOFFICE_SECRET.' }
         @{ Path = 'api/node_modules/express/package.json'; Help = 'Executa npm --prefix api ci.' }
         @{ Path = 'frontend/node_modules/vite/bin/vite.js'; Help = 'Executa npm --prefix frontend ci.' }
-        @{ Path = 'backoffice/app/vendor/autoload.php'; Help = 'Executa composer --working-dir=backoffice/app install.' }
-        @{ Path = 'backoffice/app/database/database.sqlite'; Help = 'Cria a base SQLite e executa php artisan migrate em backoffice/app, conforme o respetivo README.' }
-        @{ Path = 'backoffice/app/public/build/manifest.json'; Help = 'Executa npm --prefix backoffice/app ci e npm --prefix backoffice/app run build.' }
+        @{ Path = 'backoffice/vendor/autoload.php'; Help = 'Executa composer --working-dir=backoffice install.' }
+        @{ Path = 'backoffice/database/database.sqlite'; Help = 'Cria a base SQLite e executa php artisan migrate em backoffice, conforme o respetivo README.' }
+        @{ Path = 'backoffice/public/build/manifest.json'; Help = 'Executa npm --prefix backoffice ci e npm --prefix backoffice run build.' }
     )
 
     $missing = @($requirements | Where-Object {
@@ -38,7 +38,7 @@ try {
     $services = @(
         @{ Name = 'API'; Directory = 'api'; Command = "& '$($commands['npm.cmd'].Replace("'", "''"))' run dev"; Url = 'http://127.0.0.1:3000' }
         @{ Name = 'Frontend'; Directory = 'frontend'; Command = "& '$($commands['npm.cmd'].Replace("'", "''"))' run dev -- --host 127.0.0.1 --port 5173 --strictPort"; Url = 'http://127.0.0.1:5173' }
-        @{ Name = 'Backoffice'; Directory = 'backoffice/app'; Command = "& '$($commands['php.exe'].Replace("'", "''"))' artisan serve --host=127.0.0.1 --port=8000"; Url = 'http://127.0.0.1:8000' }
+        @{ Name = 'Backoffice'; Directory = 'backoffice'; Command = "& '$($commands['php.exe'].Replace("'", "''"))' artisan serve --host=127.0.0.1 --port=8000"; Url = 'http://127.0.0.1:8000' }
     )
 
     foreach ($service in $services) {

@@ -19,14 +19,20 @@ export function eligibleAuctionProducts(products: ProducerProduct[]) {
 }
 
 export function auctionDateErrors(draft: AuctionDraft, now = Date.now()) {
-  const start = draft.inicio === "agora" ? now : new Date(draft.dataInicio).getTime();
+  const start =
+    draft.inicio === "agora" ? now : new Date(draft.dataInicio).getTime();
   const end = new Date(draft.dataFim).getTime();
   return {
-    dataInicio: draft.inicio === "agendado" && (!Number.isFinite(start) || start <= now)
-      ? "Escolha uma data e hora de início futura." : "",
-    dataFim: !Number.isFinite(end) || end <= now
-      ? "Escolha uma data e hora de fim futura."
-      : Number.isFinite(start) && end <= start ? "O fim deve ser posterior ao início do leilão." : "",
+    dataInicio:
+      draft.inicio === "agendado" && (!Number.isFinite(start) || start <= now)
+        ? "Escolha uma data e hora de início futura."
+        : "",
+    dataFim:
+      !Number.isFinite(end) || end <= now
+        ? "Escolha uma data e hora de fim futura."
+        : Number.isFinite(start) && end <= start
+          ? "O fim deve ser posterior ao início do leilão."
+          : "",
   };
 }
 

@@ -1,0 +1,27 @@
+meta {
+  name: Altera apenas a descrição do produtor de teste
+  type: http
+  seq: 21
+}
+
+patch {
+  url: {{baseUrl}}/producers/me
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authProducerToken}}
+}
+
+body:json {
+  {"descricao":"{{testRun}}"}
+}
+
+tests {
+  test("Altera apenas a descrição do produtor de teste", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().descricao).to.equal(bru.getVar("testRun"));
+    expect(res.getBody()).not.to.have.property("validacao");
+  });
+}

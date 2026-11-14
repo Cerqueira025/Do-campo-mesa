@@ -1,0 +1,26 @@
+meta {
+  name: Upload de fotografia rejeita tipo de conteúdo inválido
+  type: http
+  seq: 39
+}
+
+put {
+  url: {{baseUrl}}/products/{{functionalProduct2}}/photo
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{producerToken}}
+}
+
+body:json {
+  {"foto":"Não é uma imagem"}
+}
+
+tests {
+  test("Upload de fotografia rejeita tipo de conteúdo inválido", function() {
+    expect(res.getStatus()).to.equal(415);
+    expect(res.getBody().erro).to.equal("Envie uma fotografia JPEG, PNG ou WebP.");
+  });
+}

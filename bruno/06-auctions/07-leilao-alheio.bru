@@ -1,0 +1,22 @@
+meta {
+  name: Outro produtor não consulta o detalhe privado
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/auctions/mine/{{testAuctionId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{otherProducerToken}}
+}
+
+tests {
+  test("Outro produtor não consulta o detalhe privado", function() {
+    expect(res.getStatus()).to.equal(404);
+    expect(res.getBody().erro).to.equal("Leilão não encontrado.");
+  });
+}

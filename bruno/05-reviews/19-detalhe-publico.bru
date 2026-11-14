@@ -1,0 +1,20 @@
+meta {
+  name: Detalhe público da avaliação republicada
+  type: http
+  seq: 19
+}
+
+get {
+  url: {{baseUrl}}/reviews/{{testReviewId}}
+  auth: none
+}
+
+tests {
+  test("mostra a avaliação republicada sem dados privados", function() {
+    expect(res.getStatus()).to.equal(200);
+    const review = res.getBody();
+    expect(review._id).to.equal(bru.getVar("testReviewId"));
+    expect(review.classificacao).to.equal(5);
+    expect(review).to.have.all.keys("_id", "autorId", "classificacao", "comentario", "createdAt");
+  });
+}

@@ -1,0 +1,23 @@
+meta {
+  name: Troca interna recusa credenciais de integração ausentes
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/internal/backoffice/exchange
+  body: json
+  auth: none
+}
+
+body:json {
+  {"code":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","state":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"}
+}
+
+tests {
+  test("Troca interna recusa credenciais de integração ausentes", function() {
+    expect(res.getStatus()).to.equal(401);
+    expect(res.getBody().erro).to.equal("Integração não autorizada.");
+    expect(res.getBody()).not.to.have.property("token");
+  });
+}

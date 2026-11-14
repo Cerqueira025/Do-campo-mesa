@@ -26,5 +26,6 @@ body:json {
 tests {
   test("Rejeita avaliação antes de entrega", function() {
     expect(res.getStatus()).to.equal(400);
+    expect(res.getBody().erro).to.equal("Só podes avaliar encomendas entregues que te pertencem.");
   });
 }

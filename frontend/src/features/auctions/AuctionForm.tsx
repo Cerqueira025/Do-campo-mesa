@@ -243,7 +243,10 @@ export default function AuctionForm() {
                           onClick={() => removeLine(line.key)}
                           aria-label={`Remover produto ${index + 1}`}
                           icon={
-                            <FontAwesomeIcon icon={faTrash} aria-hidden="true" />
+                            <FontAwesomeIcon
+                              icon={faTrash}
+                              aria-hidden="true"
+                            />
                           }
                         />
                       </div>

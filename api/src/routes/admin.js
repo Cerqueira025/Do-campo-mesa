@@ -238,8 +238,8 @@ function decorate(item, resource, now) {
 
 router.get("/summary", async (_request, response, next) => {
   try {
-    const [users, orders, pendingProducers, activeAuctions, reportedReviews] = await Promise.all(
-      [
+    const [users, orders, pendingProducers, activeAuctions, reportedReviews] =
+      await Promise.all([
         User.aggregate([{ $group: { _id: "$papel", total: { $sum: 1 } } }]),
         Order.aggregate([{ $group: { _id: "$estado", total: { $sum: 1 } } }]),
         User.countDocuments({
@@ -248,8 +248,7 @@ router.get("/summary", async (_request, response, next) => {
         }),
         Auction.countDocuments(auctionStateFilter("ativo", Date.now())),
         Review.countDocuments({ estado: "denunciada" }),
-      ],
-    );
+      ]);
     response.json({
       users: Object.fromEntries(users.map((item) => [item._id, item.total])),
       orders: Object.fromEntries(orders.map((item) => [item._id, item.total])),

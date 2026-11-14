@@ -1,0 +1,23 @@
+meta {
+  name: Perfil privado conserva a descrição após alteração recusada
+  type: http
+  seq: 23
+}
+
+get {
+  url: {{baseUrl}}/producers/me
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authProducerToken}}
+}
+
+tests {
+  test("Perfil privado conserva a descrição após alteração recusada", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().descricao).to.equal(bru.getVar("testRun"));
+    expect(res.getBody()).not.to.have.property("passwordHash");
+  });
+}

@@ -298,9 +298,10 @@ test("Leilão terminado continua público se os alvos estiverem disponíveis", a
     valor: 100,
     encomendaId: null,
   });
-  assert.deepEqual(list.body.map(({ _id, estado }) => ({ _id, estado })), [
-    { _id: id, estado: "terminado" },
-  ]);
+  assert.deepEqual(
+    list.body.map(({ _id, estado }) => ({ _id, estado })),
+    [{ _id: id, estado: "terminado" }],
+  );
 });
 
 test("Detalhe persiste o resultado e a encomenda de um leilão terminado com vencedor", async (t) => {

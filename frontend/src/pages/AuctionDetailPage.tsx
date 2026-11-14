@@ -25,6 +25,7 @@ import {
 } from "../features/products/product";
 import {
   cancellationMessages,
+  auctionReturnUrl,
   auctionState,
   bidInputValue,
   formatRemaining,
@@ -351,7 +352,8 @@ export default function AuctionDetailPage({ id }: { id: string | null }) {
     "loading" | "success" | "missing" | "error"
   >(id ? "loading" : "missing");
   const [retry, setRetry] = useState(0);
-  const returnUrl = catalogReturnUrl(window.location.search);
+  const search = window.location.search;
+  const returnUrl = auctionReturnUrl(search, catalogReturnUrl(search));
   useLayoutEffect(() => {
     restoreNavigation(status !== "loading");
   }, [status]);
@@ -551,6 +553,7 @@ export default function AuctionDetailPage({ id }: { id: string | null }) {
       <AppHeader
         variant={status === "success" ? "overlay" : "default"}
         onBack={() => returnToCatalog(returnUrl)}
+        backLabel={returnUrl === "/leiloes" ? "Voltar aos leilões" : undefined}
       />
     </div>
   );
@@ -573,7 +576,9 @@ export default function AuctionDetailPage({ id }: { id: string | null }) {
         >
           <h1>Leilão não encontrado</h1>
           <p>Este leilão não existe ou já não está disponível.</p>
-          <InternalLink href={returnUrl}>Explorar produtos</InternalLink>
+          <InternalLink href={returnUrl}>
+            {returnUrl === "/leiloes" ? "Ver leilões" : "Explorar produtos"}
+          </InternalLink>
         </section>
       ) : status === "error" ? (
         <section

@@ -1,0 +1,22 @@
+meta {
+  name: Outro produtor não consulta produto na gestão privada
+  type: http
+  seq: 38
+}
+
+get {
+  url: {{baseUrl}}/products/mine/{{functionalProduct1}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{otherProducerToken}}
+}
+
+tests {
+  test("Outro produtor não consulta produto na gestão privada", function() {
+    expect(res.getStatus()).to.equal(404);
+    expect(res.getBody().erro).to.equal("Produto não encontrado.");
+  });
+}

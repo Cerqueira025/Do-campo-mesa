@@ -1,0 +1,28 @@
+meta {
+  name: Diagnóstico confirma ligação à base e resposta do Socket.IO
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{baseUrl}}/admin/services
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+tests {
+  test("Diagnóstico confirma ligação à base e resposta do Socket.IO", function() {
+    expect(res.getStatus()).to.equal(200);
+    const { results } = res.getBody();
+    expect(results.map(result => result.service)).to.have.members(["mongodb", "socketio"]);
+    for (const result of results) {
+      expect(result.status, result.service).to.equal("ok");
+      expect(result.durationMs).to.be.at.least(0);
+      expect(Number.isNaN(Date.parse(result.checkedAt))).to.equal(false);
+    }
+  });
+}

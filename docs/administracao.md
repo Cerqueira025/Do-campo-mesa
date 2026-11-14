@@ -4,8 +4,9 @@ A área React começa em `/admin` e exige o papel atual `administrador` na API.
 Inclui resumo, aprovação de registos pendentes, moderação de produtos e avaliações,
 utilizadores, encomendas e todos os estados dos leilões. O acesso «Serviços e sistema», no final do menu administrativo,
 abre o backoffice técnico Laravel, com entrada direta, verificações locais e histórico
-de 30 dias. Consulta [a preparação e funcionamento do backoffice](../backoffice/app/README.md).
-A execução sem infraestrutura Cloud foi acordada com o professor. Gráficos ficam fora desta implementação.
+de 30 dias. O painel Laravel mostra gráficos com até 20 verificações bem-sucedidas
+por serviço nos últimos 30 dias, quando há medições. Consulta [a preparação e funcionamento do backoffice](../backoffice/README.md).
+A execução sem infraestrutura Cloud foi acordada com o professor.
 
 ## Entrada no backoffice técnico
 
