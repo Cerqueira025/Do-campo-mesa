@@ -38,7 +38,7 @@ do repositório:
 2. **Fotografias:** copia `api/uploads/products`, se existir, incluindo as duas
    variantes WebP de cada fotografia. Os documentos MongoDB referenciam esses ficheiros.
 3. **Histórico Laravel:** se usares o backoffice, abre
-   `backoffice/app/database/database.sqlite` com a ferramenta `sqlite3` e usa
+   `backoffice/database/database.sqlite` com a ferramenta `sqlite3` e usa
    `.backup CAMINHO_DA_COPIA` para criar um ficheiro SQLite autónomo.
 
 Para testar o restauro, usa uma instalação separada e uma base MongoDB vazia com
@@ -52,7 +52,7 @@ mongorestore --config="CAMINHO_CONFIG_DESTINO" --archive=marketplace.archive --g
 
 Confirma que o restauro terminou sem erros, aponta a API para a base de destino
 e repõe as fotografias no mesmo caminho relativo. Se copiaste o SQLite, coloca
-a cópia em `backoffice/app/database/database.sqlite` na instalação de teste.
+a cópia em `backoffice/database/database.sqlite` na instalação de teste.
 Arranca os serviços e confirma o catálogo, a imagem de um produto com fotografia
 carregada e, se aplicável, o histórico do backoffice. Volta a iniciar sessão no
 backoffice. Guarda a configuração e os segredos separadamente dos dados.
