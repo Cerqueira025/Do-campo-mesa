@@ -36,7 +36,11 @@ export default function ProducerSummary({ embedded }: { embedded: boolean }) {
           <section className="producer-summary__panel">
             <div className="producer-summary__heading">
               <h2>Evolução das vendas</h2>
-              <div className="producer-summary__periods" role="group" aria-label="Período das vendas">
+              <div
+                className="producer-summary__periods"
+                role="group"
+                aria-label="Período das vendas"
+              >
                 {(Object.keys(salesPeriods) as SalesPeriod[]).map((option) => (
                   <Button
                     key={option}
@@ -82,17 +86,29 @@ export default function ProducerSummary({ embedded }: { embedded: boolean }) {
                       <li key={product.id}>
                         <div className="producer-summary__rank">
                           <strong>{product.name}</strong>
-                          <span>{priceFormatter.format(product.total / 100)}</span>
+                          <span>
+                            {priceFormatter.format(product.total / 100)}
+                          </span>
                         </div>
-                        <div className="producer-summary__track" aria-hidden="true">
-                          <div style={{ width: `${(product.total / sales.ranking[0].total) * 100}%` }} />
+                        <div
+                          className="producer-summary__track"
+                          aria-hidden="true"
+                        >
+                          <div
+                            style={{
+                              width: `${(product.total / sales.ranking[0].total) * 100}%`,
+                            }}
+                          />
                         </div>
                       </li>
                     ))}
                   </ol>
                 )}
                 {sales.hasMixedLots && (
-                  <p>O valor dos lotes com vários produtos aparece apenas no gráfico.</p>
+                  <p>
+                    O valor dos lotes com vários produtos aparece apenas no
+                    gráfico.
+                  </p>
                 )}
               </section>
             )}
@@ -103,7 +119,9 @@ export default function ProducerSummary({ embedded }: { embedded: boolean }) {
           <section className="producer-summary__panel">
             <div className="producer-summary__heading">
               <h2>Encomendas recentes</h2>
-              <Button href="/produtor/encomendas" variant="cream">Ver todas</Button>
+              <Button href="/produtor/encomendas" variant="cream">
+                Ver todas
+              </Button>
             </div>
             {sales.recent.length === 0 ? (
               <p>Ainda não há encomendas.</p>

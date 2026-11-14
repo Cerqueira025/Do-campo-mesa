@@ -323,22 +323,52 @@ test("Remover fotografia antiga desativa associação pelo nome e não envia out
   ).toBeNull();
 });
 
-
 test("Criação com fotografia recupera falha de envio sem criar outro produto", async () => {
-  const request = vi.fn().mockResolvedValueOnce(managed).mockRejectedValueOnce(new Error("Envio falhou")).mockResolvedValueOnce({ ...managed, fotografia: photo });
+  const request = vi
+    .fn()
+    .mockResolvedValueOnce(managed)
+    .mockRejectedValueOnce(new Error("Envio falhou"))
+    .mockResolvedValueOnce({ ...managed, fotografia: photo });
   mount(<ProductForm />, request);
-  for (const [label, value] of [["Nome", "Batata"], ["Descrição", "Da horta"], ["Categoria", "Hortícolas"], ["Preço (€ por unidade)", "1,50"], ["Stock disponível", "5"]])
+  for (const [label, value] of [
+    ["Nome", "Batata"],
+    ["Descrição", "Da horta"],
+    ["Categoria", "Hortícolas"],
+    ["Preço (€ por unidade)", "1,50"],
+    ["Stock disponível", "5"],
+  ])
     fireEvent.change(screen.getByLabelText(label), { target: { value } });
   const file = new File(["imagem"], "batata.png", { type: "image/png" });
-  fireEvent.change(screen.getByLabelText("Fotografia"), { target: { files: [file] } });
-  const form = screen.getByRole("button", { name: "Guardar produto" }).closest("form")!;
+  fireEvent.change(screen.getByLabelText("Fotografia"), {
+    target: { files: [file] },
+  });
+  const form = screen
+    .getByRole("button", { name: "Guardar produto" })
+    .closest("form")!;
   fireEvent.submit(form);
   fireEvent.submit(form);
   await screen.findByText("Envio falhou");
-  expect(request.mock.calls.filter((call) => call[0] === "/products")).toHaveLength(1);
-  expect(screen.getByRole("link", { name: "Consultar produto sem fotografia" }).getAttribute("href")).toBe(`/produtor/produtos/${managed._id}`);
-  fireEvent.click(screen.getByRole("button", { name: "Repetir envio da fotografia" }));
-  await waitFor(() => expect(navigate).toHaveBeenCalledWith(`/produtor/produtos/${managed._id}?guardado=1`));
-  expect(request.mock.calls.filter((call) => call[0] === "/products")).toHaveLength(1);
-  expect(request.mock.calls.at(-1)).toEqual([`/products/${managed._id}/photo`, { method: "PUT", body: file }]);
+  expect(
+    request.mock.calls.filter((call) => call[0] === "/products"),
+  ).toHaveLength(1);
+  expect(
+    screen
+      .getByRole("link", { name: "Consultar produto sem fotografia" })
+      .getAttribute("href"),
+  ).toBe(`/produtor/produtos/${managed._id}`);
+  fireEvent.click(
+    screen.getByRole("button", { name: "Repetir envio da fotografia" }),
+  );
+  await waitFor(() =>
+    expect(navigate).toHaveBeenCalledWith(
+      `/produtor/produtos/${managed._id}?guardado=1`,
+    ),
+  );
+  expect(
+    request.mock.calls.filter((call) => call[0] === "/products"),
+  ).toHaveLength(1);
+  expect(request.mock.calls.at(-1)).toEqual([
+    `/products/${managed._id}/photo`,
+    { method: "PUT", body: file },
+  ]);
 });

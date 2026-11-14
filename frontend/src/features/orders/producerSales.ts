@@ -1,6 +1,10 @@
 import type { Order } from "./order";
 
-export const salesPeriods = { month: "Mês", halfYear: "6 meses", year: "Ano" } as const;
+export const salesPeriods = {
+  month: "Mês",
+  halfYear: "6 meses",
+  year: "Ano",
+} as const;
 export type SalesPeriod = keyof typeof salesPeriods;
 
 const lisbonDate = new Intl.DateTimeFormat("en-CA", {
@@ -44,7 +48,9 @@ export function producerSales(
   const series = Array.from({ length: bucketCount }, (_, index) => ({
     label: daily
       ? String(index + 1)
-      : shortMonth.format(new Date(Date.UTC(year, month - bucketCount + index, 1))),
+      : shortMonth.format(
+          new Date(Date.UTC(year, month - bucketCount + index, 1)),
+        ),
     total: 0,
   }));
   const products = new Map<string, { name: string; total: number }>();
@@ -82,7 +88,9 @@ export function producerSales(
     hasMixedLots,
     ranking: [...products]
       .map(([id, product]) => ({ id, ...product }))
-      .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name, "pt-PT"))
+      .sort(
+        (a, b) => b.total - a.total || a.name.localeCompare(b.name, "pt-PT"),
+      )
       .slice(0, 3),
     previousMonth: monthName.format(previous),
     change:

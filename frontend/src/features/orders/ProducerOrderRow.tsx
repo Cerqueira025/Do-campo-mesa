@@ -45,7 +45,9 @@ export default function ProducerOrderRow({
         </div>
         <div>
           <dt>Estado</dt>
-          <dd><OrderStatus state={order.estado} /></dd>
+          <dd>
+            <OrderStatus state={order.estado} />
+          </dd>
         </div>
       </dl>
     </div>

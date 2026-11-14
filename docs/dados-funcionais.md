@@ -53,7 +53,7 @@ Converter cada ID numérico com `seedId(n)` de `api/src/scripts/seed-data.js`:
 | 2001–2010 / 2011–2020 / 2021–2030 | Dez produtos públicos de cada uma das quintas 1, 2 e 3               |
 | 2031–2032                         | Produtos não publicados da quinta 1                                  |
 | 2033–2034 / 2035–2036             | Produtos dos produtores pendente e rejeitado                         |
-| 2037–2041                         | Quinta 1: Abóbora, Alho, Brócolos, Cebola e Tomate                    |
+| 2037–2041                         | Quinta 1: Abóbora, Alho, Brócolos, Cebola e Tomate                   |
 | 2042–2044                         | Quinta 2: Cereja, Laranja e Morango                                  |
 | 2045                              | Quinta 3: Pão                                                        |
 | 3001–3012                         | Encomendas entregues com duas linhas e avaliações elegíveis          |

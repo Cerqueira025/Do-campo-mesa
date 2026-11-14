@@ -82,47 +82,47 @@ export default function OrdersPage({
         </div>
       )}
       <ul className="order-page__list">
-        {orders?.map((order) => producer ? (
-          <li className="order-page__panel" key={order._id}>
-            <ProducerOrderRow order={order} heading="h2" />
-            {order.leilaoId && !order.entrega && (
-              <p>A aguardar a modalidade do vencedor.</p>
-            )}
-          </li>
-        ) : (
-          <li className="order-page__panel" key={order._id}>
-            <h2>
-              <InternalLink
-                className="order-page__link"
-                href={`/encomendas/${order._id}`}
-              >
-                Encomenda {order._id}
-              </InternalLink>
-            </h2>
-            <p>
-              {order.produtorId?.nome || "Produtor indisponível"}
-            </p>
-            {order.leilaoId && !order.entrega && (
-              <p>Escolha como receber o lote no detalhe da encomenda.</p>
-            )}
-            <dl className="order-page__facts">
-              <div>
-                <dt>Data</dt>
-                <dd>{orderDate(order.createdAt)}</dd>
-              </div>
-              <div>
-                <dt>Estado</dt>
-                <dd>
-                  <OrderStatus state={order.estado} />
-                </dd>
-              </div>
-              <div>
-                <dt>Total</dt>
-                <dd>{priceFormatter.format(order.total / 100)}</dd>
-              </div>
-            </dl>
-          </li>
-        ))}
+        {orders?.map((order) =>
+          producer ? (
+            <li className="order-page__panel" key={order._id}>
+              <ProducerOrderRow order={order} heading="h2" />
+              {order.leilaoId && !order.entrega && (
+                <p>A aguardar a modalidade do vencedor.</p>
+              )}
+            </li>
+          ) : (
+            <li className="order-page__panel" key={order._id}>
+              <h2>
+                <InternalLink
+                  className="order-page__link"
+                  href={`/encomendas/${order._id}`}
+                >
+                  Encomenda {order._id}
+                </InternalLink>
+              </h2>
+              <p>{order.produtorId?.nome || "Produtor indisponível"}</p>
+              {order.leilaoId && !order.entrega && (
+                <p>Escolha como receber o lote no detalhe da encomenda.</p>
+              )}
+              <dl className="order-page__facts">
+                <div>
+                  <dt>Data</dt>
+                  <dd>{orderDate(order.createdAt)}</dd>
+                </div>
+                <div>
+                  <dt>Estado</dt>
+                  <dd>
+                    <OrderStatus state={order.estado} />
+                  </dd>
+                </div>
+                <div>
+                  <dt>Total</dt>
+                  <dd>{priceFormatter.format(order.total / 100)}</dd>
+                </div>
+              </dl>
+            </li>
+          ),
+        )}
       </ul>
     </OrderLayout>
   );

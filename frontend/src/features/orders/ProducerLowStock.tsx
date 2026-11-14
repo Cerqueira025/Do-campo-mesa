@@ -23,18 +23,30 @@ export default function ProducerLowStock() {
           { signal: controller.signal },
         );
         if (controller.signal.aborted) return;
-        lowStock.push(...result.items.filter(
-          (product) => product.publicado && !product.bloqueado && product.stock <= 5,
-        ));
+        lowStock.push(
+          ...result.items.filter(
+            (product) =>
+              product.publicado && !product.bloqueado && product.stock <= 5,
+          ),
+        );
         if (page * result.limit >= result.total) break;
       }
-      setProducts(lowStock
-        .sort((a, b) => a.stock - b.stock || a.nome.localeCompare(b.nome, "pt-PT"))
-        .slice(0, 5));
+      setProducts(
+        lowStock
+          .sort(
+            (a, b) =>
+              a.stock - b.stock || a.nome.localeCompare(b.nome, "pt-PT"),
+          )
+          .slice(0, 5),
+      );
     }
     void load().catch((failure) => {
       if (controller.signal.aborted) return;
-      setError(failure instanceof Error ? failure.message : "Não foi possível consultar o stock.");
+      setError(
+        failure instanceof Error
+          ? failure.message
+          : "Não foi possível consultar o stock.",
+      );
     });
     return () => controller.abort();
   }, [request, revision]);
@@ -45,10 +57,12 @@ export default function ProducerLowStock() {
       {error && (
         <div role="alert" className="order-page__error">
           <p>{error}</p>
-          <Button onClick={() => {
-            setError("");
-            setRevision((value) => value + 1);
-          }}>
+          <Button
+            onClick={() => {
+              setError("");
+              setRevision((value) => value + 1);
+            }}
+          >
             Voltar a consultar stock
           </Button>
         </div>
@@ -59,17 +73,23 @@ export default function ProducerLowStock() {
         <ul className="producer-summary__list">
           {products.map((product) => (
             <li className="producer-summary__stock" key={product._id}>
-              <InternalLink className="order-page__link" href={`/produtor/produtos/${product._id}`}>
+              <InternalLink
+                className="order-page__link"
+                href={`/produtor/produtos/${product._id}`}
+              >
                 {product.nome}
               </InternalLink>
               <strong>
-                {quantity.format(product.stock)} {product.unidade === "unidade" ? "un." : product.unidade}
+                {quantity.format(product.stock)}{" "}
+                {product.unidade === "unidade" ? "un." : product.unidade}
               </strong>
             </li>
           ))}
         </ul>
       )}
-      <Button href="/produtor/produtos" variant="cream">Ver produtos</Button>
+      <Button href="/produtor/produtos" variant="cream">
+        Ver produtos
+      </Button>
     </section>
   );
 }
