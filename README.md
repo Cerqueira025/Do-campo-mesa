@@ -120,3 +120,5 @@ npm run lint
 - [OpenAPI](docs/openapi.yaml): contrato REST usado pelo Swagger UI. [Leilões em tempo real](docs/leiloes-tempo-real.md): eventos Socket.IO e recuperação da ligação.
 - [Administração](docs/administracao.md): gestão do mercado. [Backoffice técnico](backoffice/README.md): instalação e diagnóstico dos serviços.
 - [Relatório do projeto](docs/relatorio.md) e [enunciado](Do_Campo_a_Mesa_Enunciado.pdf).
+- [Apresentação em PowerPoint](docs/Apresentação.pptx).
+- Vídeos de demonstração: [página principal e encomenda](docs/Demo%20Pag%20Principal%20%2B%20Encomenda.mp4), [perfis](docs/Demo%20Pag%20Perfies.mp4), [leilões](docs/Demo%20Leilões.mp4) e [backoffice](docs/Demo%20Backoffice.mp4).
