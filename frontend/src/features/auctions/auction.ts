@@ -7,6 +7,7 @@ export interface Auction {
     unidade: string;
   }[];
   lote: string;
+  precoBase?: number;
   incremento: number;
   dataInicio: string;
   dataFim: string;
@@ -64,6 +65,8 @@ export function isAuction(value: unknown): value is Auction {
         ["kg", "g", "l", "unidade"].includes(line.unidade),
     ) &&
     typeof auction.lote === "string" &&
+    (auction.precoBase === undefined ||
+      (Number.isSafeInteger(auction.precoBase) && auction.precoBase >= 0)) &&
     Number.isSafeInteger(auction.incremento) &&
     auction.incremento > 0 &&
     Number.isSafeInteger(auction.licitacaoAtual?.valor) &&
@@ -96,13 +99,23 @@ export function auctionState(auction: Auction, now: number): Auction["estado"] {
     : "agendado";
 }
 
-export function featuredAuction(auctions: unknown[], now: number) {
-  return (
-    auctions
-      .filter(isAuction)
-      .filter((auction) => auctionState(auction, now) === "ativo")
-      .sort((a, b) => Date.parse(a.dataFim) - Date.parse(b.dataFim))[0] ?? null
-  );
+export function upcomingAuctions(auctions: unknown[], now: number) {
+  const active: Auction[] = [];
+  const scheduled: Auction[] = [];
+  for (const auction of auctions.filter(isAuction)) {
+    const state = auctionState(auction, now);
+    if (state === "ativo") active.push(auction);
+    if (state === "agendado") scheduled.push(auction);
+  }
+  active.sort((a, b) => Date.parse(a.dataFim) - Date.parse(b.dataFim));
+  scheduled.sort((a, b) => Date.parse(a.dataInicio) - Date.parse(b.dataInicio));
+  return { active, scheduled };
+}
+
+export function auctionReturnUrl(search: string, catalogUrl: string) {
+  return new URLSearchParams(search).get("regresso") === "/leiloes"
+    ? "/leiloes"
+    : catalogUrl;
 }
 
 export function remainingSeconds(endsAt: number, now: number) {

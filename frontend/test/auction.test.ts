@@ -4,7 +4,7 @@ import {
   auctionHref,
   auctionState,
   bidInputValue,
-  featuredAuction,
+  upcomingAuctions,
   formatRemaining,
   isAuction,
   parseBid,
@@ -30,6 +30,22 @@ const auction: Auction = {
   dataInicio: "2026-10-15T11:00:00Z",
   dataFim: "2026-10-15T13:00:00Z",
 };
+
+test("Agrupa os leilões públicos e ordena os agendados pela data de início", () => {
+  const later: Auction = {
+    ...auction,
+    estado: "agendado",
+    reservaStock: "pendente",
+    dataInicio: "2026-10-15T14:00:00Z",
+    dataFim: "2026-10-15T15:00:00Z",
+  };
+  const sooner = { ...later, dataInicio: "2026-10-15T13:00:00Z" };
+  assert.deepEqual(upcomingAuctions([later, auction, sooner], now), {
+    active: [auction],
+    scheduled: [sooner, later],
+  });
+  assert.deepEqual(upcomingAuctions([], now), { active: [], scheduled: [] });
+});
 
 test("Resolve rotas de leilões e preserva o regresso com pesquisa e filtros", () => {
   assert.equal(auctionIdFromPath(`/leiloes/${id}`), id);
@@ -128,10 +144,13 @@ test("Seleciona o leilão em curso com fim mais próximo, sem alterar a lista re
     { ...auction, dataInicio: "2026-10-15T12:20:00Z" },
     { ...auction, dataFim: "2026-10-15T11:30:00Z" },
   ];
-  assert.equal(featuredAuction(list, now), sooner);
+  assert.equal(upcomingAuctions(list, now).active[0] ?? null, sooner);
   assert.equal(list[0], auction);
-  assert.equal(featuredAuction([], now), null);
-  assert.equal(featuredAuction([auction], Date.parse(auction.dataFim)), null);
+  assert.equal(upcomingAuctions([], now).active[0] ?? null, null);
+  assert.equal(
+    upcomingAuctions([auction], Date.parse(auction.dataFim)).active[0] ?? null,
+    null,
+  );
 });
 
 test("Rejeita respostas sem produto, datas válidas ou montantes inteiros seguros", () => {
@@ -162,9 +181,12 @@ test("Destaque ignora entradas inválidas sem perder os leilões válidos", () =
     { ...auction, produtos: [{ ...auction.produtos[0], produtoId: null }] },
     { ...auction, incremento: 0 },
   ];
-  assert.equal(featuredAuction([...invalid, auction, sooner], now), sooner);
-  assert.equal(featuredAuction(invalid, now), null);
-  assert.equal(featuredAuction([], now), null);
+  assert.equal(
+    upcomingAuctions([...invalid, auction, sooner], now).active[0] ?? null,
+    sooner,
+  );
+  assert.equal(upcomingAuctions(invalid, now).active[0] ?? null, null);
+  assert.equal(upcomingAuctions([], now).active[0] ?? null, null);
 });
 
 test("Valida todas as linhas de um lote misto e exige pelo menos uma", () => {
@@ -205,16 +227,16 @@ test("Destaque aguarda confirmação do servidor e acompanha o fim localmente", 
     dataFim: new Date(now + 4000).toISOString(),
   };
   const list = [null, first, second, { ...first, estado: "terminado" }];
-  assert.equal(featuredAuction(list, now), null);
-  assert.equal(featuredAuction(list, now + 999), null);
-  assert.equal(featuredAuction(list, now + 1000), null);
+  assert.equal(upcomingAuctions(list, now).active[0] ?? null, null);
+  assert.equal(upcomingAuctions(list, now + 999).active[0] ?? null, null);
+  assert.equal(upcomingAuctions(list, now + 1000).active[0] ?? null, null);
   first.estado = "ativo";
   first.reservaStock = "reservada";
-  assert.equal(featuredAuction(list, now + 2000), first);
+  assert.equal(upcomingAuctions(list, now + 2000).active[0] ?? null, first);
   second.estado = "ativo";
   second.reservaStock = "reservada";
-  assert.equal(featuredAuction(list, now + 3000), second);
-  assert.equal(featuredAuction(list, now + 4000), null);
+  assert.equal(upcomingAuctions(list, now + 3000).active[0] ?? null, second);
+  assert.equal(upcomingAuctions(list, now + 4000).active[0] ?? null, null);
   assert.equal(first.estado, "ativo");
 });
 
@@ -231,7 +253,7 @@ test("Cancelados mantêm estado e motivo e nunca entram no destaque", () => {
     auctionState(cancelled, Date.parse(auction.dataFim) + 1000),
     "cancelado",
   );
-  assert.equal(featuredAuction([cancelled], now), null);
+  assert.equal(upcomingAuctions([cancelled], now).active[0] ?? null, null);
   assert.equal(isAuction({ ...cancelled, motivoCancelamento: "outro" }), false);
   assert.equal(
     auctionState({ ...auction, reservaStock: "pendente" }, now),

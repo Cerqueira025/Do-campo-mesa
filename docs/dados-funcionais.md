@@ -127,10 +127,11 @@ aprovado. A lista omite leilões indisponíveis; o detalhe devolve 404 para esse
 leilões e para identificadores inválidos.
 Leilões terminados continuam consultáveis se cumprirem essas condições.
 
-O destaque da página inicial usa leilões reais da API e seleciona o ativo com fim mais próximo.
-O destaque e o detalhe voltam a consultar a API a cada cinco segundos.
+A faixa da página inicial mostra até seis leilões ativos e agendados. A página
+`/leiloes` mostra a lista completa, com os ativos ordenados pelo fim e os
+agendados pelo início. A faixa, a lista e o detalhe consultam a API a cada cinco segundos.
 Os contadores atualizam-se localmente a cada segundo, sem inferir uma ativação.
-Entradas inválidas são ignoradas individualmente no destaque. No detalhe, compradores
+Entradas inválidas são ignoradas individualmente nas listas. No detalhe, compradores
 autenticados podem licitar por Socket.IO; a API confirma cada lance antes de emitir
 eventos. Um leilão com reserva e vencedor gera uma encomenda única no fecho.
 O vencedor escolhe levantamento ou entrega no detalhe da encomenda para a confirmar.

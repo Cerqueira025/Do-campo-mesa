@@ -7,6 +7,7 @@ import HomePage from "../pages/HomePage";
 import ProductDetailPage from "../pages/ProductDetailPage";
 import ProducerDetailPage from "../pages/ProducerDetailPage";
 import AuctionDetailPage from "../pages/AuctionDetailPage";
+import AuctionsPage from "../pages/AuctionsPage";
 import {
   auctionIdFromPath,
   orderIdFromPath,
@@ -86,6 +87,8 @@ function resolvePage(pathname: string, location: string, embedded: boolean) {
       );
     case "/":
       return <HomePage />;
+    case "/leiloes":
+      return <AuctionsPage />;
     case "/login":
       return <LoginPage key={location} />;
     case "/registo":
@@ -173,8 +176,7 @@ function producerPageFromPath(pathname: string): {
   section: ProducerSection;
   approved?: boolean;
 } | null {
-  if (pathname === "/produtor")
-    return { title: "Resumo", section: "summary" };
+  if (pathname === "/produtor") return { title: "Resumo", section: "summary" };
   if (pathname === "/conta")
     return { title: "A minha conta", section: "account" };
   if (pathname === "/produtor/perfil")

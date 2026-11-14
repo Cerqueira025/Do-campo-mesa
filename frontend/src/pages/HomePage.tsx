@@ -11,7 +11,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Button from "../components/ui/Button";
 import LoadingPlaceholder from "../components/ui/LoadingPlaceholder";
 import IconButton from "../components/ui/IconButton";
-import FeaturedAuction from "../features/auctions/FeaturedAuction";
+import PublicAuctions from "../features/auctions/PublicAuctions";
 import ProductCard from "../components/product/ProductCard";
 import SearchBar from "../components/ui/input/SearchBar";
 import WelcomeHero from "../features/home/components/WelcomeHero";
@@ -225,10 +225,16 @@ function HomePage() {
 
       <section
         className="home-page__auction page-content"
-        aria-label="Leilão em destaque"
+        aria-labelledby="home-auctions-title"
       >
         <div className="home-page__auction-inner">
-          <FeaturedAuction />
+          <div className="home-page__auction-heading">
+            <h2 id="home-auctions-title">Leilões</h2>
+            <Button href="/leiloes" variant="cream">
+              Ver mais
+            </Button>
+          </div>
+          <PublicAuctions />
         </div>
       </section>
 
