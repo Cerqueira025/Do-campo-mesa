@@ -75,7 +75,9 @@ test("Atualiza o preço e o total antes de confirmar a encomenda", async () => {
       entrega: { tipo: "levantamento" },
     },
   });
-  expect(JSON.parse(localStorage.getItem(cartStorageKey)!)).toEqual([]);
+  await waitFor(() =>
+    expect(JSON.parse(localStorage.getItem(cartStorageKey)!)).toEqual([]),
+  );
 });
 
 test("Exige morada para entrega e envia a morada sem espaços nas extremidades", async () => {
