@@ -53,6 +53,9 @@ Converter cada ID numérico com `seedId(n)` de `api/src/scripts/seed-data.js`:
 | 2001–2010 / 2011–2020 / 2021–2030 | Dez produtos públicos de cada uma das quintas 1, 2 e 3               |
 | 2031–2032                         | Produtos não publicados da quinta 1                                  |
 | 2033–2034 / 2035–2036             | Produtos dos produtores pendente e rejeitado                         |
+| 2037–2041                         | Quinta 1: Abóbora, Alho, Brócolos, Cebola e Tomate                    |
+| 2042–2044                         | Quinta 2: Cereja, Laranja e Morango                                  |
+| 2045                              | Quinta 3: Pão                                                        |
 | 3001–3012                         | Encomendas entregues com duas linhas e avaliações elegíveis          |
 | 3013–3016 / 3017–3020 / 3021–3024 | Encomendas pendentes, confirmadas e prontas                          |
 | 4001–4003 / 4004–4006 / 4007–4009 | Leilões de início futuro, início já atingido e históricos terminados |
@@ -63,7 +66,8 @@ O stock dos produtos representa a disponibilidade remanescente; não é deduzido
 As linhas guardam preços históricos diferentes dos atuais. Valores monetários são cêntimos inteiros;
 o total soma o arredondamento individual de cada linha. Existem stocks zero e fracionários e as quatro unidades suportadas.
 O frontend mostra a fotografia carregada pelo produtor quando existe. Nos registos
-antigos sem o campo `fotografia`, procura uma imagem WebP local pelo nome do produto.
+sem o campo `fotografia`, incluindo as novas variedades de demonstração, procura
+uma imagem WebP local pelo nome do produto.
 Se o campo estiver explicitamente vazio (`null`), se não houver imagem local
 correspondente ou se a imagem falhar, apresenta «Imagem indisponível».
 
@@ -73,6 +77,8 @@ Estes resultados referem-se aos exemplos sem compras, decisões ou passagem do c
 de leilões posteriores. Não são contagens da base atualmente configurada.
 
 - `GET /api/products?q=exploração funcional&limit=24&page=1`: 24 de 30 resultados; página 2 contém os outros 6, sem repetições.
+- O catálogo sem filtros tem 42 produtos públicos de 19 variedades. Os nove novos
+  produtos aparecem no catálogo e nas páginas das respetivas quintas.
 - Os IDs 2031–2036 não aparecem no catálogo nem no detalhe público. Stock zero continua visível: não existe filtro automático de stock.
 - As opções públicas incluem as três localidades, sem duplicados, e as quintas 1–3; excluem as quintas 4–6.
 - Combinar produtor 1101, categoria `Hortícolas`, `bio=true`, `epoca=primavera`, localidade `Viana`, `precoMin=1.51` e `precoMax=1.51` devolve o produto 2001. Os limites de preço do catálogo são euros.

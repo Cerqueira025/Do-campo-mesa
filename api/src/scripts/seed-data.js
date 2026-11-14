@@ -294,6 +294,118 @@ export function seedData(passwordHash, now = new Date()) {
     };
   });
   products.push(...extraProducts);
+  const catalogProducts = [
+    [
+      1101,
+      "Abóbora",
+      "Hortícolas",
+      "kg",
+      180,
+      40,
+      ["outono"],
+      "Abóbora de outono para assar ou usar em sopas.",
+    ],
+    [
+      1101,
+      "Alho",
+      "Hortícolas",
+      "kg",
+      450,
+      20,
+      ["verao"],
+      "Cabeças de alho seco para temperar.",
+    ],
+    [
+      1101,
+      "Brócolos",
+      "Hortícolas",
+      "kg",
+      280,
+      30,
+      ["inverno"],
+      "Brócolos frescos para cozer ou saltear.",
+    ],
+    [
+      1101,
+      "Cebola",
+      "Hortícolas",
+      "kg",
+      170,
+      45,
+      ["verao"],
+      "Cebola seca para refogados e assados.",
+    ],
+    [
+      1101,
+      "Tomate",
+      "Hortícolas",
+      "kg",
+      240,
+      35,
+      ["verao"],
+      "Tomate maduro para saladas e molhos.",
+    ],
+    [
+      1102,
+      "Cereja",
+      "Fruta",
+      "kg",
+      550,
+      25,
+      ["primavera", "verao"],
+      "Cerejas frescas para comer ao natural.",
+    ],
+    [
+      1102,
+      "Laranja",
+      "Fruta",
+      "kg",
+      190,
+      50,
+      ["inverno"],
+      "Laranjas de inverno para sumo ou sobremesa.",
+    ],
+    [
+      1102,
+      "Morango",
+      "Fruta",
+      "kg",
+      420,
+      25,
+      ["primavera"],
+      "Morangos de primavera para servir frescos.",
+    ],
+    [
+      1103,
+      "Pão",
+      "Padaria",
+      "unidade",
+      220,
+      20,
+      ["todo-o-ano"],
+      "Pão de trigo com côdea crocante.",
+    ],
+  ];
+  products.push(
+    ...catalogProducts.map(
+      (
+        [produtor, nome, categoria, unidade, preco, stock, epoca, descricao],
+        i,
+      ) => ({
+        _id: id(2037 + i),
+        produtorId: id(produtor),
+        nome,
+        categoria,
+        unidade,
+        preco,
+        stock,
+        epoca,
+        descricao,
+        biologico: false,
+        publicado: true,
+      }),
+    ),
+  );
   for (let i = 0; i < 24; i++) {
     const group = i % 3;
     const pair = Math.floor((i % 12) / 3) % 2;
